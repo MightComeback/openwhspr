@@ -1,89 +1,73 @@
+// ContentView.swift
+// OpenWhisper
+//
+//  Created by Continuous Shipping Loop on 2026-02-05.
+//
+
 import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var transcriber: AudioTranscriber
-    @StateObject private var hotkeyMonitor: HotkeyMonitor
-
-    init(transcriber: AudioTranscriber) {
-        self.transcriber = transcriber
-        _hotkeyMonitor = StateObject(wrappedValue: HotkeyMonitor {
-            transcriber.toggleRecording()
-        })
-    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 20) {
             Text("OpenWhisper")
-                .font(.system(size: 28, weight: .bold))
+                .font(.largeTitle)
+                .fontWeight(.bold)
 
-            TextField("Transcription", text: $transcriber.transcription, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(6, reservesSpace: true)
-
-            HStack(spacing: 12) {
-                Button(transcriber.isRecording ? "Stop" : "Start") {
-                    transcriber.toggleRecording()
-                }
-                .keyboardShortcut(.defaultAction)
-
-                Text(transcriber.statusMessage)
-                    .foregroundStyle(transcriber.isRecording ? .green : .secondary)
-
-                Spacer()
-
-                Text("Hotkey: ⌘⇧D")
+            if transcriber.isRecording {
+                Text("🔴 Listening…")
+                    .font(.title2)
+                    .foregroundStyle(.green)
+            } else {
+                Text("Ready for dictation")
+                    .font(.title2)
                     .foregroundStyle(.secondary)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Keyword highlight")
-                    .font(.headline)
-
-                HighlightedTextView(text: transcriber.transcription)
-                    .frame(minHeight: 120, alignment: .topLeading)
-                    .padding(8)
-                    .background(.gray.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            ScrollView {
+                Text(transcriber.transcription)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
             }
+            .frame(minHeight: 100)
 
-            if let errorMessage = transcriber.lastError {
-                Text(errorMessage)
+            Button(transcriber.isRecording ? "🛑 Stop Dictation" : "🎤 Start Dictation") {
+                transcriber.toggleRecording()
+            }
+            .font(.headline)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(transcriber.isRecording ? Color.red.opacity(0.8) : Color.blue.opacity(0.8))
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            Text(transcriber.statusMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if let error = transcriber.lastError {
+                Text("❌ \(error)")
+                    .font(.caption)
                     .foregroundStyle(.red)
             }
         }
-        .padding(20)
-        .frame(minWidth: 640, minHeight: 420)
+        .frame(minWidth: 450, minHeight: 400)
+        .padding()
         .onAppear {
-            hotkeyMonitor.start()
             transcriber.requestPermissions()
+            
+            // Global hotkey: Cmd + Shift + D
+            let monitor = HotkeyMonitor { [weak transcriber] in
+                transcriber?.toggleRecording()
+            }
+            monitor.start()
         }
     }
 }
 
-struct HighlightedTextView: View {
-    private let keywords = ["urgent", "todo", "action", "whisper", "dictation"]
-    let text: String
-
-    var body: some View {
-        Text(highlighted(text))
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func highlighted(_ input: String) -> AttributedString {
-        var attributed = AttributedString(input)
-        let lowercased = input.lowercased()
-
-        for keyword in keywords {
-            var searchStart = lowercased.startIndex
-            while let range = lowercased.range(of: keyword, options: [.caseInsensitive], range: searchStart..<lowercased.endIndex) {
-                if let attrRange = Range(range, in: attributed) {
-                    attributed[attrRange].backgroundColor = .yellow.opacity(0.4)
-                    attributed[attrRange].foregroundColor = .primary
-                }
-                searchStart = range.upperBound
-            }
-        }
-
-        return attributed
-    }
+#Preview {
+    ContentView(transcriber: AudioTranscriber())
 }
