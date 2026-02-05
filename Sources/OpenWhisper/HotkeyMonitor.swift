@@ -41,13 +41,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func requestAccessibilityIfNeeded() {
-        let options = CFDictionaryCreateMutable(
-            kCFAllocatorDefault,
-            0,
-            &kCFTypeDictionaryKeyCallBacks,
-            &kCFTypeDictionaryValueCallBacks
-        )!
-        CFDictionarySetValue(options, kAXTrustedCheckOptionPrompt, kCFBooleanTrue)
+        let options: CFDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString: kCFBooleanTrue] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
 }
