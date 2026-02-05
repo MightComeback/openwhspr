@@ -59,11 +59,12 @@ struct ContentView: View {
         .onAppear {
             transcriber.requestPermissions()
             
-            // Global hotkey: Cmd + Shift + D
-            let monitor = HotkeyMonitor { [weak transcriber] in
-                transcriber?.toggleRecording()
-            }
-            monitor.start()
+// Global hotkey: Cmd + Shift + D (handled app-wide)
+            // let monitor = HotkeyMonitor()
+            // monitor.setHandler { [weak transcriber] in
+            //     transcriber?.toggleRecording()
+            // }
+            // monitor.start()
         }
     }
 }

@@ -4,13 +4,21 @@ import SwiftUI
 struct OpenWhisperApp: App {
     @StateObject private var transcriber = AudioTranscriber()
     @StateObject private var hotkeyMonitor = HotkeyMonitor()
+    @State private var isMenuBarExtraInserted = true
     
     var body: some Scene {
         WindowGroup {
             SettingsView(transcriber: transcriber)
+                .task {
+                    hotkeyMonitor.setHandler { [weak transcriber] in
+                        transcriber?.toggleRecording()
+                    }
+                    hotkeyMonitor.start()
+                    transcriber.requestPermissions()
+                }
         }
         
-        @State private var isMenuBarExtraInserted = true\n        MenuBarExtra("🎤", isInserted: $isMenuBarExtraInserted) {
+        MenuBarExtra("🎤", isInserted: $isMenuBarExtraInserted) {
             VStack(alignment: .leading, spacing: 8) {
                 if transcriber.isRecording {
                     Text("🔴 Listening…")
@@ -58,12 +66,5 @@ struct OpenWhisperApp: App {
             .frame(minWidth: 200)
         }
         .menuBarExtraStyle(.window)
-    }
-    .onAppear {
-        hotkeyMonitor.setHandler { [weak transcriber] in
-            transcriber?.toggleRecording()
-        }
-        hotkeyMonitor.start()
-        transcriber.requestPermissions()
     }
 }
