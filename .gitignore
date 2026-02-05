@@ -1,10 +1,9 @@
-.DS_Store
-/.build
-/Packages
-xcuserdata/
+.build/
 DerivedData/
-.swiftpm/configuration/registries.json
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-.netrc
-Package.resolved
-build.log
+*.xcodeproj
+*.xcworkspace
+.DS_Store
+.env
+*.swp
+# Models - download manually
+Resources/ggml-*.bin
