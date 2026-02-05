@@ -2,7 +2,7 @@
 import Foundation
 import SwiftWhisper
 
-final class AudioTranscriber: ObservableObject {
+final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var transcription: String = ""
     @Published var isRecording: Bool = false
     @Published var statusMessage: String = "Idle"

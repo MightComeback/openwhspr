@@ -17,7 +17,7 @@ let package = Package(
                 .process("Resources")
             ],
             swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
+                // .enableExperimentalFeature("StrictConcurrency")
             ]
         )
     ]
