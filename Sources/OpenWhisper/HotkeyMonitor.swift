@@ -3,6 +3,7 @@
 import CoreFoundation
 
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
+    var handler: (() -> Void)?
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private let handler: () -> Void
