@@ -3,14 +3,14 @@ import SwiftUI
 @main
 struct OpenWhisperApp: App {
     @StateObject private var transcriber = AudioTranscriber()
-    @StateObject private var hotkeyMonitor = HotkeyMonitor {}
+    @StateObject private var hotkeyMonitor = HotkeyMonitor()
     
     var body: some Scene {
         WindowGroup {
             SettingsView(transcriber: transcriber)
         }
         
-        MenuBarExtra("🎤", isInserted: true) {
+        @State private var isMenuBarExtraInserted = true\n        MenuBarExtra("🎤", isInserted: $isMenuBarExtraInserted) {
             VStack(alignment: .leading, spacing: 8) {
                 if transcriber.isRecording {
                     Text("🔴 Listening…")
