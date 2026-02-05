@@ -10,7 +10,7 @@ struct OpenWhisperApp: App {
             SettingsView(transcriber: transcriber)
         }
         
-        MenuBarExtra("🎤", isPresented: .constant(false)) {
+        MenuBarExtra("🎤", isInserted: true) {
             VStack(alignment: .leading, spacing: 8) {
                 if transcriber.isRecording {
                     Text("🔴 Listening…")
@@ -58,12 +58,12 @@ struct OpenWhisperApp: App {
             .frame(minWidth: 200)
         }
         .menuBarExtraStyle(.window)
-        .onAppear {
-            hotkeyMonitor.handler = { [weak transcriber] in
-                transcriber?.toggleRecording()
-            }
-            hotkeyMonitor.start()
-            transcriber.requestPermissions()
+    }
+    .onAppear {
+        hotkeyMonitor.setHandler { [weak transcriber] in
+            transcriber?.toggleRecording()
         }
+        hotkeyMonitor.start()
+        transcriber.requestPermissions()
     }
 }

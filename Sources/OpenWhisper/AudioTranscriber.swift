@@ -8,10 +8,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var statusMessage: String = "Idle"
     @Published var lastError: String? = nil
     
+@MainActor
     func clearTranscription() {
-        await MainActor.run {
-            transcription = ""
-        }
+        transcription = ""
     }
 
     private let sampleRate: Double = 16_000

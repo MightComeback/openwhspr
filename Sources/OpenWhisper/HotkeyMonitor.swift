@@ -4,11 +4,13 @@ import CoreFoundation
 
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     var handler: (() -> Void)?
+
     private var globalMonitor: Any?
     private var localMonitor: Any?
-    private let handler: () -> Void
 
-    init(handler: @escaping () -> Void) {
+    init() {}
+
+    func setHandler(_ handler: @escaping () -> Void) {
         self.handler = handler
     }
 
@@ -37,7 +39,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard hasRequired, !hasForbidden else { return false }
         guard event.charactersIgnoringModifiers?.lowercased() == "d" else { return false }
 
-        handler()
+        handler?()
         return true
     }
 
