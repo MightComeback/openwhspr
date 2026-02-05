@@ -1,4 +1,4 @@
-import AppKit
+@preconcurrency import AppKit
 import ApplicationServices
 
 final class HotkeyMonitor: ObservableObject {
@@ -39,8 +39,8 @@ final class HotkeyMonitor: ObservableObject {
         return true
     }
 
-    private func requestAccessibilityIfNeeded() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+    private nonisolated func requestAccessibilityIfNeeded() {
+        let options: CFDictionary = ["AXTrustedCheckOptionPrompt" as CFString: kCFBooleanTrue]
         _ = AXIsProcessTrustedWithOptions(options)
     }
 }

@@ -15,7 +15,7 @@ let package = Package(
         .executableTarget(
             name: "OpenWhisper",
             dependencies: ["SwiftWhisper"],
-            resources: [
+            swiftSettings: [.strictConcurrency("minimal")],
                 .process("Resources"),
             ]
         ),
