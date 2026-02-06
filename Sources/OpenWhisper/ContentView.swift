@@ -29,7 +29,7 @@ struct ContentView: View {
                     .foregroundStyle(transcriber.isRecording ? .red : .primary)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(transcriber.isRecording ? "Recording" : "Ready")
+                    Text(statusTitle())
                         .font(.headline)
                     Text("Hotkey: \(hotkeySummary())")
                         .font(.caption)
@@ -55,6 +55,45 @@ struct ContentView: View {
                     ProgressView(value: Double(transcriber.inputLevel))
                         .progressViewStyle(.linear)
                 }
+            }
+
+            if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Streaming metrics")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("Duration")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatDuration(recordingDuration()))
+                            .font(.caption2)
+                    }
+
+                    HStack {
+                        Text("Chunks")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(transcriber.processedChunkCount) processed • \(transcriber.pendingChunkCount) pending")
+                            .font(.caption2)
+                    }
+
+                    if transcriber.lastChunkLatencySeconds > 0 {
+                        HStack {
+                            Text("Last chunk latency")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(String(format: "%.2fs", transcriber.lastChunkLatencySeconds))
+                                .font(.caption2)
+                        }
+                    }
+                }
+                .padding(8)
+                .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
             }
 
             if !microphoneAuthorized || !accessibilityAuthorized || !inputMonitoringAuthorized {
@@ -220,6 +259,28 @@ struct ContentView: View {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+    }
+
+    private func statusTitle() -> String {
+        if transcriber.isRecording {
+            return "Recording"
+        }
+        if transcriber.pendingChunkCount > 0 {
+            return "Finalizing"
+        }
+        return "Ready"
+    }
+
+    private func recordingDuration() -> TimeInterval {
+        guard let startedAt = transcriber.recordingStartedAt else { return 0 }
+        return max(0, Date().timeIntervalSince(startedAt))
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let total = Int(max(0, seconds.rounded()))
+        let minutes = total / 60
+        let remainder = total % 60
+        return String(format: "%d:%02d", minutes, remainder)
     }
 
     private func hotkeySummary() -> String {

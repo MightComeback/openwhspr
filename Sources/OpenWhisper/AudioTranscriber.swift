@@ -20,6 +20,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var appProfiles: [AppProfile] = []
     @Published var frontmostAppName: String = "Unknown App"
     @Published var frontmostBundleIdentifier: String = ""
+    @Published var pendingChunkCount: Int = 0
+    @Published var processedChunkCount: Int = 0
+    @Published var lastChunkLatencySeconds: Double = 0
+    @Published var recordingStartedAt: Date? = nil
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -27,6 +31,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     private var audioBuffer: [Float] = []
     private var pendingChunks: [[Float]] = []
+    private var pendingChunkEnqueueTimes: [Date] = []
     private var isTranscribing: Bool = false
     private var pendingSessionFinalize: Bool = false
 
@@ -237,6 +242,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         inputLevel = 0
         pendingSessionFinalize = false
         pendingChunks.removeAll()
+        pendingChunkEnqueueTimes.removeAll()
+        pendingChunkCount = 0
+        processedChunkCount = 0
+        lastChunkLatencySeconds = 0
+        recordingStartedAt = Date()
 
         bufferQueue.async { [weak self] in
             self?.audioBuffer.removeAll()
@@ -266,6 +276,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             isRecording = true
             statusMessage = "Listening…"
         } catch {
+            recordingStartedAt = nil
             lastError = "Failed to start audio engine: \(error.localizedDescription)"
         }
     }
@@ -276,6 +287,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRecording = false
+        recordingStartedAt = nil
         statusMessage = "Finalizing…"
         flushRemainingAudio()
     }
@@ -335,6 +347,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private func queueTranscription(for samples: [Float]) {
         guard !samples.isEmpty else { return }
         pendingChunks.append(samples)
+        pendingChunkEnqueueTimes.append(Date())
+        pendingChunkCount = pendingChunks.count
         processTranscriptionQueueIfNeeded()
     }
 
@@ -351,11 +365,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         isTranscribing = true
         let nextChunk = pendingChunks.removeFirst()
+        let queuedAt = pendingChunkEnqueueTimes.isEmpty ? Date() : pendingChunkEnqueueTimes.removeFirst()
+        pendingChunkCount = pendingChunks.count
 
         Task {
             let text = await self.transcribe(samples: nextChunk)
             await MainActor.run {
                 self.consumeTranscribedText(text)
+                self.processedChunkCount += 1
+                self.lastChunkLatencySeconds = max(0, Date().timeIntervalSince(queuedAt))
                 self.isTranscribing = false
                 self.processTranscriptionQueueIfNeeded()
             }
@@ -421,6 +439,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private func finalizeSessionIfNeeded() {
         pendingSessionFinalize = false
         inputLevel = 0
+        pendingChunkCount = 0
 
         let settings = effectiveOutputSettingsForCurrentApp()
         let finalText = normalizeOutputText(transcription, settings: settings)
