@@ -3,8 +3,8 @@ import XCTest
 
 final class OpenWhisperTests: XCTestCase {
     func testModelSourceTitles() throws {
-        XCTAssertEqual(ModelSource.bundledTiny.title, \"Bundled tiny model\")
-        XCTAssertEqual(ModelSource.customPath.title, \"Custom local model\")
+        XCTAssertEqual(ModelSource.bundledTiny.title, "Bundled tiny model")
+        XCTAssertEqual(ModelSource.customPath.title, "Custom local model")
     }
 
     func testModelSourceAllCases() throws {
