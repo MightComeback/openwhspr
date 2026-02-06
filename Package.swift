@@ -19,6 +19,10 @@ let package = Package(
             swiftSettings: [
                 // .enableExperimentalFeature("StrictConcurrency")
             ]
+        ),
+        .testTarget(
+            name: "OpenWhisperTests",
+            dependencies: ["OpenWhisper"]
         )
     ]
 )
