@@ -7,6 +7,7 @@
 @preconcurrency import AVFoundation
 @preconcurrency import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var transcriber: AudioTranscriber
@@ -31,6 +32,9 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.outputAutoCopy) private var autoCopy: Bool = true
     @AppStorage(AppDefaults.Keys.outputAutoPaste) private var autoPaste: Bool = false
     @AppStorage(AppDefaults.Keys.outputClearAfterInsert) private var clearAfterInsert: Bool = false
+
+    @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
+    @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
 
     @AppStorage(AppDefaults.Keys.transcriptionReplacements) private var replacementsRaw: String = ""
     @AppStorage(AppDefaults.Keys.transcriptionHistoryLimit) private var historyLimit: Int = 25
@@ -131,6 +135,78 @@ struct SettingsView: View {
                         Text("Auto-paste sends Cmd+V via Accessibility APIs. Keep it disabled if you only want clipboard updates.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+                }
+
+                GroupBox("Model") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Picker("Model source", selection: $modelSourceRaw) {
+                            ForEach(ModelSource.allCases) { source in
+                                Text(source.title).tag(source.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        if modelSourceRaw == ModelSource.customPath.rawValue {
+                            HStack(alignment: .center, spacing: 8) {
+                                TextField("/path/to/ggml-model.bin", text: $customModelPath)
+                                    .textFieldStyle(.roundedBorder)
+
+                                Button("Choose…") {
+                                    chooseCustomModelFile()
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button("Apply") {
+                                    Task { @MainActor in
+                                        transcriber.setCustomModelPath(customModelPath)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                        }
+
+                        HStack(spacing: 10) {
+                            Button("Reload model") {
+                                Task { @MainActor in
+                                    transcriber.reloadConfiguredModel()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+
+                            if modelSourceRaw == ModelSource.customPath.rawValue {
+                                Button("Clear custom path") {
+                                    customModelPath = ""
+                                    Task { @MainActor in
+                                        transcriber.clearCustomModelPath()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Loaded: \(transcriber.activeModelDisplayName)")
+                                .font(.subheadline)
+                            Text(transcriber.modelStatusMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            if !transcriber.activeModelPath.isEmpty {
+                                Text(transcriber.activeModelPath)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+
+                            if let warning = transcriber.modelWarning {
+                                Text(warning)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
@@ -241,7 +317,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.red)
                         }
 
-                        Text("Bundled model: ggml-tiny.bin (\(formatBytes(sizeOfModel())))")
+                        Text("Current model: \(transcriber.activeModelDisplayName) (\(formatBytes(sizeOfModel(path: transcriber.activeModelPath))))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -291,6 +367,12 @@ struct SettingsView: View {
         }
         .onChange(of: forbiddenCapsLock) { _, newValue in
             if newValue { requiredCapsLock = false }
+        }
+        .onChange(of: modelSourceRaw) { _, newValue in
+            let parsed = ModelSource(rawValue: newValue) ?? .bundledTiny
+            Task { @MainActor in
+                transcriber.setModelSource(parsed)
+            }
         }
     }
 
@@ -379,13 +461,38 @@ struct SettingsView: View {
         return formatter.string(fromByteCount: bytes)
     }
 
-    private func sizeOfModel() -> Int64 {
-        guard let url = Bundle.module.url(forResource: "ggml-tiny", withExtension: "bin"),
-              let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+    private func sizeOfModel(path: String) -> Int64 {
+        if path.isEmpty,
+           let bundledURL = Bundle.module.url(forResource: "ggml-tiny", withExtension: "bin"),
+           let attrs = try? FileManager.default.attributesOfItem(atPath: bundledURL.path),
+           let size = attrs[.size] as? Int64 {
+            return size
+        }
+
+        guard !path.isEmpty,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: path),
               let size = attrs[.size] as? Int64 else {
             return 0
         }
         return size
+    }
+
+    private func chooseCustomModelFile() {
+        let panel = NSOpenPanel()
+        if let binType = UTType(filenameExtension: "bin") {
+            panel.allowedContentTypes = [binType]
+        }
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.message = "Select a local Whisper GGML model file (.bin)"
+
+        if panel.runModal() == .OK, let url = panel.url {
+            customModelPath = url.path
+            Task { @MainActor in
+                transcriber.setCustomModelPath(url.path)
+            }
+        }
     }
 
     private func openSystemSettingsPane(_ paneURL: String) {

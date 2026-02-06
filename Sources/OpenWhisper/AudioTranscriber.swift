@@ -12,6 +12,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var statusMessage: String = "Idle"
     @Published var lastError: String? = nil
     @Published var inputLevel: Float = 0
+    @Published var modelStatusMessage: String = "Loading model…"
+    @Published var modelWarning: String? = nil
+    @Published var activeModelDisplayName: String = "Unavailable"
+    @Published var activeModelPath: String = ""
+    @Published var activeModelSource: ModelSource = .bundledTiny
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -29,7 +34,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     static let shared = AudioTranscriber()
 
     private init() {
-        loadModel()
+        Task { @MainActor in
+            self.reloadConfiguredModel()
+        }
     }
 
     @MainActor
@@ -46,6 +53,37 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     func requestMicrophonePermission() {
         AVCaptureDevice.requestAccess(for: .audio) { _ in }
+    }
+
+    @MainActor
+    func reloadConfiguredModel() {
+        if isRecording {
+            stopRecording()
+        }
+        loadConfiguredModel()
+    }
+
+    @MainActor
+    func setModelSource(_ source: ModelSource) {
+        UserDefaults.standard.set(source.rawValue, forKey: AppDefaults.Keys.modelSource)
+        if source == .bundledTiny {
+            modelWarning = nil
+        }
+        reloadConfiguredModel()
+    }
+
+    @MainActor
+    func setCustomModelPath(_ path: String) {
+        let normalized = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        UserDefaults.standard.set(normalized, forKey: AppDefaults.Keys.modelCustomPath)
+        UserDefaults.standard.set(ModelSource.customPath.rawValue, forKey: AppDefaults.Keys.modelSource)
+        reloadConfiguredModel()
+    }
+
+    @MainActor
+    func clearCustomModelPath() {
+        UserDefaults.standard.set("", forKey: AppDefaults.Keys.modelCustomPath)
+        reloadConfiguredModel()
     }
 
     @MainActor
@@ -419,19 +457,97 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return true
     }
 
-    private func loadModel() {
-        guard let modelURL = Bundle.module.url(forResource: "ggml-tiny", withExtension: "bin") else {
-            lastError = "Missing ggml-tiny.bin in Resources"
+    @MainActor
+    private func loadConfiguredModel() {
+        let resolved = resolveConfiguredModelURL()
+        activeModelSource = resolved.loadedSource
+        modelWarning = resolved.warning
+
+        guard let modelURL = resolved.url else {
+            whisper = nil
+            activeModelDisplayName = "Unavailable"
+            activeModelPath = ""
+            modelStatusMessage = "No usable model file found"
+            lastError = "Missing bundled model and custom model path is invalid."
+            statusMessage = "Model unavailable"
             return
         }
 
-        if let size = (try? FileManager.default.attributesOfItem(atPath: modelURL.path)[.size]) as? NSNumber,
-           size.intValue == 0 {
-            lastError = "Model file is empty. Download ggml-tiny.bin from whisper.cpp releases."
+        guard isReadableModelFile(at: modelURL) else {
+            whisper = nil
+            activeModelDisplayName = modelURL.lastPathComponent
+            activeModelPath = modelURL.path
+            modelStatusMessage = "Model file is invalid or unreadable"
+            lastError = "Model file is invalid: \(modelURL.path)"
+            statusMessage = "Model unavailable"
             return
         }
 
         whisper = Whisper(fromFileURL: modelURL)
-        statusMessage = "Model loaded"
+        activeModelDisplayName = modelURL.lastPathComponent
+        activeModelPath = modelURL.path
+        modelStatusMessage = "Loaded \(modelURL.lastPathComponent)"
+        if resolved.warning == nil {
+            lastError = nil
+        }
+        if let warning = resolved.warning {
+            statusMessage = warning
+        } else {
+            statusMessage = "Model loaded"
+        }
+    }
+
+    private func resolveConfiguredModelURL() -> (url: URL?, loadedSource: ModelSource, warning: String?) {
+        let defaults = UserDefaults.standard
+        let selectedSourceRaw = defaults.string(forKey: AppDefaults.Keys.modelSource) ?? ModelSource.bundledTiny.rawValue
+        let selectedSource = ModelSource(rawValue: selectedSourceRaw) ?? .bundledTiny
+
+        if selectedSource == .customPath {
+            let customPath = (defaults.string(forKey: AppDefaults.Keys.modelCustomPath) ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !customPath.isEmpty, let customURL = validFileURL(for: customPath) {
+                return (customURL, .customPath, nil)
+            }
+
+            let warning: String
+            if customPath.isEmpty {
+                warning = "Custom model path is empty. Using bundled model."
+            } else {
+                warning = "Custom model not found at \(customPath). Using bundled model."
+            }
+
+            if let bundled = bundledModelURL() {
+                return (bundled, .bundledTiny, warning)
+            }
+
+            return (nil, .customPath, warning)
+        }
+
+        if let bundled = bundledModelURL() {
+            return (bundled, .bundledTiny, nil)
+        }
+
+        return (nil, .bundledTiny, "Bundled model is missing.")
+    }
+
+    private func bundledModelURL() -> URL? {
+        Bundle.module.url(forResource: "ggml-tiny", withExtension: "bin")
+    }
+
+    private func validFileURL(for path: String) -> URL? {
+        var isDirectory = ObjCBool(false)
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else {
+            return nil
+        }
+        return URL(fileURLWithPath: path)
+    }
+
+    private func isReadableModelFile(at url: URL) -> Bool {
+        guard FileManager.default.isReadableFile(atPath: url.path) else { return false }
+        if let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? NSNumber,
+           size.intValue > 0 {
+            return true
+        }
+        return false
     }
 }
