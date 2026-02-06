@@ -41,7 +41,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     static let shared = AudioTranscriber()
 
-    private struct EffectiveOutputSettings {
+    struct EffectiveOutputSettings {
         var autoCopy: Bool
         var autoPaste: Bool
         var clearAfterInsert: Bool
@@ -477,7 +477,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func normalizeOutputText(_ text: String, settings: EffectiveOutputSettings) -> String {
+    func normalizeOutputText(_ text: String, settings: EffectiveOutputSettings) -> String {
         var output = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !output.isEmpty else { return "" }
 
@@ -499,7 +499,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func applyCommandReplacements(to text: String, settings: EffectiveOutputSettings) -> String {
+    func applyCommandReplacements(to text: String, settings: EffectiveOutputSettings) -> String {
         var output = text
 
         var rules = BuiltInCommandRules.all
@@ -518,7 +518,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output
     }
 
-    private func normalizeWhitespace(in text: String) -> String {
+    func normalizeWhitespace(in text: String) -> String {
         var output = text
         output = replaceRegex(pattern: "[\\t ]+", in: output, with: " ")
         output = replaceRegex(pattern: " *\\n *", in: output, with: "\n")
@@ -527,7 +527,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output
     }
 
-    private func applySmartCapitalization(to text: String) -> String {
+    func applySmartCapitalization(to text: String) -> String {
         var output = ""
         output.reserveCapacity(text.count)
 
@@ -551,7 +551,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output
     }
 
-    private func applyTerminalPunctuationIfNeeded(to text: String) -> String {
+    func applyTerminalPunctuationIfNeeded(to text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let lastCharacter = trimmed.last else { return trimmed }
 
@@ -570,7 +570,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return trimmed
     }
 
-    private func replaceRegex(pattern: String, in text: String, with template: String) -> String {
+    func replaceRegex(pattern: String, in text: String, with template: String) -> String {
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return text
         }
@@ -579,12 +579,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return regex.stringByReplacingMatches(in: text, range: range, withTemplate: literalTemplate)
     }
 
-    private func isLetter(_ character: Character) -> Bool {
+    func isLetter(_ character: Character) -> Bool {
         character.unicodeScalars.contains { CharacterSet.letters.contains($0) }
     }
 
     @MainActor
-    private func effectiveOutputSettingsForCurrentApp() -> EffectiveOutputSettings {
+    func effectiveOutputSettingsForCurrentApp() -> EffectiveOutputSettings {
         refreshFrontmostAppContext()
         let defaults = defaultOutputSettings()
 
@@ -593,27 +593,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return defaults
         }
 
-        let combinedCustomCommands: String
-        if defaults.customCommandsRaw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            combinedCustomCommands = profile.customCommands
-        } else if profile.customCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            combinedCustomCommands = defaults.customCommandsRaw
-        } else {
-            combinedCustomCommands = defaults.customCommandsRaw + "\n" + profile.customCommands
-        }
-
-        return EffectiveOutputSettings(
-            autoCopy: profile.autoCopy,
-            autoPaste: profile.autoPaste,
-            clearAfterInsert: profile.clearAfterInsert,
-            commandReplacements: profile.commandReplacements,
-            smartCapitalization: profile.smartCapitalization,
-            terminalPunctuation: profile.terminalPunctuation,
-            customCommandsRaw: combinedCustomCommands
-        )
+        return resolveOutputSettings(defaults: defaults, profile: profile)
     }
 
-    private func defaultOutputSettings() -> EffectiveOutputSettings {
+    func defaultOutputSettings() -> EffectiveOutputSettings {
         let defaults = UserDefaults.standard
         return EffectiveOutputSettings(
             autoCopy: defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy),
@@ -627,7 +610,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func applyTextReplacements(to text: String) -> String {
+    func applyTextReplacements(to text: String) -> String {
         var output = text
         for replacement in replacementPairs() {
             output = output.replacingOccurrences(of: replacement.from, with: replacement.to)
@@ -635,7 +618,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output
     }
 
-    private func replacementPairs() -> [(from: String, to: String)] {
+    func replacementPairs() -> [(from: String, to: String)] {
         let raw = UserDefaults.standard.string(forKey: AppDefaults.Keys.transcriptionReplacements) ?? ""
         let lines = raw.components(separatedBy: .newlines)
         var pairs: [(from: String, to: String)] = []
@@ -764,7 +747,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func resolveConfiguredModelURL() -> (url: URL?, loadedSource: ModelSource, warning: String?) {
+    func resolveConfiguredModelURL() -> (url: URL?, loadedSource: ModelSource, warning: String?) {
         let defaults = UserDefaults.standard
         let selectedSourceRaw = defaults.string(forKey: AppDefaults.Keys.modelSource) ?? ModelSource.bundledTiny.rawValue
         let selectedSource = ModelSource(rawValue: selectedSourceRaw) ?? .bundledTiny
@@ -801,7 +784,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         Bundle.module.url(forResource: "ggml-tiny", withExtension: "bin")
     }
 
-    private func validFileURL(for path: String) -> URL? {
+    func validFileURL(for path: String) -> URL? {
         var isDirectory = ObjCBool(false)
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else {
             return nil
@@ -809,12 +792,35 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return URL(fileURLWithPath: path)
     }
 
-    private func isReadableModelFile(at url: URL) -> Bool {
+    func isReadableModelFile(at url: URL) -> Bool {
         guard FileManager.default.isReadableFile(atPath: url.path) else { return false }
         if let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? NSNumber,
            size.intValue > 0 {
             return true
         }
         return false
+    }
+
+    func resolveOutputSettings(defaults: EffectiveOutputSettings, profile: AppProfile?) -> EffectiveOutputSettings {
+        guard let profile else { return defaults }
+
+        let combinedCustomCommands: String
+        if defaults.customCommandsRaw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            combinedCustomCommands = profile.customCommands
+        } else if profile.customCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            combinedCustomCommands = defaults.customCommandsRaw
+        } else {
+            combinedCustomCommands = defaults.customCommandsRaw + "\n" + profile.customCommands
+        }
+
+        return EffectiveOutputSettings(
+            autoCopy: profile.autoCopy,
+            autoPaste: profile.autoPaste,
+            clearAfterInsert: profile.clearAfterInsert,
+            commandReplacements: profile.commandReplacements,
+            smartCapitalization: profile.smartCapitalization,
+            terminalPunctuation: profile.terminalPunctuation,
+            customCommandsRaw: combinedCustomCommands
+        )
     }
 }

@@ -6,6 +6,8 @@ import CoreFoundation
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     weak var transcriber: AudioTranscriber?
 
+    private let defaults: UserDefaults
+    private let observesDefaults: Bool
     private var mode: HotkeyMode = .toggle
     private var requiredModifiers: CGEventFlags = [.maskCommand, .maskShift]
     private var forbiddenModifiers: CGEventFlags = [.maskAlternate, .maskControl]
@@ -16,19 +18,27 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
-    init() {
-        loadConfig()
-        start()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(configChanged),
-            name: UserDefaults.didChangeNotification,
-            object: nil
-        )
+    init(defaults: UserDefaults = .standard, startListening: Bool = true, observeDefaults: Bool = true) {
+        self.defaults = defaults
+        self.observesDefaults = observeDefaults
+        reloadConfig()
+        if startListening {
+            start()
+        }
+        if observeDefaults {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(configChanged),
+                name: UserDefaults.didChangeNotification,
+                object: nil
+            )
+        }
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        if observesDefaults {
+            NotificationCenter.default.removeObserver(self)
+        }
         stop()
     }
 
@@ -37,12 +47,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     @objc private func configChanged() {
-        loadConfig()
+        reloadConfig()
     }
 
-    private func loadConfig() {
-        let defaults = UserDefaults.standard
-
+    func reloadConfig() {
         let required = parseModifierSettings(
             defaults: defaults,
             commandKey: AppDefaults.Keys.hotkeyRequiredCommand,
@@ -208,6 +216,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
             return false
         }
+    }
+
+    func handleForTesting(_ event: CGEvent, type: CGEventType) -> Bool {
+        handle(event, type: type)
+    }
+
+    var holdSessionArmedForTesting: Bool {
+        holdSessionArmed
     }
 
     private func requestAccessibilityIfNeeded() {

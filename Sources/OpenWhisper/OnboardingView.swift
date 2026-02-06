@@ -15,7 +15,11 @@ struct OnboardingView: View {
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
 
     private var allPermissionsGranted: Bool {
-        microphoneAuthorized && accessibilityAuthorized && inputMonitoringAuthorized
+        Self.permissionsGranted(
+            microphone: microphoneAuthorized,
+            accessibility: accessibilityAuthorized,
+            inputMonitoring: inputMonitoringAuthorized
+        )
     }
 
     var body: some View {
@@ -204,6 +208,10 @@ struct OnboardingView: View {
     private func openSystemSettingsPane(_ paneURL: String) {
         guard let url = URL(string: paneURL) else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    static func permissionsGranted(microphone: Bool, accessibility: Bool, inputMonitoring: Bool) -> Bool {
+        microphone && accessibility && inputMonitoring
     }
 }
 

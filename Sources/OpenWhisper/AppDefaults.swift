@@ -36,7 +36,11 @@ enum AppDefaults {
     }
 
     static func register() {
-        let defaults: [String: Any] = [
+        register(into: .standard)
+    }
+
+    static func register(into defaults: UserDefaults) {
+        let values: [String: Any] = [
             Keys.hotkeyMode: HotkeyMode.toggle.rawValue,
             Keys.hotkeyKey: "space",
 
@@ -69,6 +73,6 @@ enum AppDefaults {
 
             Keys.onboardingCompleted: false
         ]
-        UserDefaults.standard.register(defaults: defaults)
+        defaults.register(defaults: values)
     }
 }
