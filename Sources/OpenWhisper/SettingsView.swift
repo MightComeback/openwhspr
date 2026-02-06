@@ -35,6 +35,7 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.outputCommandReplacements) private var outputCommandReplacements: Bool = true
     @AppStorage(AppDefaults.Keys.outputSmartCapitalization) private var outputSmartCapitalization: Bool = true
     @AppStorage(AppDefaults.Keys.outputTerminalPunctuation) private var outputTerminalPunctuation: Bool = true
+    @AppStorage(AppDefaults.Keys.outputCustomCommands) private var outputCustomCommands: String = ""
 
     @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
     @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
@@ -212,6 +213,19 @@ struct SettingsView: View {
                                             }
                                         }
                                         .toggleStyle(.checkbox)
+
+                                        Text("App-specific custom commands (`phrase => replacement`):")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+
+                                        TextEditor(text: profileStringBinding(profile.bundleIdentifier, \.customCommands))
+                                            .font(.system(.caption, design: .monospaced))
+                                            .frame(minHeight: 70)
+                                            .padding(4)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 6)
+                                                    .stroke(.quaternary, lineWidth: 1)
+                                            )
                                     }
                                     .padding(10)
                                     .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
@@ -305,7 +319,24 @@ struct SettingsView: View {
                         Toggle("Auto-capitalize sentences", isOn: $outputSmartCapitalization)
                         Toggle("Add final punctuation when missing", isOn: $outputTerminalPunctuation)
 
-                        Text("Built-in commands: new line, new paragraph, comma, period, question mark, exclamation mark.")
+                        Text("Built-in commands include punctuation/symbol phrases such as new line, new paragraph, comma, period, question mark, open quote, and open parenthesis.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text("Global custom commands (`phrase => replacement`):")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        TextEditor(text: $outputCustomCommands)
+                            .font(.system(.body, design: .monospaced))
+                            .frame(minHeight: 90)
+                            .padding(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(.quaternary, lineWidth: 1)
+                            )
+
+                        Text("Use `\\\\n` for line breaks. Custom commands are merged with built-ins.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -522,6 +553,23 @@ struct SettingsView: View {
         Binding(
             get: {
                 transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier })?[keyPath: keyPath] ?? false
+            },
+            set: { newValue in
+                guard var profile = transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier }) else {
+                    return
+                }
+                profile[keyPath: keyPath] = newValue
+                Task { @MainActor in
+                    transcriber.updateProfile(profile)
+                }
+            }
+        )
+    }
+
+    private func profileStringBinding(_ bundleIdentifier: String, _ keyPath: WritableKeyPath<AppProfile, String>) -> Binding<String> {
+        Binding(
+            get: {
+                transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier })?[keyPath: keyPath] ?? ""
             },
             set: { newValue in
                 guard var profile = transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier }) else {

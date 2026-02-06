@@ -23,6 +23,7 @@ enum AppDefaults {
         static let outputCommandReplacements = "output.commandReplacements"
         static let outputSmartCapitalization = "output.smartCapitalization"
         static let outputTerminalPunctuation = "output.terminalPunctuation"
+        static let outputCustomCommands = "output.customCommands"
 
         static let transcriptionReplacements = "transcription.replacements"
         static let transcriptionHistoryLimit = "transcription.historyLimit"
@@ -57,6 +58,7 @@ enum AppDefaults {
             Keys.outputCommandReplacements: true,
             Keys.outputSmartCapitalization: true,
             Keys.outputTerminalPunctuation: true,
+            Keys.outputCustomCommands: "",
 
             Keys.transcriptionReplacements: "",
             Keys.transcriptionHistoryLimit: 25,

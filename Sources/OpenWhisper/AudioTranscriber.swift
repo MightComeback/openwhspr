@@ -43,6 +43,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         var commandReplacements: Bool
         var smartCapitalization: Bool
         var terminalPunctuation: Bool
+        var customCommandsRaw: String
     }
 
     private init() {
@@ -93,7 +94,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             clearAfterInsert: currentDefaults.clearAfterInsert,
             commandReplacements: currentDefaults.commandReplacements,
             smartCapitalization: currentDefaults.smartCapitalization,
-            terminalPunctuation: currentDefaults.terminalPunctuation
+            terminalPunctuation: currentDefaults.terminalPunctuation,
+            customCommands: ""
         )
 
         if let index = appProfiles.firstIndex(where: { $0.bundleIdentifier == profile.bundleIdentifier }) {
@@ -461,7 +463,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !output.isEmpty else { return "" }
 
         if settings.commandReplacements {
-            output = applyCommandReplacements(to: output)
+            output = applyCommandReplacements(to: output, settings: settings)
         }
 
         output = applyTextReplacements(to: output)
@@ -478,29 +480,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func applyCommandReplacements(to text: String) -> String {
+    private func applyCommandReplacements(to text: String, settings: EffectiveOutputSettings) -> String {
         var output = text
 
-        let commandMap: [(phrase: String, replacement: String)] = [
-            ("new line", "\n"),
-            ("new paragraph", "\n\n"),
-            ("comma", ","),
-            ("period", "."),
-            ("full stop", "."),
-            ("question mark", "?"),
-            ("exclamation mark", "!"),
-            ("exclamation point", "!"),
-            ("colon", ":"),
-            ("semicolon", ";")
-        ]
+        var rules = BuiltInCommandRules.all
+        rules.append(contentsOf: CommandRuleParser.parse(raw: settings.customCommandsRaw))
+        rules.sort { $0.phrase.count > $1.phrase.count }
 
-        for command in commandMap {
-            let tokens = command.phrase
+        for rule in rules {
+            let tokens = rule.phrase
                 .split(separator: " ")
                 .map { NSRegularExpression.escapedPattern(for: String($0)) }
                 .joined(separator: "\\s+")
             let pattern = "(?i)\\b\(tokens)\\b"
-            output = replaceRegex(pattern: pattern, in: output, with: command.replacement)
+            output = replaceRegex(pattern: pattern, in: output, with: rule.replacement)
         }
 
         return output
@@ -563,7 +556,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return text
         }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        return regex.stringByReplacingMatches(in: text, range: range, withTemplate: template)
+        let literalTemplate = NSRegularExpression.escapedTemplate(for: template)
+        return regex.stringByReplacingMatches(in: text, range: range, withTemplate: literalTemplate)
     }
 
     private func isLetter(_ character: Character) -> Bool {
@@ -580,13 +574,23 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return defaults
         }
 
+        let combinedCustomCommands: String
+        if defaults.customCommandsRaw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            combinedCustomCommands = profile.customCommands
+        } else if profile.customCommands.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            combinedCustomCommands = defaults.customCommandsRaw
+        } else {
+            combinedCustomCommands = defaults.customCommandsRaw + "\n" + profile.customCommands
+        }
+
         return EffectiveOutputSettings(
             autoCopy: profile.autoCopy,
             autoPaste: profile.autoPaste,
             clearAfterInsert: profile.clearAfterInsert,
             commandReplacements: profile.commandReplacements,
             smartCapitalization: profile.smartCapitalization,
-            terminalPunctuation: profile.terminalPunctuation
+            terminalPunctuation: profile.terminalPunctuation,
+            customCommandsRaw: combinedCustomCommands
         )
     }
 
@@ -598,7 +602,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             clearAfterInsert: defaults.bool(forKey: AppDefaults.Keys.outputClearAfterInsert),
             commandReplacements: defaults.bool(forKey: AppDefaults.Keys.outputCommandReplacements),
             smartCapitalization: defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization),
-            terminalPunctuation: defaults.bool(forKey: AppDefaults.Keys.outputTerminalPunctuation)
+            terminalPunctuation: defaults.bool(forKey: AppDefaults.Keys.outputTerminalPunctuation),
+            customCommandsRaw: defaults.string(forKey: AppDefaults.Keys.outputCustomCommands) ?? ""
         )
     }
 
