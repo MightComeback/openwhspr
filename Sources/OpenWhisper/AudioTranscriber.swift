@@ -496,7 +496,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             output = applyTerminalPunctuationIfNeeded(to: output)
         }
 
-        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return output.trimmingCharacters(in: .whitespaces)
     }
 
     func applyCommandReplacements(to text: String, settings: EffectiveOutputSettings) -> String {
