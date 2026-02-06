@@ -8,7 +8,7 @@ final class HotkeyMonitorTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         addTeardownBlock {
-            defaults.removePersistentDomain(forName: suiteName)
+            UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
         }
         return defaults
     }

@@ -210,7 +210,7 @@ struct OnboardingView: View {
         NSWorkspace.shared.open(url)
     }
 
-    static func permissionsGranted(microphone: Bool, accessibility: Bool, inputMonitoring: Bool) -> Bool {
+    nonisolated static func permissionsGranted(microphone: Bool, accessibility: Bool, inputMonitoring: Bool) -> Bool {
         microphone && accessibility && inputMonitoring
     }
 }
