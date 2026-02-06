@@ -110,7 +110,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func copyTranscriptionToClipboard() -> Bool {
-        let normalized = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = normalizeOutputText(transcription)
         guard !normalized.isEmpty else { return false }
         transcription = normalized
         let copied = copyToPasteboard(normalized)
@@ -123,7 +123,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
-        let normalized = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = normalizeOutputText(transcription)
         guard !normalized.isEmpty else { return false }
         transcription = normalized
 
@@ -344,7 +344,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingSessionFinalize = false
         inputLevel = 0
 
-        let finalText = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalText = normalizeOutputText(transcription)
         transcription = finalText
 
         guard !finalText.isEmpty else {
@@ -377,6 +377,122 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         statusMessage = shouldAutoCopy ? "Copied to clipboard" : "Ready"
+    }
+
+    @MainActor
+    private func normalizeOutputText(_ text: String) -> String {
+        let defaults = UserDefaults.standard
+        var output = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !output.isEmpty else { return "" }
+
+        if defaults.bool(forKey: AppDefaults.Keys.outputCommandReplacements) {
+            output = applyCommandReplacements(to: output)
+        }
+
+        output = applyTextReplacements(to: output)
+        output = normalizeWhitespace(in: output)
+
+        if defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization) {
+            output = applySmartCapitalization(to: output)
+        }
+
+        if defaults.bool(forKey: AppDefaults.Keys.outputTerminalPunctuation) {
+            output = applyTerminalPunctuationIfNeeded(to: output)
+        }
+
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func applyCommandReplacements(to text: String) -> String {
+        var output = text
+
+        let commandMap: [(phrase: String, replacement: String)] = [
+            ("new line", "\n"),
+            ("new paragraph", "\n\n"),
+            ("comma", ","),
+            ("period", "."),
+            ("full stop", "."),
+            ("question mark", "?"),
+            ("exclamation mark", "!"),
+            ("exclamation point", "!"),
+            ("colon", ":"),
+            ("semicolon", ";")
+        ]
+
+        for command in commandMap {
+            let tokens = command.phrase
+                .split(separator: " ")
+                .map { NSRegularExpression.escapedPattern(for: String($0)) }
+                .joined(separator: "\\s+")
+            let pattern = "(?i)\\b\(tokens)\\b"
+            output = replaceRegex(pattern: pattern, in: output, with: command.replacement)
+        }
+
+        return output
+    }
+
+    private func normalizeWhitespace(in text: String) -> String {
+        var output = text
+        output = replaceRegex(pattern: "[\\t ]+", in: output, with: " ")
+        output = replaceRegex(pattern: " *\\n *", in: output, with: "\n")
+        output = replaceRegex(pattern: "\\n{3,}", in: output, with: "\n\n")
+        output = replaceRegex(pattern: "\\s+([,.;:!?])", in: output, with: "$1")
+        return output
+    }
+
+    private func applySmartCapitalization(to text: String) -> String {
+        var output = ""
+        output.reserveCapacity(text.count)
+
+        var shouldCapitalize = true
+        for character in text {
+            if shouldCapitalize, isLetter(character) {
+                output.append(contentsOf: String(character).uppercased())
+                shouldCapitalize = false
+                continue
+            }
+
+            output.append(character)
+
+            if character == "." || character == "!" || character == "?" || character == "\n" {
+                shouldCapitalize = true
+            } else if !character.isWhitespace {
+                shouldCapitalize = false
+            }
+        }
+
+        return output
+    }
+
+    private func applyTerminalPunctuationIfNeeded(to text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let lastCharacter = trimmed.last else { return trimmed }
+
+        if [".", "!", "?", ":", ";"].contains(lastCharacter) {
+            return trimmed
+        }
+
+        if lastCharacter == "\n" {
+            return trimmed
+        }
+
+        if isLetter(lastCharacter) || lastCharacter.isNumber {
+            return trimmed + "."
+        }
+
+        return trimmed
+    }
+
+    private func replaceRegex(pattern: String, in text: String, with template: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, range: range, withTemplate: template)
+    }
+
+    private func isLetter(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { CharacterSet.letters.contains($0) }
     }
 
     @MainActor

@@ -32,6 +32,9 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.outputAutoCopy) private var autoCopy: Bool = true
     @AppStorage(AppDefaults.Keys.outputAutoPaste) private var autoPaste: Bool = false
     @AppStorage(AppDefaults.Keys.outputClearAfterInsert) private var clearAfterInsert: Bool = false
+    @AppStorage(AppDefaults.Keys.outputCommandReplacements) private var outputCommandReplacements: Bool = true
+    @AppStorage(AppDefaults.Keys.outputSmartCapitalization) private var outputSmartCapitalization: Bool = true
+    @AppStorage(AppDefaults.Keys.outputTerminalPunctuation) private var outputTerminalPunctuation: Bool = true
 
     @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
     @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
@@ -214,6 +217,16 @@ struct SettingsView: View {
 
                 GroupBox("Text cleanup") {
                     VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Enable spoken command replacements", isOn: $outputCommandReplacements)
+                        Toggle("Auto-capitalize sentences", isOn: $outputSmartCapitalization)
+                        Toggle("Add final punctuation when missing", isOn: $outputTerminalPunctuation)
+
+                        Text("Built-in commands: new line, new paragraph, comma, period, question mark, exclamation mark.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Divider()
+
                         Text("Replacement rules (one per line):")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -227,7 +240,7 @@ struct SettingsView: View {
                                     .stroke(.quaternary, lineWidth: 1)
                             )
 
-                        Text("Format: `from => to` or `from = to`. Lines starting with `#` are ignored.")
+                        Text("Format: `from => to` or `from = to`. Lines starting with `#` are ignored. Custom rules apply after built-in command replacements.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

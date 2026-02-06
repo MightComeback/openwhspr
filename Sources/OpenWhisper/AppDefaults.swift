@@ -20,6 +20,9 @@ enum AppDefaults {
         static let outputAutoCopy = "output.autoCopy"
         static let outputAutoPaste = "output.autoPaste"
         static let outputClearAfterInsert = "output.clearAfterInsert"
+        static let outputCommandReplacements = "output.commandReplacements"
+        static let outputSmartCapitalization = "output.smartCapitalization"
+        static let outputTerminalPunctuation = "output.terminalPunctuation"
 
         static let transcriptionReplacements = "transcription.replacements"
         static let transcriptionHistoryLimit = "transcription.historyLimit"
@@ -50,6 +53,9 @@ enum AppDefaults {
             Keys.outputAutoCopy: true,
             Keys.outputAutoPaste: false,
             Keys.outputClearAfterInsert: false,
+            Keys.outputCommandReplacements: true,
+            Keys.outputSmartCapitalization: true,
+            Keys.outputTerminalPunctuation: true,
 
             Keys.transcriptionReplacements: "",
             Keys.transcriptionHistoryLimit: 25,
