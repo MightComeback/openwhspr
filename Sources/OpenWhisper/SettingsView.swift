@@ -143,6 +143,90 @@ struct SettingsView: View {
                     .padding(.top, 4)
                 }
 
+                GroupBox("Per-App Profiles") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Frontmost app: \(transcriber.frontmostAppName)")
+                            .font(.subheadline)
+
+                        if !transcriber.frontmostBundleIdentifier.isEmpty {
+                            Text(transcriber.frontmostBundleIdentifier)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+
+                        HStack(spacing: 10) {
+                            Button("Refresh frontmost app") {
+                                Task { @MainActor in
+                                    transcriber.refreshFrontmostAppContext()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button("Capture profile from frontmost app") {
+                                Task { @MainActor in
+                                    transcriber.captureProfileForFrontmostApp()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+
+                        if transcriber.appProfiles.isEmpty {
+                            Text("No app-specific profiles yet. Capture the frontmost app to create one.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(transcriber.appProfiles) { profile in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Text(profile.appName)
+                                                .font(.headline)
+                                            Spacer()
+                                            Button("Delete") {
+                                                Task { @MainActor in
+                                                    transcriber.removeProfile(bundleIdentifier: profile.bundleIdentifier)
+                                                }
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.small)
+                                        }
+
+                                        Text(profile.bundleIdentifier)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .textSelection(.enabled)
+
+                                        Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
+                                            GridRow {
+                                                Toggle("Auto-copy", isOn: profileBinding(profile.bundleIdentifier, \.autoCopy))
+                                                Toggle("Auto-paste", isOn: profileBinding(profile.bundleIdentifier, \.autoPaste))
+                                            }
+                                            GridRow {
+                                                Toggle("Clear after insert", isOn: profileBinding(profile.bundleIdentifier, \.clearAfterInsert))
+                                                Toggle("Command replacements", isOn: profileBinding(profile.bundleIdentifier, \.commandReplacements))
+                                            }
+                                            GridRow {
+                                                Toggle("Smart capitalization", isOn: profileBinding(profile.bundleIdentifier, \.smartCapitalization))
+                                                Toggle("Terminal punctuation", isOn: profileBinding(profile.bundleIdentifier, \.terminalPunctuation))
+                                            }
+                                        }
+                                        .toggleStyle(.checkbox)
+                                    }
+                                    .padding(10)
+                                    .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
+                                }
+                            }
+                        }
+
+                        Text("Profiles override global output behavior when that app is frontmost during finalization/copy/insert.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+                }
+
                 GroupBox("Model") {
                     VStack(alignment: .leading, spacing: 10) {
                         Picker("Model source", selection: $modelSourceRaw) {
@@ -344,9 +428,15 @@ struct SettingsView: View {
         .frame(minWidth: 700, minHeight: 700)
         .onAppear {
             refreshPermissionState()
+            Task { @MainActor in
+                transcriber.refreshFrontmostAppContext()
+            }
         }
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
+            Task { @MainActor in
+                transcriber.refreshFrontmostAppContext()
+            }
         }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
@@ -426,6 +516,23 @@ struct SettingsView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }
+    }
+
+    private func profileBinding(_ bundleIdentifier: String, _ keyPath: WritableKeyPath<AppProfile, Bool>) -> Binding<Bool> {
+        Binding(
+            get: {
+                transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier })?[keyPath: keyPath] ?? false
+            },
+            set: { newValue in
+                guard var profile = transcriber.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier }) else {
+                    return
+                }
+                profile[keyPath: keyPath] = newValue
+                Task { @MainActor in
+                    transcriber.updateProfile(profile)
+                }
+            }
+        )
     }
 
     private func refreshPermissionState() {

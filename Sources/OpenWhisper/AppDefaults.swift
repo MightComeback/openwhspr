@@ -26,6 +26,7 @@ enum AppDefaults {
 
         static let transcriptionReplacements = "transcription.replacements"
         static let transcriptionHistoryLimit = "transcription.historyLimit"
+        static let appProfiles = "profiles.appOutput"
 
         static let modelSource = "model.source"
         static let modelCustomPath = "model.customPath"
@@ -59,6 +60,7 @@ enum AppDefaults {
 
             Keys.transcriptionReplacements: "",
             Keys.transcriptionHistoryLimit: 25,
+            Keys.appProfiles: "[]",
 
             Keys.modelSource: ModelSource.bundledTiny.rawValue,
             Keys.modelCustomPath: "",

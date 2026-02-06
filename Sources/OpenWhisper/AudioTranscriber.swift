@@ -17,6 +17,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var activeModelDisplayName: String = "Unavailable"
     @Published var activeModelPath: String = ""
     @Published var activeModelSource: ModelSource = .bundledTiny
+    @Published var appProfiles: [AppProfile] = []
+    @Published var frontmostAppName: String = "Unknown App"
+    @Published var frontmostBundleIdentifier: String = ""
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -33,8 +36,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     static let shared = AudioTranscriber()
 
+    private struct EffectiveOutputSettings {
+        var autoCopy: Bool
+        var autoPaste: Bool
+        var clearAfterInsert: Bool
+        var commandReplacements: Bool
+        var smartCapitalization: Bool
+        var terminalPunctuation: Bool
+    }
+
     private init() {
         Task { @MainActor in
+            self.reloadProfiles()
+            self.refreshFrontmostAppContext()
             self.reloadConfiguredModel()
         }
     }
@@ -48,6 +62,66 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     func clearHistory() {
         recentEntries.removeAll()
+    }
+
+    @MainActor
+    func refreshFrontmostAppContext() {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            frontmostAppName = "Unknown App"
+            frontmostBundleIdentifier = ""
+            return
+        }
+
+        frontmostAppName = app.localizedName ?? "Unknown App"
+        frontmostBundleIdentifier = app.bundleIdentifier ?? ""
+    }
+
+    @MainActor
+    func captureProfileForFrontmostApp() {
+        refreshFrontmostAppContext()
+        guard !frontmostBundleIdentifier.isEmpty else {
+            lastError = "Cannot capture profile: frontmost app has no bundle identifier."
+            return
+        }
+
+        let currentDefaults = defaultOutputSettings()
+        let profile = AppProfile(
+            bundleIdentifier: frontmostBundleIdentifier,
+            appName: frontmostAppName,
+            autoCopy: currentDefaults.autoCopy,
+            autoPaste: currentDefaults.autoPaste,
+            clearAfterInsert: currentDefaults.clearAfterInsert,
+            commandReplacements: currentDefaults.commandReplacements,
+            smartCapitalization: currentDefaults.smartCapitalization,
+            terminalPunctuation: currentDefaults.terminalPunctuation
+        )
+
+        if let index = appProfiles.firstIndex(where: { $0.bundleIdentifier == profile.bundleIdentifier }) {
+            appProfiles[index] = profile
+        } else {
+            appProfiles.append(profile)
+        }
+
+        appProfiles.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+        persistProfiles()
+        statusMessage = "Saved profile for \(profile.appName)"
+        lastError = nil
+    }
+
+    @MainActor
+    func updateProfile(_ profile: AppProfile) {
+        guard let index = appProfiles.firstIndex(where: { $0.bundleIdentifier == profile.bundleIdentifier }) else {
+            return
+        }
+        appProfiles[index] = profile
+        appProfiles.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+        persistProfiles()
+    }
+
+    @MainActor
+    func removeProfile(bundleIdentifier: String) {
+        appProfiles.removeAll { $0.bundleIdentifier == bundleIdentifier }
+        persistProfiles()
     }
 
     @MainActor
@@ -110,7 +184,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func copyTranscriptionToClipboard() -> Bool {
-        let normalized = normalizeOutputText(transcription)
+        let settings = effectiveOutputSettingsForCurrentApp()
+        let normalized = normalizeOutputText(transcription, settings: settings)
         guard !normalized.isEmpty else { return false }
         transcription = normalized
         let copied = copyToPasteboard(normalized)
@@ -123,7 +198,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
-        let normalized = normalizeOutputText(transcription)
+        let settings = effectiveOutputSettingsForCurrentApp()
+        let normalized = normalizeOutputText(transcription, settings: settings)
         guard !normalized.isEmpty else { return false }
         transcription = normalized
 
@@ -135,7 +211,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         appendHistoryEntry(normalized)
         statusMessage = "Inserted into active app"
-        if UserDefaults.standard.bool(forKey: AppDefaults.Keys.outputClearAfterInsert) {
+        if settings.clearAfterInsert {
             transcription = ""
         }
         return true
@@ -344,7 +420,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingSessionFinalize = false
         inputLevel = 0
 
-        let finalText = normalizeOutputText(transcription)
+        let settings = effectiveOutputSettingsForCurrentApp()
+        let finalText = normalizeOutputText(transcription, settings: settings)
         transcription = finalText
 
         guard !finalText.isEmpty else {
@@ -354,10 +431,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         appendHistoryEntry(finalText)
 
-        let defaults = UserDefaults.standard
-        let shouldAutoCopy = defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy)
-        let shouldAutoPaste = defaults.bool(forKey: AppDefaults.Keys.outputAutoPaste)
-        let clearAfterInsert = defaults.bool(forKey: AppDefaults.Keys.outputClearAfterInsert)
+        let shouldAutoCopy = settings.autoCopy
+        let shouldAutoPaste = settings.autoPaste
+        let clearAfterInsert = settings.clearAfterInsert
 
         if shouldAutoCopy || shouldAutoPaste {
             _ = copyToPasteboard(finalText)
@@ -380,23 +456,22 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func normalizeOutputText(_ text: String) -> String {
-        let defaults = UserDefaults.standard
+    private func normalizeOutputText(_ text: String, settings: EffectiveOutputSettings) -> String {
         var output = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !output.isEmpty else { return "" }
 
-        if defaults.bool(forKey: AppDefaults.Keys.outputCommandReplacements) {
+        if settings.commandReplacements {
             output = applyCommandReplacements(to: output)
         }
 
         output = applyTextReplacements(to: output)
         output = normalizeWhitespace(in: output)
 
-        if defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization) {
+        if settings.smartCapitalization {
             output = applySmartCapitalization(to: output)
         }
 
-        if defaults.bool(forKey: AppDefaults.Keys.outputTerminalPunctuation) {
+        if settings.terminalPunctuation {
             output = applyTerminalPunctuationIfNeeded(to: output)
         }
 
@@ -496,6 +571,38 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    private func effectiveOutputSettingsForCurrentApp() -> EffectiveOutputSettings {
+        refreshFrontmostAppContext()
+        let defaults = defaultOutputSettings()
+
+        guard !frontmostBundleIdentifier.isEmpty,
+              let profile = appProfiles.first(where: { $0.bundleIdentifier == frontmostBundleIdentifier }) else {
+            return defaults
+        }
+
+        return EffectiveOutputSettings(
+            autoCopy: profile.autoCopy,
+            autoPaste: profile.autoPaste,
+            clearAfterInsert: profile.clearAfterInsert,
+            commandReplacements: profile.commandReplacements,
+            smartCapitalization: profile.smartCapitalization,
+            terminalPunctuation: profile.terminalPunctuation
+        )
+    }
+
+    private func defaultOutputSettings() -> EffectiveOutputSettings {
+        let defaults = UserDefaults.standard
+        return EffectiveOutputSettings(
+            autoCopy: defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy),
+            autoPaste: defaults.bool(forKey: AppDefaults.Keys.outputAutoPaste),
+            clearAfterInsert: defaults.bool(forKey: AppDefaults.Keys.outputClearAfterInsert),
+            commandReplacements: defaults.bool(forKey: AppDefaults.Keys.outputCommandReplacements),
+            smartCapitalization: defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization),
+            terminalPunctuation: defaults.bool(forKey: AppDefaults.Keys.outputTerminalPunctuation)
+        )
+    }
+
+    @MainActor
     private func applyTextReplacements(to text: String) -> String {
         var output = text
         for replacement in replacementPairs() {
@@ -571,6 +678,26 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
         return true
+    }
+
+    @MainActor
+    private func reloadProfiles() {
+        let raw = UserDefaults.standard.string(forKey: AppDefaults.Keys.appProfiles) ?? "[]"
+        guard let data = raw.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([AppProfile].self, from: data) else {
+            appProfiles = []
+            return
+        }
+        appProfiles = decoded.sorted { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
+    }
+
+    @MainActor
+    private func persistProfiles() {
+        guard let data = try? JSONEncoder().encode(appProfiles),
+              let json = String(data: data, encoding: .utf8) else {
+            return
+        }
+        UserDefaults.standard.set(json, forKey: AppDefaults.Keys.appProfiles)
     }
 
     @MainActor
