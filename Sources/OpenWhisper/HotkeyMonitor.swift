@@ -6,10 +6,12 @@ import CoreFoundation
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     weak var transcriber: AudioTranscriber?
 
+    private var mode: HotkeyMode = .toggle
     private var requiredModifiers: CGEventFlags = [.maskCommand, .maskShift]
     private var forbiddenModifiers: CGEventFlags = [.maskAlternate, .maskControl]
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
+    private var holdSessionArmed: Bool = false
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -17,7 +19,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     init() {
         loadConfig()
         start()
-        NotificationCenter.default.addObserver(self, selector: #selector(configChanged), name: UserDefaults.didChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(configChanged),
+            name: UserDefaults.didChangeNotification,
+            object: nil
+        )
     }
 
     deinit {
@@ -35,25 +42,47 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func loadConfig() {
         let defaults = UserDefaults.standard
-        let requiredRaw = defaults.string(forKey: "hotkey.required") ?? "command,shift"
-        let forbiddenRaw = defaults.string(forKey: "hotkey.forbidden") ?? "option,control"
-        let key = defaults.string(forKey: "hotkey.key") ?? "space"
-        updateConfig(required: parseModifiers(requiredRaw), forbidden: parseModifiers(forbiddenRaw), key: key)
+
+        let required = parseModifierSettings(
+            defaults: defaults,
+            commandKey: AppDefaults.Keys.hotkeyRequiredCommand,
+            shiftKey: AppDefaults.Keys.hotkeyRequiredShift,
+            optionKey: AppDefaults.Keys.hotkeyRequiredOption,
+            controlKey: AppDefaults.Keys.hotkeyRequiredControl,
+            capsLockKey: AppDefaults.Keys.hotkeyRequiredCapsLock
+        )
+
+        var forbidden = parseModifierSettings(
+            defaults: defaults,
+            commandKey: AppDefaults.Keys.hotkeyForbiddenCommand,
+            shiftKey: AppDefaults.Keys.hotkeyForbiddenShift,
+            optionKey: AppDefaults.Keys.hotkeyForbiddenOption,
+            controlKey: AppDefaults.Keys.hotkeyForbiddenControl,
+            capsLockKey: AppDefaults.Keys.hotkeyForbiddenCapsLock
+        )
+        forbidden.subtract(required)
+
+        let key = defaults.string(forKey: AppDefaults.Keys.hotkeyKey) ?? "space"
+        let modeRaw = defaults.string(forKey: AppDefaults.Keys.hotkeyMode) ?? HotkeyMode.toggle.rawValue
+        let parsedMode = HotkeyMode(rawValue: modeRaw) ?? .toggle
+
+        updateConfig(required: required, forbidden: forbidden, key: key, mode: parsedMode)
     }
 
-    private func parseModifiers(_ raw: String) -> CGEventFlags {
+    private func parseModifierSettings(
+        defaults: UserDefaults,
+        commandKey: String,
+        shiftKey: String,
+        optionKey: String,
+        controlKey: String,
+        capsLockKey: String
+    ) -> CGEventFlags {
         var flags: CGEventFlags = []
-        for part in raw.components(separatedBy: ",") {
-            let trimmed = part.trimmingCharacters(in: .whitespaces).lowercased()
-            switch trimmed {
-            case "command", "cmd": flags.insert(.maskCommand)
-            case "shift": flags.insert(.maskShift)
-            case "option", "alt": flags.insert(.maskAlternate)
-            case "control", "ctrl": flags.insert(.maskControl)
-            case "capslock": flags.insert(.maskAlphaShift)
-            default: break
-            }
-        }
+        if defaults.bool(forKey: commandKey) { flags.insert(.maskCommand) }
+        if defaults.bool(forKey: shiftKey) { flags.insert(.maskShift) }
+        if defaults.bool(forKey: optionKey) { flags.insert(.maskAlternate) }
+        if defaults.bool(forKey: controlKey) { flags.insert(.maskControl) }
+        if defaults.bool(forKey: capsLockKey) { flags.insert(.maskAlphaShift) }
         return flags
     }
 
@@ -61,7 +90,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestAccessibilityIfNeeded()
 
         guard eventTap == nil else { return }
-        let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+        let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue))
 
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         guard let tap = CGEvent.tapCreate(
@@ -93,14 +122,19 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
         runLoopSource = nil
         eventTap = nil
+        holdSessionArmed = false
     }
 
-    func updateConfig(required: CGEventFlags, forbidden: CGEventFlags, key: String) {
+    func updateConfig(required: CGEventFlags, forbidden: CGEventFlags, key: String, mode: HotkeyMode) {
         self.requiredModifiers = required
         self.forbiddenModifiers = forbidden
+        self.mode = mode
+
         let normalized = normalizeKeyString(key)
         self.keyCharacter = normalized.character
         self.keyCode = normalized.keyCode
+
+        holdSessionArmed = false
         stop()
         start()
     }
@@ -110,26 +144,25 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let monitor = Unmanaged<HotkeyMonitor>.fromOpaque(refcon).takeUnretainedValue()
 
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            monitor.holdSessionArmed = false
+            Task { @MainActor [weak transcriber = monitor.transcriber] in
+                transcriber?.stopRecordingFromHotkey()
+            }
             if let tap = monitor.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
             return Unmanaged.passUnretained(event)
         }
 
-        guard type == .keyDown else {
+        guard type == .keyDown || type == .keyUp else {
             return Unmanaged.passUnretained(event)
         }
 
-        let handled = monitor.handle(event)
+        let handled = monitor.handle(event, type: type)
         return handled ? nil : Unmanaged.passUnretained(event)
     }
 
-    private func handle(_ event: CGEvent) -> Bool {
-        let flags = event.flags
-        let hasRequired = flags.intersection(requiredModifiers) == requiredModifiers
-        let hasForbidden = !flags.intersection(forbiddenModifiers).isEmpty
-
-        guard hasRequired, !hasForbidden else { return false }
+    private func handle(_ event: CGEvent, type: CGEventType) -> Bool {
         if let keyCode {
             let eventKeyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
             guard eventKeyCode == keyCode else { return false }
@@ -139,14 +172,59 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                   chars == keyCharacter else { return false }
         }
 
-        Task { @MainActor [weak transcriber] in
-            transcriber?.toggleRecording()
+        let flags = event.flags
+        let hasRequired = flags.intersection(requiredModifiers) == requiredModifiers
+        let hasForbidden = !flags.intersection(forbiddenModifiers).isEmpty
+        let comboMatches = hasRequired && !hasForbidden
+
+        switch mode {
+        case .toggle:
+            guard type == .keyDown, comboMatches else { return false }
+            Task { @MainActor [weak transcriber] in
+                transcriber?.toggleRecording()
+            }
+            return true
+
+        case .hold:
+            if type == .keyDown {
+                guard comboMatches else { return false }
+                if !holdSessionArmed {
+                    holdSessionArmed = true
+                    Task { @MainActor [weak transcriber] in
+                        transcriber?.startRecordingFromHotkey()
+                    }
+                }
+                return true
+            }
+
+            if holdSessionArmed {
+                holdSessionArmed = false
+                Task { @MainActor [weak transcriber] in
+                    transcriber?.stopRecordingFromHotkey()
+                }
+                return true
+            }
+
+            return false
         }
-        return true
     }
 
     private func requestAccessibilityIfNeeded() {
-        let options: CFDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString: kCFBooleanTrue] as CFDictionary
+        guard !Self.hasAccessibilityPermission() else { return }
+        let options: CFDictionary = [
+            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString: kCFBooleanTrue
+        ] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    static func hasAccessibilityPermission() -> Bool {
+        AXIsProcessTrusted()
+    }
+
+    static func requestAccessibilityPermissionPrompt() {
+        let options: CFDictionary = [
+            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString: kCFBooleanTrue
+        ] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
