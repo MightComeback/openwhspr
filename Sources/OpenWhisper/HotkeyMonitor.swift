@@ -5,6 +5,10 @@ import CoreFoundation
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     var handler: (() -> Void)?
 
+    private var requiredModifiers: NSEvent.ModifierFlags = [.command, .shift]
+    private var forbiddenModifiers: NSEvent.ModifierFlags = [.option, .control]
+    private var keyCharacter: String = "d"
+
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
@@ -31,13 +35,31 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
     }
 
+    func stop() {
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMonitor = nil
+        }
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMonitor = nil
+        }
+    }
+
+    func updateConfig(required: NSEvent.ModifierFlags, forbidden: NSEvent.ModifierFlags, key: String) {
+        self.requiredModifiers = required
+        self.forbiddenModifiers = forbidden
+        self.keyCharacter = key.lowercased()
+        stop()
+        start()
+    }
+
     private func handle(_ event: NSEvent) -> Bool {
-        let required: NSEvent.ModifierFlags = [.command, .shift]
-        let hasRequired = event.modifierFlags.intersection(required) == required
-        let hasForbidden = event.modifierFlags.contains(.option) || event.modifierFlags.contains(.control)
+        let hasRequired = event.modifierFlags.intersection(requiredModifiers) == requiredModifiers
+        let hasForbidden = !event.modifierFlags.intersection(forbiddenModifiers).isEmpty
 
         guard hasRequired, !hasForbidden else { return false }
-        guard event.charactersIgnoringModifiers?.lowercased() == "d" else { return false }
+        guard let chars = event.charactersIgnoringModifiers?.lowercased(), chars == keyCharacter else { return false }
 
         handler?()
         return true
