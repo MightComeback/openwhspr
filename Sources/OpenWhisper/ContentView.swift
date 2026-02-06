@@ -30,9 +30,31 @@ struct ContentView: View {
                     .lineLimit(3)
                     .padding(.horizontal)
             }
+            
+            Divider()
+            
+            Button("Settings") {
+                showingSettings.toggle()
+            }
+            .buttonStyle(.borderless)
+            
+            Button("Copy") {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(transcriber.transcription, forType: .string)
+            }
+            .buttonStyle(.borderless)
+            .disabled(transcriber.transcription.isEmpty)
+            
+            Button("Clear") {
+                transcriber.clearTranscription()
+            }
+            .buttonStyle(.borderless)
+            .disabled(transcriber.transcription.isEmpty)
         }
         .padding()
-        .frame(width: 220, maxHeight: 140)
+        .frame(width: 220)
+        .frame(maxHeight: 140)
         .onAppear {
             hotkeyMonitor.setTranscriber(transcriber)
         }
