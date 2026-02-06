@@ -139,7 +139,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                   chars == keyCharacter else { return false }
         }
 
-        transcriber?.toggleRecording()
+        Task { @MainActor [weak transcriber] in
+            transcriber?.toggleRecording()
+        }
         return true
     }
 

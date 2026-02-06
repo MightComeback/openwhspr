@@ -1,23 +1,26 @@
 @preconcurrency import AVFoundation
+@preconcurrency import AppKit
+@preconcurrency import ApplicationServices
+import Carbon.HIToolbox
 import Foundation
 import SwiftWhisper
 
 final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var transcription: String = ""
+    @Published var recentEntries: [TranscriptionEntry] = []
     @Published var isRecording: Bool = false
     @Published var statusMessage: String = "Idle"
     @Published var lastError: String? = nil
-    
-@MainActor
-    func clearTranscription() {
-        transcription = ""
-    }
+    @Published var inputLevel: Float = 0
 
     private let sampleRate: Double = 16_000
-    private let chunkSeconds: Double = 5
+    private let chunkSeconds: Double = 4
     private let bufferQueue = DispatchQueue(label: "OpenWhisper.AudioBuffer")
+
     private var audioBuffer: [Float] = []
+    private var pendingChunks: [[Float]] = []
     private var isTranscribing: Bool = false
+    private var pendingSessionFinalize: Bool = false
 
     private let engine = AVAudioEngine()
     private var converter: AVAudioConverter?
@@ -29,10 +32,23 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         loadModel()
     }
 
-    func requestPermissions() {
+    @MainActor
+    func clearTranscription() {
+        transcription = ""
+        lastError = nil
+    }
+
+    @MainActor
+    func clearHistory() {
+        recentEntries.removeAll()
+    }
+
+    @MainActor
+    func requestMicrophonePermission() {
         AVCaptureDevice.requestAccess(for: .audio) { _ in }
     }
 
+    @MainActor
     func toggleRecording() {
         if isRecording {
             stopRecording()
@@ -41,21 +57,83 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func startRecording() {
+    @MainActor
+    func startRecordingFromHotkey() {
         guard !isRecording else { return }
+        startRecording()
+    }
+
+    @MainActor
+    func stopRecordingFromHotkey() {
+        guard isRecording else { return }
+        stopRecording()
+    }
+
+    @MainActor
+    @discardableResult
+    func copyTranscriptionToClipboard() -> Bool {
+        let normalized = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return false }
+        transcription = normalized
+        let copied = copyToPasteboard(normalized)
+        if copied {
+            statusMessage = "Copied to clipboard"
+        }
+        return copied
+    }
+
+    @MainActor
+    @discardableResult
+    func insertTranscriptionIntoFocusedApp() -> Bool {
+        let normalized = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return false }
+        transcription = normalized
+
+        guard copyToPasteboard(normalized) else { return false }
+        guard pasteIntoFocusedApp() else {
+            lastError = "Failed to paste into active app. Check Accessibility permissions."
+            return false
+        }
+
+        appendHistoryEntry(normalized)
+        statusMessage = "Inserted into active app"
+        if UserDefaults.standard.bool(forKey: AppDefaults.Keys.outputClearAfterInsert) {
+            transcription = ""
+        }
+        return true
+    }
+
+    @MainActor
+    private func startRecording() {
+        guard whisper != nil else {
+            statusMessage = "Model unavailable"
+            return
+        }
 
         let status = AVCaptureDevice.authorizationStatus(for: .audio)
         guard status == .authorized else {
             statusMessage = "Microphone permission required"
-            requestPermissions()
+            requestMicrophonePermission()
             return
+        }
+
+        lastError = nil
+        inputLevel = 0
+        pendingSessionFinalize = false
+        pendingChunks.removeAll()
+
+        bufferQueue.async { [weak self] in
+            self?.audioBuffer.removeAll()
         }
 
         let input = engine.inputNode
         let inputFormat = input.inputFormat(forBus: 0)
-        let targetFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1, interleaved: false)
-
-        guard let targetFormat else {
+        guard let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: sampleRate,
+            channels: 1,
+            interleaved: false
+        ) else {
             lastError = "Failed to create target audio format"
             return
         }
@@ -76,13 +154,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
     }
 
+    @MainActor
     private func stopRecording() {
         guard isRecording else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRecording = false
-        statusMessage = "Stopped"
-
+        statusMessage = "Finalizing…"
         flushRemainingAudio()
     }
 
@@ -112,6 +190,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let frameCount = Int(pcmBuffer.frameLength)
         let samples = Array(UnsafeBufferPointer(start: channel, count: frameCount))
 
+        if frameCount > 0 {
+            let averageEnergy = samples.reduce(Float.zero) { partial, sample in
+                partial + (sample * sample)
+            } / Float(frameCount)
+            let level = min(max(sqrt(averageEnergy) * 6.5, 0), 1)
+            Task { @MainActor in
+                self.inputLevel = level
+            }
+        }
+
         bufferQueue.async { [weak self] in
             guard let self else { return }
             self.audioBuffer.append(contentsOf: samples)
@@ -127,45 +215,74 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
     }
 
+    @MainActor
     private func queueTranscription(for samples: [Float]) {
         guard !samples.isEmpty else { return }
-        guard !isTranscribing else { return }
-        isTranscribing = true
-
-        Task {
-            await self.transcribe(samples: samples)
-            await MainActor.run {
-                self.isTranscribing = false
-            }
-        }
+        pendingChunks.append(samples)
+        processTranscriptionQueueIfNeeded()
     }
 
-    private func transcribe(samples: [Float]) async {
-        guard let whisper else {
-            await MainActor.run {
-                self.lastError = "Whisper model unavailable"
+    @MainActor
+    private func processTranscriptionQueueIfNeeded() {
+        guard !isTranscribing else { return }
+
+        guard !pendingChunks.isEmpty else {
+            if pendingSessionFinalize {
+                finalizeSessionIfNeeded()
             }
             return
         }
 
+        isTranscribing = true
+        let nextChunk = pendingChunks.removeFirst()
+
+        Task {
+            let text = await self.transcribe(samples: nextChunk)
+            await MainActor.run {
+                self.consumeTranscribedText(text)
+                self.isTranscribing = false
+                self.processTranscriptionQueueIfNeeded()
+            }
+        }
+    }
+
+    private func transcribe(samples: [Float]) async -> String {
+        guard let whisper else {
+            await MainActor.run {
+                self.lastError = "Whisper model unavailable"
+            }
+            return ""
+        }
+
         do {
             let segments = try await whisper.transcribe(audioFrames: samples)
-            let text = segments.map { $0.text }.joined()
-            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                await MainActor.run {
-                    if self.transcription.isEmpty {
-                        self.transcription = text
-                    } else {
-                        self.transcription += " " + text
-                    }
-                    self.statusMessage = "Transcribed \(segments.count) segment(s)"
-                }
-            }
+            return segments
+                .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
         } catch {
             await MainActor.run {
                 self.lastError = "Transcription failed: \(error.localizedDescription)"
             }
+            return ""
         }
+    }
+
+    @MainActor
+    private func consumeTranscribedText(_ text: String) {
+        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+
+        if transcription.isEmpty {
+            transcription = cleaned
+        } else if transcription.hasSuffix(" ") {
+            transcription += cleaned
+        } else {
+            transcription += " \(cleaned)"
+        }
+
+        statusMessage = "Transcribing…"
     }
 
     private func flushRemainingAudio() {
@@ -173,12 +290,133 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             guard let self else { return }
             let remaining = self.audioBuffer
             self.audioBuffer.removeAll()
-            if !remaining.isEmpty {
-                Task { @MainActor in
+
+            Task { @MainActor in
+                if !remaining.isEmpty {
                     self.queueTranscription(for: remaining)
+                }
+                self.pendingSessionFinalize = true
+                self.processTranscriptionQueueIfNeeded()
+            }
+        }
+    }
+
+    @MainActor
+    private func finalizeSessionIfNeeded() {
+        pendingSessionFinalize = false
+        inputLevel = 0
+
+        let finalText = applyTextReplacements(to: transcription).trimmingCharacters(in: .whitespacesAndNewlines)
+        transcription = finalText
+
+        guard !finalText.isEmpty else {
+            statusMessage = "Ready"
+            return
+        }
+
+        appendHistoryEntry(finalText)
+
+        let defaults = UserDefaults.standard
+        let shouldAutoCopy = defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy)
+        let shouldAutoPaste = defaults.bool(forKey: AppDefaults.Keys.outputAutoPaste)
+        let clearAfterInsert = defaults.bool(forKey: AppDefaults.Keys.outputClearAfterInsert)
+
+        if shouldAutoCopy || shouldAutoPaste {
+            _ = copyToPasteboard(finalText)
+        }
+
+        if shouldAutoPaste {
+            if pasteIntoFocusedApp() {
+                statusMessage = "Inserted into active app"
+                if clearAfterInsert {
+                    transcription = ""
+                }
+            } else {
+                statusMessage = "Transcribed, paste failed"
+                lastError = "Failed to paste into active app. Check Accessibility permissions."
+            }
+            return
+        }
+
+        statusMessage = shouldAutoCopy ? "Copied to clipboard" : "Ready"
+    }
+
+    @MainActor
+    private func applyTextReplacements(to text: String) -> String {
+        var output = text
+        for replacement in replacementPairs() {
+            output = output.replacingOccurrences(of: replacement.from, with: replacement.to)
+        }
+        return output
+    }
+
+    private func replacementPairs() -> [(from: String, to: String)] {
+        let raw = UserDefaults.standard.string(forKey: AppDefaults.Keys.transcriptionReplacements) ?? ""
+        let lines = raw.components(separatedBy: .newlines)
+        var pairs: [(from: String, to: String)] = []
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
+
+            if let range = trimmed.range(of: "=>") {
+                let from = String(trimmed[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let to = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                if !from.isEmpty {
+                    pairs.append((from: from, to: to))
+                }
+                continue
+            }
+
+            if let range = trimmed.range(of: "=") {
+                let from = String(trimmed[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let to = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                if !from.isEmpty {
+                    pairs.append((from: from, to: to))
                 }
             }
         }
+
+        return pairs
+    }
+
+    @MainActor
+    private func appendHistoryEntry(_ text: String) {
+        if recentEntries.first?.text == text {
+            return
+        }
+
+        recentEntries.insert(TranscriptionEntry(text: text), at: 0)
+        let configuredLimit = UserDefaults.standard.integer(forKey: AppDefaults.Keys.transcriptionHistoryLimit)
+        let maxEntries = max(1, configuredLimit)
+        if recentEntries.count > maxEntries {
+            recentEntries = Array(recentEntries.prefix(maxEntries))
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    private func copyToPasteboard(_ text: String) -> Bool {
+        guard !text.isEmpty else { return false }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        return pasteboard.setString(text, forType: .string)
+    }
+
+    @MainActor
+    @discardableResult
+    private func pasteIntoFocusedApp() -> Bool {
+        guard let source = CGEventSource(stateID: .combinedSessionState),
+              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) else {
+            return false
+        }
+
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+        return true
     }
 
     private func loadModel() {
@@ -187,7 +425,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
-        if let size = (try? FileManager.default.attributesOfItem(atPath: modelURL.path)[.size]) as? NSNumber, size.intValue == 0 {
+        if let size = (try? FileManager.default.attributesOfItem(atPath: modelURL.path)[.size]) as? NSNumber,
+           size.intValue == 0 {
             lastError = "Model file is empty. Download ggml-tiny.bin from whisper.cpp releases."
             return
         }
