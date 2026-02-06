@@ -111,5 +111,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(transcriber: AudioTranscriber())
+    SettingsView(transcriber: AudioTranscriber.shared)
 }

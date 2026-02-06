@@ -25,23 +25,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.action = #selector(toggleDictation)
         
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Start Dictation", action: #selector(startDictation), keyEquivalent: "s"))
-        menu.addItem(NSMenuItem(title: "Stop Dictation", action: #selector(stopDictation), keyEquivalent: "e"))
+        menu.addItem(NSMenuItem(title: "Toggle Dictation", action: #selector(toggleDictation), keyEquivalent: "d"))
+        menu.addItem(NSMenuItem.separator())
+        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
+        menu.addItem(settingsItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem?.menu = menu
+
+        AudioTranscriber.shared.requestPermissions()
+        let hotkeyMonitor = HotkeyMonitor()
+        hotkeyMonitor.setTranscriber(AudioTranscriber.shared)
     }
 
     @objc func toggleDictation() {
-        // Placeholder for global hotkey toggle
-        print("Toggle dictation")
+        AudioTranscriber.shared.toggleRecording()
     }
 
-    @objc func startDictation() {
-        print("Start dictation")
-    }
-
-    @objc func stopDictation() {
-        print("Stop dictation")
+    @MainActor @objc func openSettings() {
+        let hostingController = NSHostingController(rootView: SettingsView(transcriber: AudioTranscriber.shared))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 420),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = hostingController
+        window.center()
+        window.makeKeyAndOrderFront(nil)
     }
 }

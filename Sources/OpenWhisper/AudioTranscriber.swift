@@ -23,7 +23,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var converter: AVAudioConverter?
     private var whisper: Whisper?
 
-    init() {
+    static let shared = AudioTranscriber()
+
+    private init() {
         loadModel()
     }
 
