@@ -1,50 +1,75 @@
 # OpenWhisper (`openwhspr`)
 
-A native, open-source, local-first macOS dictation app.
+OpenWhisper is an open-source, local-first macOS dictation app.
 
-OpenWhisper is built to be a serious alternative to tools like SuperWhisper, Aqua Voice, and WhisperFlow, while keeping a strict local-first default: no account, no required cloud, no telemetry dependency.
+It is designed to become a world-class replacement for SuperWhisper, Aqua Voice, and WhisperFlow while keeping strict local defaults: no account requirement, no mandatory cloud dependency, no telemetry lock-in.
 
-## Project status
+## Status (February 6, 2026)
 
-OpenWhisper is currently an alpha-quality app with a working local transcription pipeline and a production-oriented macOS UX foundation.
+OpenWhisper is a strong alpha and **not yet full SuperWhisper parity**.
 
-## Principles
+It now includes:
+- first-run onboarding and permission center
+- configurable global hotkeys (toggle + hold-to-talk)
+- local model source management (bundled + custom local model file)
+- configurable output polish pipeline (spoken command replacements, capitalization, punctuation)
 
-- Local first: all core dictation runs on-device by default.
-- Open source: transparent architecture and configurable behavior.
-- Fast interaction loop: global hotkey, low-friction start/stop, instant output actions.
-- Privacy by default: no mandatory cloud service for primary functionality.
+## Product principles
 
-## What works today
+- Local first: core dictation works on-device by default.
+- Open source: architecture and behavior are transparent and modifiable.
+- Practical speed: global hotkey workflow and fast insertion path.
+- Privacy by default: no forced cloud endpoint for primary use.
+
+## Replacement parity snapshot
+
+| Capability | Status | Notes |
+|---|---|---|
+| Local on-device dictation | ✅ Implemented | SwiftWhisper + local model |
+| Global hotkey dictation | ✅ Implemented | Toggle and hold-to-talk modes |
+| Permission onboarding | ✅ Implemented | Microphone, Accessibility, Input Monitoring |
+| Runtime model switching | ✅ Implemented | Bundled tiny model + custom local `.bin` path |
+| Output insertion workflow | ✅ Implemented | Auto-copy, optional auto-paste, manual insert |
+| Output cleanup controls | ✅ Implemented | Spoken command replacements + custom rules + smart formatting |
+| Per-app profiles | ❌ Missing | No app-specific behavior presets yet |
+| Streaming partial UX polish | ⚠️ Partial | Live chunk updates exist; advanced token streaming UX still missing |
+| Advanced command/macro engine | ⚠️ Partial | Basic command replacements only |
+| Packaged release quality | ❌ Missing | No signed/notarized distribution pipeline yet |
+| Test coverage depth | ⚠️ Partial | Build-verified; stronger automated behavioral tests still needed |
+
+## Core features
 
 - Native macOS menu bar app (`SwiftUI`, `AVAudioEngine`).
-- On-device transcription via `SwiftWhisper` + bundled local model.
-- Global hotkey capture with configurable:
-- Required/forbidden modifiers
-- Trigger key
-- Dictation mode (`toggle` or `hold-to-talk`)
-- Real-time status UI with input level meter.
-- Session finalization pipeline:
-- Chunked transcription queue (no dropped chunks while transcribing)
-- Optional auto-copy to clipboard
-- Optional auto-paste to active app
-- Optional clear-after-insert
-- Text replacement rules (`from => to`) for cleanup.
-- Recent transcription history in the menu UI.
-
-## Next milestones
-
-- Better model management (download/swap tiny/base/small/large models).
-- Streaming/partial token rendering for lower perceived latency.
-- Rich post-processing pipeline (punctuation, capitalization, command macros).
-- Optional provider abstraction for cloud fallback (opt-in only).
-- Stronger test coverage around hotkey state machine and transcription queueing.
-- Signed release pipeline and notarized distributables.
+- Local transcription pipeline with chunk queueing (prevents dropped chunks while processing).
+- Dictation controls:
+- start/stop in app UI
+- global hotkey (toggle or hold)
+- Customizable hotkey config:
+- required/forbidden modifiers
+- trigger key
+- mode selection
+- Output controls:
+- auto-copy
+- optional auto-paste into focused app
+- optional clear-after-insert
+- Text polish controls:
+- built-in spoken command replacements (`new line`, `comma`, `period`, etc.)
+- custom replacement rules (`from => to`)
+- smart capitalization toggle
+- terminal punctuation toggle
+- History:
+- recent transcription entries
+- quick restore into active draft
+- Onboarding + permissions center with deep links to System Settings panes.
+- Model management:
+- choose bundled tiny model
+- choose custom local GGML `.bin` model path
+- reload model at runtime
 
 ## Requirements
 
 - macOS 14+
-- Xcode 15.4+ (or Swift 6 toolchain)
+- Xcode 15.4+ or Swift 6 toolchain
 
 ## Quick start
 
@@ -55,86 +80,91 @@ swift build
 swift run OpenWhisper
 ```
 
-## Permissions (required)
+## Permissions
 
-OpenWhisper needs these permissions for full functionality:
+OpenWhisper requires:
+- Microphone (audio capture)
+- Accessibility (global hotkey handling and auto-paste)
+- Input Monitoring (reliable event tap key capture)
 
-- Microphone: capture dictation audio.
-- Accessibility: global hotkeys and auto-paste to other apps.
-- Input Monitoring: required by event-tap based global key monitoring on many macOS setups.
-
-Grant in:
+Location:
 `System Settings -> Privacy & Security`
 
 ## Hotkey behavior
 
-Hotkeys are evaluated against:
-
-- Required modifiers (must all be pressed)
-- Forbidden modifiers (must not be pressed)
-- Trigger key
+Hotkey match uses:
+- required modifiers (must be present)
+- forbidden modifiers (must be absent)
+- trigger key
 
 Modes:
+- Toggle: combo press starts/stops dictation.
+- Hold to talk: key down starts dictation, key up finalizes dictation.
 
-- Toggle: pressing the combo starts/stops recording.
-- Hold to talk: recording starts on key down and stops on key up.
+## Model management
 
-## Replacement rules
+In Settings -> Model:
+- select bundled tiny model, or
+- select custom local `.bin` model
+- reload model after changes
+
+If a configured custom path is missing, OpenWhisper falls back to the bundled model and shows a warning.
+
+## Text cleanup and command replacements
 
 In Settings -> Text cleanup:
+- enable/disable spoken command replacements
+- enable/disable smart capitalization
+- enable/disable terminal punctuation
+- add custom replacement lines
 
-- Add one rule per line.
-- Supported formats:
+Custom replacement syntax:
 - `from => to`
 - `from = to`
-- `#` prefix comments are ignored.
+- `# comment`
 
-Examples:
+Example:
 
 ```text
 teh => the
 open ai = OpenAI
 ```
 
-## Local-first and privacy model
-
-- Core dictation path is fully local by default.
-- No required remote inference endpoint.
-- No mandatory account/login.
-- Output is written only to local process memory + system clipboard when enabled.
-
 ## Architecture (current)
 
-- `AudioTranscriber`: audio capture, chunking, Whisper inference, session finalization.
-- `HotkeyMonitor`: global event tap, combo matching, toggle/hold state machine.
-- `ContentView`: menu bar runtime controls and history.
-- `SettingsView`: hotkey/output/replacement/permission configuration.
-- `AppDefaults`: centralized default settings keys.
+- `AudioTranscriber`: audio capture, queueing, inference, model loading, output polish/finalization.
+- `HotkeyMonitor`: global event tap, combo matching, hold/toggle state machine.
+- `OnboardingView`: first-run setup and permission guidance.
+- `ContentView`: runtime controls, status, and recent history.
+- `SettingsView`: hotkey/output/model/permissions configuration.
+- `AppDefaults`: centralized defaults and settings keys.
 
-## Developer workflow
+## Immediate roadmap to replacement grade
+
+1. Add robust runtime verification and automated tests for hotkey and transcription/output state machines.
+2. Improve streaming UX and latency perception (partial token rendering and better intermediate feedback).
+3. Add per-app profiles and richer command/macro actions.
+4. Improve model UX (download/manage multiple local models by name, not only file path).
+5. Ship signed/notarized releases with a consistent update path.
+
+## Development workflow
 
 ```bash
 swift build
 swift run OpenWhisper
 ```
 
-Useful during iteration:
-
-- Keep `swift build` passing after each feature commit.
-- Validate permission prompts after hotkey/auto-paste changes.
-- Test both hotkey modes (`toggle` and `hold-to-talk`).
+Recommended verification during feature work:
+- run `swift build` on every milestone commit
+- test both hotkey modes
+- test onboarding/permission re-entry paths
+- test model source switching with valid and invalid custom paths
 
 ## Contributing
 
-Issues and PRs are welcome. High-impact contribution areas:
+PRs and issues are welcome.
 
-- transcription quality/latency improvements
-- model management UX
-- deterministic tests for hotkey and audio chunk state machines
-- packaging/release automation
-
-If you submit a PR, include:
-
+When opening a PR, include:
 - what changed
 - why it changed
-- how you validated it (`swift build` + behavior notes)
+- how you validated it (minimum: `swift build` and runtime notes)
