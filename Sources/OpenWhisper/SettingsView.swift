@@ -11,7 +11,7 @@ struct SettingsView: View {
     
     @AppStorage("hotkey.required") private var requiredRaw: String = "command,shift"
     @AppStorage("hotkey.forbidden") private var forbiddenRaw: String = "option,control"
-    @AppStorage("hotkey.key") private var hotkeyKey: String = "d"
+    @AppStorage("hotkey.key") private var hotkeyKey: String = "space"
     
     private func formatHotkey() -> String {
         let reqNames = requiredRaw.components(separatedBy: ",").compactMap { part -> String? in
@@ -25,8 +25,23 @@ struct SettingsView: View {
             default: return nil
             }
         }
-        let key = hotkeyKey.uppercased()
+        let key = displayKey(hotkeyKey)
         return reqNames.joined() + "+" + key
+    }
+
+    private func displayKey(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch trimmed {
+        case "space": return "Space"
+        case "tab": return "Tab"
+        case "return", "enter": return "Return"
+        case "escape", "esc": return "Esc"
+        default:
+            if trimmed.count == 1 {
+                return trimmed.uppercased()
+            }
+            return trimmed
+        }
     }
     
     var body: some View {
@@ -57,10 +72,14 @@ struct SettingsView: View {
                 
                 HStack {
                     Text("Key:")
-                    TextField("e.g. d", text: $hotkeyKey)
+                    TextField("e.g. space", text: $hotkeyKey)
                         .textFieldStyle(.roundedBorder)
-                        .frame(width: 50)
+                        .frame(width: 80)
                 }
+
+                Text("Global hotkeys use an event tap. Allow Input Monitoring (and Accessibility if prompted) in System Settings → Privacy & Security.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 
                 Text(transcriber.statusMessage)
                     .foregroundStyle(.secondary)

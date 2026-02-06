@@ -18,3 +18,6 @@ Native macOS dictation app — replaces SuperWhisper, AquaVoice, WhisperFlow.
 - Floating indicator window
 - Menu bar extra for settings
 
+## Permissions
+- Global hotkeys use a CGEventTap. Enable Input Monitoring (and Accessibility if prompted) in System Settings → Privacy & Security.
+- Microphone access is required for dictation.

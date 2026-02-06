@@ -17,6 +17,7 @@ struct OpenWhisperApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
+    var hotkeyMonitor: HotkeyMonitor?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Create menu bar item
@@ -36,6 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AudioTranscriber.shared.requestPermissions()
         let hotkeyMonitor = HotkeyMonitor()
         hotkeyMonitor.setTranscriber(AudioTranscriber.shared)
+        self.hotkeyMonitor = hotkeyMonitor
     }
 
     @objc func toggleDictation() {
