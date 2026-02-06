@@ -1,109 +1,47 @@
+// OpenWhisperApp.swift
+// Basic menu bar app structure for OpenWhisper
+
 import SwiftUI
 
 @main
 struct OpenWhisperApp: App {
-    @StateObject private var transcriber = AudioTranscriber()
-    @StateObject private var hotkeyMonitor = HotkeyMonitor()
-    
-    @AppStorage("hotkey.required") private var requiredRaw: String = "command,shift"
-    @AppStorage("hotkey.forbidden") private var forbiddenRaw: String = "option,control"
-    @AppStorage("hotkey.key") private var hotkeyKey: String = "d"
-    
-    @State private var isMenuBarExtraInserted = true
-    
-    private func parseModifiers(_ raw: String) -> NSEvent.ModifierFlags {
-        let names = raw.components(separatedBy: ",").compactMap { part -> String? in
-            let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            return trimmed.isEmpty ? nil : trimmed
-        }
-        var flags: NSEvent.ModifierFlags = []
-        for name in names {
-            switch name {
-            case "command", "cmd": flags.formUnion(.command)
-            case "shift": flags.formUnion(.shift)
-            case "option", "alt": flags.formUnion(.option)
-            case "control", "ctrl": flags.formUnion(.control)
-            case "capslock": flags.formUnion(.capsLock)
-            default: break
-            }
-        }
-        return flags
-    }
-    
-    private func updateHotkeyConfig() {
-        let req = parseModifiers(requiredRaw)
-        let forb = parseModifiers(forbiddenRaw)
-        hotkeyMonitor.updateConfig(required: req, forbidden: forb, key: hotkeyKey)
-    }
-    
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
-            SettingsView(transcriber: transcriber)
-                .task {
-                    hotkeyMonitor.setHandler { [weak transcriber] in
-                        transcriber?.toggleRecording()
-                    }
-                    hotkeyMonitor.start()
-                    updateHotkeyConfig()
-                }
-                .onChange(of: requiredRaw) { _ in
-                    updateHotkeyConfig()
-                }
-                .onChange(of: forbiddenRaw) { _ in
-                    updateHotkeyConfig()
-                }
-                .onChange(of: hotkeyKey) { _ in
-                    updateHotkeyConfig()
-                }
+            ContentView()
         }
+        .windowResizability(.contentSize)
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var statusItem: NSStatusItem?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Create menu bar item
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem?.button?.title = "🎤"
+        statusItem?.button?.action = #selector(toggleDictation)
         
-        MenuBarExtra("🎤", isInserted: $isMenuBarExtraInserted) {
-            VStack(alignment: .leading, spacing: 8) {
-                if transcriber.isRecording {
-                    Text("🔴 Listening…")
-                        .font(.headline)
-                        .foregroundStyle(.red)
-                } else {
-                    Text("Ready")
-                        .font(.headline)
-                        .foregroundStyle(.green)
-                }
-                
-                Text(transcriber.statusMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                
-                if let error = transcriber.lastError {
-                    Text("❌ \(error)")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-                
-                Divider()
-                
-                Button(transcriber.isRecording ? "🛑 Stop" : "🎤 Start") {
-                    transcriber.toggleRecording()
-                }
-                .keyboardShortcut(.space, modifiers: [])
-                
-                Button("Clear") {
-                    transcriber.clearTranscription()
-                }
-                
-                Button("Copy") {
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(transcriber.transcription, forType: .string)
-                }
-                
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q", modifiers: [.command])
-            }
-            .padding()
-            .frame(minWidth: 200)
-        }
-        .menuBarExtraStyle(.window)
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Start Dictation", action: #selector(startDictation), keyEquivalent: "s"))
+        menu.addItem(NSMenuItem(title: "Stop Dictation", action: #selector(stopDictation), keyEquivalent: "e"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        statusItem?.menu = menu
+    }
+
+    @objc func toggleDictation() {
+        // Placeholder for global hotkey toggle
+        print("Toggle dictation")
+    }
+
+    @objc func startDictation() {
+        print("Start dictation")
+    }
+
+    @objc func stopDictation() {
+        print("Stop dictation")
     }
 }
