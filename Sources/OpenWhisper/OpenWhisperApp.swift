@@ -20,6 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var hotkeyMonitor: HotkeyMonitor?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApplication.shared.setActivationPolicy(.accessory)
         // Create menu bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.button?.title = "🎤"
@@ -33,6 +34,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem?.menu = menu
+
+        // Close any open windows to make it pure menu bar app
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApplication.shared.windows.forEach { window in
+                if window.title != "Settings" {  // Keep settings open if somehow open
+                    window.close()
+                }
+            }
+        }
 
         AudioTranscriber.shared.requestPermissions()
         let hotkeyMonitor = HotkeyMonitor()
