@@ -12,8 +12,12 @@ struct ContentView: View {
     @ObservedObject var transcriber: AudioTranscriber
     @ObservedObject var hotkeyMonitor: HotkeyMonitor
 
+    @AppStorage(AppDefaults.Keys.onboardingCompleted) private var onboardingCompleted: Bool = false
+
     @State private var microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     @State private var accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
+    @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+    @State private var showingOnboarding = false
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
 
@@ -53,7 +57,7 @@ struct ContentView: View {
                 }
             }
 
-            if !microphoneAuthorized || !accessibilityAuthorized {
+            if !microphoneAuthorized || !accessibilityAuthorized || !inputMonitoringAuthorized {
                 VStack(alignment: .leading, spacing: 4) {
                     if !microphoneAuthorized {
                         Text("Microphone access is required for dictation.")
@@ -62,6 +66,11 @@ struct ContentView: View {
                     }
                     if !accessibilityAuthorized {
                         Text("Accessibility access is required for global hotkeys and auto-paste.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    if !inputMonitoringAuthorized {
+                        Text("Input Monitoring is required for reliable global hotkeys.")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
@@ -177,6 +186,11 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderless)
 
+                Button("Onboarding…") {
+                    showingOnboarding = true
+                }
+                .buttonStyle(.borderless)
+
                 Spacer()
 
                 Button("Quit") {
@@ -190,15 +204,22 @@ struct ContentView: View {
         .onAppear {
             hotkeyMonitor.setTranscriber(transcriber)
             refreshPermissionState()
+            if !onboardingCompleted {
+                showingOnboarding = true
+            }
         }
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            OnboardingView(transcriber: transcriber)
         }
     }
 
     private func refreshPermissionState() {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
+        inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
     }
 
     private func hotkeySummary() -> String {

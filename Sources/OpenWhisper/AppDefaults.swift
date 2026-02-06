@@ -23,6 +23,8 @@ enum AppDefaults {
 
         static let transcriptionReplacements = "transcription.replacements"
         static let transcriptionHistoryLimit = "transcription.historyLimit"
+
+        static let onboardingCompleted = "onboarding.completed"
     }
 
     static func register() {
@@ -47,7 +49,9 @@ enum AppDefaults {
             Keys.outputClearAfterInsert: false,
 
             Keys.transcriptionReplacements: "",
-            Keys.transcriptionHistoryLimit: 25
+            Keys.transcriptionHistoryLimit: 25,
+
+            Keys.onboardingCompleted: false
         ]
         UserDefaults.standard.register(defaults: defaults)
     }

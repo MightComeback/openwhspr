@@ -88,6 +88,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     func start() {
         requestAccessibilityIfNeeded()
+        requestInputMonitoringIfNeeded()
 
         guard eventTap == nil else { return }
         let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue))
@@ -217,6 +218,11 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
+    private func requestInputMonitoringIfNeeded() {
+        guard !Self.hasInputMonitoringPermission() else { return }
+        _ = CGRequestListenEventAccess()
+    }
+
     static func hasAccessibilityPermission() -> Bool {
         AXIsProcessTrusted()
     }
@@ -226,6 +232,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as CFString: kCFBooleanTrue
         ] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    static func hasInputMonitoringPermission() -> Bool {
+        CGPreflightListenEventAccess()
+    }
+
+    static func requestInputMonitoringPermissionPrompt() {
+        _ = CGRequestListenEventAccess()
     }
 
     private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?) {

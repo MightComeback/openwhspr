@@ -12,6 +12,7 @@ struct SettingsView: View {
     @ObservedObject var transcriber: AudioTranscriber
     @ObservedObject var hotkeyMonitor: HotkeyMonitor
 
+    @AppStorage(AppDefaults.Keys.onboardingCompleted) private var onboardingCompleted: Bool = false
     @AppStorage(AppDefaults.Keys.hotkeyMode) private var hotkeyModeRaw: String = HotkeyMode.toggle.rawValue
     @AppStorage(AppDefaults.Keys.hotkeyKey) private var hotkeyKey: String = "space"
 
@@ -36,6 +37,8 @@ struct SettingsView: View {
 
     @State private var microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     @State private var accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
+    @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+    @State private var showingOnboarding = false
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
 
@@ -178,6 +181,15 @@ struct SettingsView: View {
                             }
                         )
 
+                        permissionRow(
+                            title: "Input Monitoring",
+                            granted: inputMonitoringAuthorized,
+                            actionTitle: "Request",
+                            action: {
+                                HotkeyMonitor.requestInputMonitoringPermissionPrompt()
+                            }
+                        )
+
                         HStack(spacing: 12) {
                             Button("Open Microphone Privacy") {
                                 openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
@@ -185,9 +197,34 @@ struct SettingsView: View {
                             Button("Open Accessibility Privacy") {
                                 openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
                             }
+                            Button("Open Input Monitoring Privacy") {
+                                openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+                            }
                         }
                         .buttonStyle(.link)
                         .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+                }
+
+                GroupBox("Onboarding") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(onboardingCompleted ? "Onboarding has been completed." : "Onboarding is not completed.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 10) {
+                            Button("Open onboarding guide") {
+                                showingOnboarding = true
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button("Reset onboarding completion") {
+                                onboardingCompleted = false
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
@@ -221,6 +258,9 @@ struct SettingsView: View {
         }
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            OnboardingView(transcriber: transcriber)
         }
         .onChange(of: requiredCommand) { _, newValue in
             if newValue { forbiddenCommand = false }
@@ -296,6 +336,7 @@ struct SettingsView: View {
     private func refreshPermissionState() {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
+        inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
     }
 
     private func sanitizeKeyValue(_ raw: String) -> String {
