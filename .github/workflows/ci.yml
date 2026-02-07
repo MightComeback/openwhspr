@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: macos-14
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Swift 6 toolchain
+      run: |
+        swift --version
+        xcrun swift-format --version || echo "swift-format optional"
+
+    - name: Build and test
+      run: swift test
