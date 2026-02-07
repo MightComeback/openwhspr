@@ -8,15 +8,18 @@ on:
 
 jobs:
   test:
-    runs-on: macos-14
+    runs-on: macos-14-arm64
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Select Swift 6 toolchain
-      run: |
-        swift --version
-        xcrun swift-format --version || echo "swift-format optional"
+    - name: Setup Swift 6.0
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: &#39;6.0&#39;
 
-    - name: Build and test
+    - name: Verify Swift version
+      run: swift --version
+
+    - name: Run tests
       run: swift test
