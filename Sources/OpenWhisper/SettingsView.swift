@@ -83,7 +83,7 @@ struct SettingsView: View {
                                 .onChange(of: hotkeyKey) { _, newValue in
                                     hotkeyKey = sanitizeKeyValue(newValue)
                                 }
-                            Text("Examples: space, tab, return, a, 1")
+                            Text("Examples: space/spacebar, tab, return, esc, delete, left, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -610,7 +610,7 @@ struct SettingsView: View {
     private func displayKey(_ raw: String) -> String {
         let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         switch normalized {
-        case "space": return "Space"
+        case "space", "spacebar": return "Space"
         case "tab": return "Tab"
         case "return", "enter": return "Return"
         case "escape", "esc": return "Esc"

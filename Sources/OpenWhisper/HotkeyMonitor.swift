@@ -265,7 +265,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         switch trimmed {
-        case "space": return (" ", nil)
+        case "space", "spacebar": return (" ", nil)
         case "tab": return ("\t", nil)
         case "return", "enter": return ("\r", nil)
         case "escape", "esc": return ("\u{1B}", nil)
@@ -280,7 +280,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func keyCodeForKeyString(_ key: String) -> CGKeyCode? {
         switch key {
-        case "space": return CGKeyCode(kVK_Space)
+        case "space", "spacebar": return CGKeyCode(kVK_Space)
         case "return", "enter": return CGKeyCode(kVK_Return)
         case "tab": return CGKeyCode(kVK_Tab)
         case "escape", "esc": return CGKeyCode(kVK_Escape)
