@@ -6,6 +6,7 @@
 //
 
 @preconcurrency import AVFoundation
+@preconcurrency import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -97,24 +98,46 @@ struct ContentView: View {
             }
 
             if !microphoneAuthorized || !accessibilityAuthorized || !inputMonitoringAuthorized {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     if !microphoneAuthorized {
-                        Text("Microphone access is required for dictation.")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                        permissionRow(
+                            title: "Microphone",
+                            detail: "Required for dictation audio.",
+                            requestTitle: "Request",
+                            request: {
+                                Task { @MainActor in
+                                    transcriber.requestMicrophonePermission()
+                                }
+                            },
+                            settingsPane: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+                        )
                     }
+
                     if !accessibilityAuthorized {
-                        Text("Accessibility access is required for global hotkeys and auto-paste.")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                        permissionRow(
+                            title: "Accessibility",
+                            detail: "Required for global hotkeys and auto-paste.",
+                            requestTitle: "Request",
+                            request: {
+                                HotkeyMonitor.requestAccessibilityPermissionPrompt()
+                            },
+                            settingsPane: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                        )
                     }
+
                     if !inputMonitoringAuthorized {
-                        Text("Input Monitoring is required for reliable global hotkeys.")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                        permissionRow(
+                            title: "Input Monitoring",
+                            detail: "Required for reliable global key capture.",
+                            requestTitle: "Request",
+                            request: {
+                                HotkeyMonitor.requestInputMonitoringPermissionPrompt()
+                            },
+                            settingsPane: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+                        )
                     }
                 }
-                .padding(8)
+                .padding(10)
                 .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
             }
 
@@ -312,5 +335,47 @@ struct ContentView: View {
             }
             return normalized.capitalized
         }
+    }
+
+    @ViewBuilder
+    private func permissionRow(
+        title: String,
+        detail: String,
+        requestTitle: String,
+        request: @escaping () -> Void,
+        settingsPane: String
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 8) {
+                Button(requestTitle, action: request)
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+
+                Button("Open Settings") {
+                    openSystemSettingsPane(settingsPane)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+            }
+        }
+    }
+
+    private func openSystemSettingsPane(_ paneURL: String) {
+        guard let url = URL(string: paneURL) else { return }
+        NSWorkspace.shared.open(url)
     }
 }
