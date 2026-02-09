@@ -83,7 +83,7 @@ struct SettingsView: View {
                                 .onChange(of: hotkeyKey) { _, newValue in
                                     hotkeyKey = sanitizeKeyValue(newValue)
                                 }
-                            Text("Examples: space/spacebar, tab, return, esc, delete, left, a, 1")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -593,7 +593,10 @@ struct SettingsView: View {
         let normalized = raw
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-        return normalized.isEmpty ? "space" : normalized
+
+        if normalized.isEmpty { return "space" }
+        if normalized == " " { return "space" }
+        return normalized
     }
 
     private func hotkeySummary() -> String {
@@ -614,6 +617,12 @@ struct SettingsView: View {
         case "tab": return "Tab"
         case "return", "enter": return "Return"
         case "escape", "esc": return "Esc"
+        case "delete", "backspace": return "Delete"
+        case "forwarddelete": return "FwdDelete"
+        case "left": return "←"
+        case "right": return "→"
+        case "up": return "↑"
+        case "down": return "↓"
         default:
             if normalized.count == 1 {
                 return normalized.uppercased()
