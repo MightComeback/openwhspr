@@ -25,6 +25,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var lastChunkLatencySeconds: Double = 0
     @Published var recordingStartedAt: Date? = nil
 
+    private var recordingOutputSettings: EffectiveOutputSettings? = nil
+
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
     private let bufferQueue = DispatchQueue(label: "OpenWhisper.AudioBuffer")
@@ -240,6 +242,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         lastError = nil
         inputLevel = 0
+        recordingOutputSettings = effectiveOutputSettingsForCurrentApp()
         pendingSessionFinalize = false
         pendingChunks.removeAll()
         pendingChunkEnqueueTimes.removeAll()
@@ -277,6 +280,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             statusMessage = "Listening…"
         } catch {
             recordingStartedAt = nil
+            recordingOutputSettings = nil
             lastError = "Failed to start audio engine: \(error.localizedDescription)"
         }
     }
@@ -437,11 +441,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func finalizeSessionIfNeeded() {
+        defer { recordingOutputSettings = nil }
         pendingSessionFinalize = false
         inputLevel = 0
         pendingChunkCount = 0
 
-        let settings = effectiveOutputSettingsForCurrentApp()
+        let settings = recordingOutputSettings ?? effectiveOutputSettingsForCurrentApp()
         let finalText = normalizeOutputText(transcription, settings: settings)
         transcription = finalText
 
