@@ -189,6 +189,13 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         switch mode {
         case .toggle:
             guard type == .keyDown, comboMatches else { return false }
+
+            // Prevent key repeat from rapidly toggling recording while the hotkey is held.
+            let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+            if isAutoRepeat {
+                return true
+            }
+
             Task { @MainActor [weak transcriber] in
                 transcriber?.toggleRecording()
             }
