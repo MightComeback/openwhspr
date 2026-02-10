@@ -17,6 +17,8 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.hotkeyMode) private var hotkeyModeRaw: String = HotkeyMode.toggle.rawValue
     @AppStorage(AppDefaults.Keys.hotkeyKey) private var hotkeyKey: String = "space"
 
+    @State private var hotkeyKeyDraft: String = ""
+
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredOption) private var requiredOption: Bool = false
@@ -74,15 +76,26 @@ struct SettingsView: View {
                                 .font(.headline)
                         }
 
-                        HStack {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text("Trigger key")
                                 .frame(width: 110, alignment: .leading)
-                            TextField("space", text: $hotkeyKey)
+
+                            TextField("space", text: $hotkeyKeyDraft)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 120)
-                                .onChange(of: hotkeyKey) { _, newValue in
-                                    hotkeyKey = sanitizeKeyValue(newValue)
+                                .onChange(of: hotkeyKeyDraft) { _, newValue in
+                                    hotkeyKeyDraft = sanitizeKeyValue(newValue)
                                 }
+                                .onSubmit {
+                                    applyHotkeyKeyDraft()
+                                }
+
+                            Button("Apply") {
+                                applyHotkeyKeyDraft()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
                             Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -458,6 +471,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 700, minHeight: 700)
         .onAppear {
+            hotkeyKeyDraft = hotkeyKey
             refreshPermissionState()
             Task { @MainActor in
                 transcriber.refreshFrontmostAppContext()
@@ -587,6 +601,12 @@ struct SettingsView: View {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+    }
+
+    private func applyHotkeyKeyDraft() {
+        let sanitized = sanitizeKeyValue(hotkeyKeyDraft)
+        hotkeyKeyDraft = sanitized
+        hotkeyKey = sanitized
     }
 
     private func sanitizeKeyValue(_ raw: String) -> String {
