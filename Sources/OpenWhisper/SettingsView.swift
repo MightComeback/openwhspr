@@ -125,6 +125,17 @@ struct SettingsView: View {
                             capsLock: $forbiddenCapsLock
                         )
 
+                        HStack(spacing: 10) {
+                            Button("Reset hotkey defaults") {
+                                resetHotkeyDefaults()
+                            }
+                            .buttonStyle(.bordered)
+
+                            Text("Restores ⌘+⇧+Space (toggle mode) and safe forbidden modifiers.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
                         Text("Tip: in hold-to-talk mode, recording starts on key down and ends on key up.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -607,6 +618,24 @@ struct SettingsView: View {
         let sanitized = sanitizeKeyValue(hotkeyKeyDraft)
         hotkeyKeyDraft = sanitized
         hotkeyKey = sanitized
+    }
+
+    private func resetHotkeyDefaults() {
+        hotkeyModeRaw = HotkeyMode.toggle.rawValue
+        hotkeyKey = "space"
+        hotkeyKeyDraft = "space"
+
+        requiredCommand = true
+        requiredShift = true
+        requiredOption = false
+        requiredControl = false
+        requiredCapsLock = false
+
+        forbiddenCommand = false
+        forbiddenShift = false
+        forbiddenOption = true
+        forbiddenControl = true
+        forbiddenCapsLock = false
     }
 
     private func sanitizeKeyValue(_ raw: String) -> String {
