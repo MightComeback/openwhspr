@@ -212,8 +212,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !normalized.isEmpty else { return false }
         transcription = normalized
 
-        guard copyToPasteboard(normalized) else { return false }
-        guard pasteIntoFocusedApp() else {
+        let pasted = withTemporaryPasteboardString(normalized) {
+            pasteIntoFocusedApp()
+        }
+
+        guard pasted else {
             lastError = "Failed to paste into active app. Check Accessibility permissions."
             return false
         }
@@ -665,6 +668,32 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if recentEntries.count > maxEntries {
             recentEntries = Array(recentEntries.prefix(maxEntries))
         }
+    }
+
+    @MainActor
+    private func withTemporaryPasteboardString(_ text: String, perform: () -> Bool) -> Bool {
+        guard !text.isEmpty else { return false }
+
+        let pasteboard = NSPasteboard.general
+        let originalItems = pasteboard.pasteboardItems
+
+        pasteboard.clearContents()
+        guard pasteboard.setString(text, forType: .string) else { return false }
+
+        let changeCountAfterInsert = pasteboard.changeCount
+        let result = perform()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            let pb = NSPasteboard.general
+            guard pb.changeCount == changeCountAfterInsert else { return }
+
+            pb.clearContents()
+            if let originalItems {
+                _ = pb.writeObjects(originalItems)
+            }
+        }
+
+        return result
     }
 
     @MainActor
