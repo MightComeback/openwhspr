@@ -53,7 +53,7 @@ enum HotkeyDisplay {
         case "forwardslash": return "slash"
         case "grave": return "backtick"
         case "pgup": return "pageup"
-        case "pgdn": return "pagedown"
+        case "pgdn", "pgdown": return "pagedown"
         case "numpad0": return "keypad0"
         case "numpad1": return "keypad1"
         case "numpad2": return "keypad2"
