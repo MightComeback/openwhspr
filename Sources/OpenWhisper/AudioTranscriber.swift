@@ -589,6 +589,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if maxOverlap > 0 {
             for length in stride(from: maxOverlap, through: 1, by: -1) {
+                // Very short overlaps (1-2 chars) can corrupt text by matching
+                // unrelated fragments ("cat" + "atlas" -> "cat las").
+                // Keep overlap merging conservative for live-transcription safety.
+                if length < 3 {
+                    continue
+                }
+
                 let lhsSuffixStart = lowerLHS.index(lowerLHS.endIndex, offsetBy: -length)
                 let lhsSuffix = lowerLHS[lhsSuffixStart...]
                 let rhsPrefixEnd = lowerRHS.index(lowerRHS.startIndex, offsetBy: length)

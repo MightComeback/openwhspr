@@ -188,6 +188,18 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world from swift")
     }
 
+    func testMergeChunkIgnoresTinyOverlapThatWouldCorruptWords() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("atlas", into: "cat")
+        XCTAssertEqual(merged, "cat atlas")
+    }
+
+    func testMergeChunkUsesThreeCharacterOverlapWhenLegitimate() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("def ghi", into: "abc def")
+        XCTAssertEqual(merged, "abc def ghi")
+    }
+
     func testMergeChunkPrefersExpandedChunkWhenItExtendsPartialTail() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world", into: "hello wor")
