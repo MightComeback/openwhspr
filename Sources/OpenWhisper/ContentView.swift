@@ -190,7 +190,6 @@ struct ContentView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
-                        .disabled(!canInsertIntoTargetApp)
 
                         Button("Retarget") {
                             Task { @MainActor in
@@ -355,10 +354,6 @@ struct ContentView: View {
 
     private func hotkeySummary() -> String {
         HotkeyDisplay.summaryIncludingMode()
-    }
-
-    private var canInsertIntoTargetApp: Bool {
-        accessibilityAuthorized
     }
 
     private func insertButtonTitle() -> String {
