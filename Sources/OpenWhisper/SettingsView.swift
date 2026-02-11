@@ -153,7 +153,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste a combo like cmd+shift+space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -778,15 +778,30 @@ struct SettingsView: View {
     }
 
     private func applyHotkeyKeyDraft() {
-        guard let normalized = normalizedHotkeyDraftForApply else {
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
             return
         }
 
-        let sanitized = sanitizeKeyValue(normalized)
+        let sanitized = sanitizeKeyValue(parsed.key)
         hotkeyKeyDraft = sanitized
         guard HotkeyDisplay.isSupportedKey(sanitized) else {
             return
         }
+
+        if let modifiers = parsed.requiredModifiers {
+            requiredCommand = modifiers.contains(.command)
+            requiredShift = modifiers.contains(.shift)
+            requiredOption = modifiers.contains(.option)
+            requiredControl = modifiers.contains(.control)
+            requiredCapsLock = modifiers.contains(.capsLock)
+
+            forbiddenCommand = !requiredCommand && forbiddenCommand
+            forbiddenShift = !requiredShift && forbiddenShift
+            forbiddenOption = !requiredOption && forbiddenOption
+            forbiddenControl = !requiredControl && forbiddenControl
+            forbiddenCapsLock = !requiredCapsLock && forbiddenCapsLock
+        }
+
         hotkeyKey = sanitized
     }
 
@@ -813,7 +828,31 @@ struct SettingsView: View {
     }
 
     private var normalizedHotkeyDraftForApply: String? {
-        let normalized = hotkeyKeyDraft
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
+            return nil
+        }
+        return parsed.key
+    }
+
+    private func sanitizeHotkeyDraftValue(_ raw: String) -> String {
+        raw.lowercased()
+    }
+
+    private struct ParsedHotkeyDraft {
+        var key: String
+        var requiredModifiers: Set<ParsedModifier>?
+    }
+
+    private enum ParsedModifier: Hashable {
+        case command
+        case shift
+        case option
+        case control
+        case capsLock
+    }
+
+    private func parseHotkeyDraft(_ raw: String) -> ParsedHotkeyDraft? {
+        let normalized = raw
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
 
@@ -822,14 +861,49 @@ struct SettingsView: View {
         }
 
         if normalized == " " {
-            return "space"
+            return ParsedHotkeyDraft(key: "space", requiredModifiers: nil)
         }
 
-        return normalized
+        if !normalized.contains("+") {
+            return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+        }
+
+        let tokens = normalized
+            .split(separator: "+")
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !tokens.isEmpty else {
+            return nil
+        }
+
+        var modifiers = Set<ParsedModifier>()
+        var keyToken: String?
+
+        for token in tokens {
+            if let modifier = parseModifierToken(token) {
+                modifiers.insert(modifier)
+            } else {
+                keyToken = token
+            }
+        }
+
+        guard let keyToken else {
+            return nil
+        }
+
+        return ParsedHotkeyDraft(key: keyToken, requiredModifiers: modifiers)
     }
 
-    private func sanitizeHotkeyDraftValue(_ raw: String) -> String {
-        raw.lowercased()
+    private func parseModifierToken(_ token: String) -> ParsedModifier? {
+        switch token {
+        case "cmd", "command", "⌘": return .command
+        case "shift", "⇧": return .shift
+        case "opt", "option", "alt", "⌥": return .option
+        case "ctrl", "control", "⌃": return .control
+        case "caps", "capslock", "⇪": return .capsLock
+        default: return nil
+        }
     }
 
     private func sanitizeKeyValue(_ raw: String) -> String {
