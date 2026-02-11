@@ -17,6 +17,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
     private var holdSessionArmed: Bool = false
+    private var toggleKeyDownConsumed: Bool = false
     private var isListening: Bool = false
 
     private var eventTap: CFMachPort?
@@ -158,6 +159,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         runLoopSource = nil
         eventTap = nil
         holdSessionArmed = false
+        toggleKeyDownConsumed = false
 
         setStatus(active: false, message: "Hotkey stopped")
     }
@@ -172,6 +174,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         self.keyCode = normalized.keyCode
 
         holdSessionArmed = false
+        toggleKeyDownConsumed = false
 
         // Only restart the event tap if we're actively listening.
         if isListening {
@@ -186,6 +189,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             monitor.holdSessionArmed = false
+            monitor.toggleKeyDownConsumed = false
             Task { @MainActor [weak transcriber = monitor.transcriber] in
                 transcriber?.stopRecordingFromHotkey()
             }
@@ -224,7 +228,15 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         switch mode {
         case .toggle:
-            guard type == .keyDown, comboMatches else { return false }
+            if type == .keyUp {
+                if toggleKeyDownConsumed {
+                    toggleKeyDownConsumed = false
+                    return true
+                }
+                return false
+            }
+
+            guard comboMatches else { return false }
 
             // Prevent key repeat from rapidly toggling recording while the hotkey is held.
             let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
@@ -232,6 +244,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 return true
             }
 
+            toggleKeyDownConsumed = true
             Task { @MainActor [weak transcriber] in
                 transcriber?.toggleRecording()
             }

@@ -99,7 +99,7 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
-    func testToggleModeKeyUpNotHandled() {
+    func testToggleModeKeyUpConsumedAfterHandledKeyDown() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
@@ -109,8 +109,25 @@ final class HotkeyMonitorTests: XCTestCase {
         let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
         monitor.reloadConfig()
 
-        let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
-        XCTAssertFalse(monitor.handleForTesting(event, type: .keyUp))
+        let downEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(downEvent, type: .keyDown))
+
+        let upEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
+        XCTAssertTrue(monitor.handleForTesting(upEvent, type: .keyUp))
+    }
+
+    func testToggleModeKeyUpWithoutHandledKeyDownNotHandled() {
+        let defaults = makeDefaults()
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let upEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
+        XCTAssertFalse(monitor.handleForTesting(upEvent, type: .keyUp))
     }
 
     func testFunctionKeyHotkeyMatchesConfiguredFKey() {
