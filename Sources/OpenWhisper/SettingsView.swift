@@ -292,13 +292,23 @@ struct SettingsView: View {
                                 }
                             }
                             .buttonStyle(.bordered)
-                            .disabled(!canCaptureFrontmostProfile)
+                            .disabled(!canRunInsertionTest)
                         }
 
                         if !canCaptureFrontmostProfile {
                             Text(captureProfileDisabledReason)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
+                        }
+
+                        if !canRunInsertionTest {
+                            Text(insertionTestDisabledReason)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        } else if let target = insertionTestTargetAppName {
+                            Text("Insertion test target: \(target)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
                         if transcriber.appProfiles.isEmpty {
@@ -819,6 +829,18 @@ struct SettingsView: View {
         }
 
         return "Frontmost app is OpenWhisper itself. Switch to the app where insertion should happen, then refresh."
+    }
+
+    private var insertionTestTargetAppName: String? {
+        transcriber.manualInsertTargetAppName()
+    }
+
+    private var canRunInsertionTest: Bool {
+        insertionTestTargetAppName != nil
+    }
+
+    private var insertionTestDisabledReason: String {
+        "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
 
     private var hasAnyRequiredModifier: Bool {
