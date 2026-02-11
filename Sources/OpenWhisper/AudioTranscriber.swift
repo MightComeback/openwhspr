@@ -536,11 +536,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func refreshStreamingStatusIfNeeded() {
-        guard !isRecording else { return }
+        let inFlightChunks = pendingChunkCount + (isTranscribing ? 1 : 0)
 
-        if pendingChunkCount > 0 || isTranscribing {
-            let remaining = pendingChunkCount + (isTranscribing ? 1 : 0)
-            statusMessage = "Finalizing… \(remaining) chunk\(remaining == 1 ? "" : "s") left"
+        if isRecording {
+            if inFlightChunks > 0 {
+                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight"
+            } else {
+                statusMessage = "Listening…"
+            }
+            return
+        }
+
+        if inFlightChunks > 0 {
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left"
             return
         }
 
