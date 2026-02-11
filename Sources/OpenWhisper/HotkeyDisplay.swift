@@ -3,6 +3,18 @@ import Foundation
 /// Shared formatting helpers for displaying the current hotkey configuration.
 enum HotkeyDisplay {
     static func summary(defaults: UserDefaults = .standard) -> String {
+        comboSummary(defaults: defaults)
+    }
+
+    /// Returns a short, user-facing string including the configured hotkey mode.
+    /// Example: `Toggle • ⌘+⇧+Space` or `Hold • ⌘+⇧+Space`.
+    static func summaryIncludingMode(defaults: UserDefaults = .standard) -> String {
+        let modeRaw = defaults.string(forKey: AppDefaults.Keys.hotkeyMode) ?? HotkeyMode.toggle.rawValue
+        let mode = HotkeyMode(rawValue: modeRaw) ?? .toggle
+        return "\(mode.title) • \(comboSummary(defaults: defaults))"
+    }
+
+    private static func comboSummary(defaults: UserDefaults) -> String {
         var parts: [String] = []
 
         if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCommand) { parts.append("⌘") }

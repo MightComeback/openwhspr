@@ -311,7 +311,7 @@ struct ContentView: View {
     }
 
     private func hotkeySummary() -> String {
-        HotkeyDisplay.summary()
+        HotkeyDisplay.summaryIncludingMode()
     }
 
     @ViewBuilder
