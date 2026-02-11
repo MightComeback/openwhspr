@@ -608,7 +608,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if transcription.isEmpty {
             transcription = cleaned
-            statusMessage = "Transcribing…"
+            updateStreamingActivityStatusAfterChunkMerge()
             return
         }
 
@@ -618,7 +618,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         transcription = merged
-        statusMessage = "Transcribing…"
+        updateStreamingActivityStatusAfterChunkMerge()
+    }
+
+    @MainActor
+    private func updateStreamingActivityStatusAfterChunkMerge() {
+        if isRecording {
+            statusMessage = "Transcribing…"
+            return
+        }
+
+        if pendingSessionFinalize {
+            statusMessage = "Finalizing…"
+        }
     }
 
     private func mergeChunk(_ chunk: String, into existing: String) -> String {
