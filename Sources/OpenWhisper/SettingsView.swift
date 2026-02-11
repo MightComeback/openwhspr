@@ -285,6 +285,14 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .disabled(!canCaptureFrontmostProfile)
+
+                            Button("Run insertion test") {
+                                Task { @MainActor in
+                                    _ = transcriber.runInsertionProbe()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!canCaptureFrontmostProfile)
                         }
 
                         if !canCaptureFrontmostProfile {
@@ -354,7 +362,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        Text("Profiles override global output behavior when that app is frontmost during finalization/copy/insert.")
+                        Text("Profiles override global output behavior when that app is frontmost during finalization/copy/insert. Use “Run insertion test” to verify front-app paste targeting before recording.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

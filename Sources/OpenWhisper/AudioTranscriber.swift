@@ -284,23 +284,54 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !normalized.isEmpty else { return false }
         transcription = normalized
 
+        let result = performManualInsert(text: normalized)
+        guard result.success else { return false }
+
+        appendHistoryEntry(normalized)
+        if settings.clearAfterInsert {
+            transcription = ""
+        }
+        return true
+    }
+
+    /// Sends a short sample phrase to the currently focused app to verify the
+    /// insertion pipeline (target capture, activation, paste permissions).
+    @MainActor
+    @discardableResult
+    func runInsertionProbe(sampleText: String = "OpenWhisper insertion test") -> Bool {
+        let probe = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !probe.isEmpty else { return false }
+
+        let result = performManualInsert(text: probe)
+        if result.success {
+            if let targetName = result.targetName, !targetName.isEmpty {
+                statusMessage = "Insertion test succeeded in \(targetName)"
+            } else {
+                statusMessage = "Insertion test succeeded"
+            }
+        }
+        return result.success
+    }
+
+    @MainActor
+    private func performManualInsert(text: String) -> (success: Bool, targetName: String?) {
         // Manual insert should target the app currently in front, not the app
         // that happened to be active when recording started.
         captureInsertionTargetApp()
         let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
 
         guard canAutoPasteIntoTargetApp() else {
-            _ = copyToPasteboard(normalized)
+            _ = copyToPasteboard(text)
             if let resolvedTargetName, !resolvedTargetName.isEmpty {
                 lastError = "Accessibility permission is required to insert into \(resolvedTargetName). Copied text to clipboard instead."
             } else {
                 lastError = "Accessibility permission is required to insert text automatically. Copied text to clipboard instead."
             }
             statusMessage = "Copied to clipboard"
-            return false
+            return (false, resolvedTargetName)
         }
 
-        let pasteResult = withTemporaryPasteboardString(normalized) {
+        let pasteResult = withTemporaryPasteboardString(text) {
             pasteIntoFocusedApp()
         }
 
@@ -309,7 +340,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             case .noTargetApp:
                 lastError = "No target app available for insertion. Switch to the destination app and try again."
             case .activationFailed:
-                _ = copyToPasteboard(normalized)
+                _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Copied text to clipboard instead."
                 } else {
@@ -317,7 +348,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 }
                 statusMessage = "Copied to clipboard"
             case .pasteKeystrokeFailed:
-                _ = copyToPasteboard(normalized)
+                _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard instead."
                 } else {
@@ -327,20 +358,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             case .success:
                 break
             }
-            return false
+            return (false, resolvedTargetName)
         }
 
-        appendHistoryEntry(normalized)
         lastError = nil
         if let resolvedTargetName, !resolvedTargetName.isEmpty {
             statusMessage = "Inserted into \(resolvedTargetName)"
         } else {
             statusMessage = "Inserted into active app"
         }
-        if settings.clearAfterInsert {
-            transcription = ""
-        }
-        return true
+        return (true, resolvedTargetName)
     }
 
     @MainActor
