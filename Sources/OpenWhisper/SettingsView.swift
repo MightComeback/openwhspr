@@ -137,7 +137,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
-                            .disabled(!isHotkeyKeyDraftSupported)
+                            .disabled(!isHotkeyKeyDraftSupported || !isHotkeyDraftDifferentFromSaved)
 
                             Menu("Common keys") {
                                 ForEach(commonHotkeyKeyOptions, id: \.self) { key in
@@ -158,6 +158,11 @@ struct SettingsView: View {
                             Text("Unsupported key. Use a single character, named key, arrow, or F1-F20.")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
+                        } else if let preview = canonicalHotkeyDraftPreview,
+                                  preview != hotkeySummary() {
+                            Text("Preview: \(preview)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
                         Divider()
@@ -686,6 +691,33 @@ struct SettingsView: View {
             return false
         }
         return HotkeyDisplay.isSupportedKey(key)
+    }
+
+    private var isHotkeyDraftDifferentFromSaved: Bool {
+        guard let normalized = normalizedHotkeyDraftForApply else {
+            return false
+        }
+        return sanitizeKeyValue(normalized) != sanitizeKeyValue(hotkeyKey)
+    }
+
+    private var canonicalHotkeyDraftPreview: String? {
+        guard let normalized = normalizedHotkeyDraftForApply else {
+            return nil
+        }
+
+        let sanitized = sanitizeKeyValue(normalized)
+        guard HotkeyDisplay.isSupportedKey(sanitized) else {
+            return nil
+        }
+
+        var parts: [String] = []
+        if requiredCommand { parts.append("⌘") }
+        if requiredShift { parts.append("⇧") }
+        if requiredOption { parts.append("⌥") }
+        if requiredControl { parts.append("⌃") }
+        if requiredCapsLock { parts.append("⇪") }
+        parts.append(HotkeyDisplay.displayKey(sanitized))
+        return parts.joined(separator: "+")
     }
 
     private var commonHotkeyKeyOptions: [String] {
