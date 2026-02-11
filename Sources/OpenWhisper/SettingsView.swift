@@ -145,7 +145,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
-                            .disabled(!isHotkeyKeyDraftSupported || !isHotkeyDraftDifferentFromSaved)
+                            .disabled(!isHotkeyKeyDraftSupported || !hasHotkeyDraftChangesToApply)
 
                             Menu("Common keys") {
                                 ForEach(commonHotkeyKeySections, id: \.title) { section in
@@ -712,11 +712,32 @@ struct SettingsView: View {
         return HotkeyDisplay.isSupportedKey(key)
     }
 
-    private var isHotkeyDraftDifferentFromSaved: Bool {
-        guard let normalized = normalizedHotkeyDraftForApply else {
+    private var hasHotkeyDraftChangesToApply: Bool {
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
             return false
         }
-        return sanitizeKeyValue(normalized) != sanitizeKeyValue(hotkeyKey)
+
+        let sanitizedKey = sanitizeKeyValue(parsed.key)
+        let keyChanged = sanitizedKey != sanitizeKeyValue(hotkeyKey)
+
+        let modifiersChanged: Bool
+        if let modifiers = parsed.requiredModifiers {
+            modifiersChanged = modifiers != currentRequiredModifierSet
+        } else {
+            modifiersChanged = false
+        }
+
+        return keyChanged || modifiersChanged
+    }
+
+    private var currentRequiredModifierSet: Set<ParsedModifier> {
+        var result = Set<ParsedModifier>()
+        if requiredCommand { result.insert(.command) }
+        if requiredShift { result.insert(.shift) }
+        if requiredOption { result.insert(.option) }
+        if requiredControl { result.insert(.control) }
+        if requiredCapsLock { result.insert(.capsLock) }
+        return result
     }
 
     private var canonicalHotkeyDraftPreview: String? {
