@@ -25,6 +25,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var lastChunkLatencySeconds: Double = 0
     @Published var averageChunkLatencySeconds: Double = 0
     @Published var recordingStartedAt: Date? = nil
+    @Published var lastInsertionProbeDate: Date? = nil
+    @Published var lastInsertionProbeMessage: String = "No insertion test run yet"
+    @Published var lastInsertionProbeSucceeded: Bool? = nil
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
@@ -307,13 +310,26 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !probe.isEmpty else { return false }
 
         let result = performManualInsert(text: probe)
+        let now = Date()
+        lastInsertionProbeDate = now
+        lastInsertionProbeSucceeded = result.success
+
         if result.success {
             if let targetName = result.targetName, !targetName.isEmpty {
-                statusMessage = "Insertion test succeeded in \(targetName)"
+                let message = "Insertion test succeeded in \(targetName)"
+                statusMessage = message
+                lastInsertionProbeMessage = message
             } else {
-                statusMessage = "Insertion test succeeded"
+                let message = "Insertion test succeeded"
+                statusMessage = message
+                lastInsertionProbeMessage = message
             }
+        } else if let failure = lastError, !failure.isEmpty {
+            lastInsertionProbeMessage = "Insertion test failed: \(failure)"
+        } else {
+            lastInsertionProbeMessage = "Insertion test failed"
         }
+
         return result.success
     }
 

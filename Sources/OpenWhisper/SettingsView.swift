@@ -311,6 +311,22 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("Last insertion test:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text(transcriber.lastInsertionProbeMessage)
+                                .font(.caption)
+                                .foregroundStyle(insertionProbeStatusColor)
+
+                            if let date = transcriber.lastInsertionProbeDate {
+                                Text("(\(date.formatted(date: .omitted, time: .shortened)))")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
                         if transcriber.appProfiles.isEmpty {
                             Text("No app-specific profiles yet. Capture the frontmost app to create one.")
                                 .font(.caption)
@@ -848,6 +864,17 @@ struct SettingsView: View {
         }
 
         return "No destination app is available for insertion yet. Switch to your target app, then refresh."
+    }
+
+    private var insertionProbeStatusColor: Color {
+        switch transcriber.lastInsertionProbeSucceeded {
+        case true:
+            return .green
+        case false:
+            return .orange
+        case nil:
+            return .secondary
+        }
     }
 
     private var hasAnyRequiredModifier: Bool {
