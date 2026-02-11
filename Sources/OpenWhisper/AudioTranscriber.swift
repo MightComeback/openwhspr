@@ -476,6 +476,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingChunks.append(samples)
         pendingChunkEnqueueTimes.append(Date())
         pendingChunkCount = pendingChunks.count
+        refreshStreamingStatusIfNeeded()
         processTranscriptionQueueIfNeeded()
     }
 
@@ -484,6 +485,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !isTranscribing else { return }
 
         guard !pendingChunks.isEmpty else {
+            refreshStreamingStatusIfNeeded()
             if pendingSessionFinalize {
                 finalizeSessionIfNeeded()
             }
@@ -494,6 +496,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let nextChunk = pendingChunks.removeFirst()
         let queuedAt = pendingChunkEnqueueTimes.isEmpty ? Date() : pendingChunkEnqueueTimes.removeFirst()
         pendingChunkCount = pendingChunks.count
+        refreshStreamingStatusIfNeeded()
 
         Task {
             let text = await self.transcribe(samples: nextChunk)
@@ -502,6 +505,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 self.processedChunkCount += 1
                 self.lastChunkLatencySeconds = max(0, Date().timeIntervalSince(queuedAt))
                 self.isTranscribing = false
+                self.refreshStreamingStatusIfNeeded()
                 self.processTranscriptionQueueIfNeeded()
             }
         }
@@ -527,6 +531,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 self.lastError = "Transcription failed: \(error.localizedDescription)"
             }
             return ""
+        }
+    }
+
+    @MainActor
+    private func refreshStreamingStatusIfNeeded() {
+        guard !isRecording else { return }
+
+        if pendingChunkCount > 0 || isTranscribing {
+            let remaining = pendingChunkCount + (isTranscribing ? 1 : 0)
+            statusMessage = "Finalizing… \(remaining) chunk\(remaining == 1 ? "" : "s") left"
+            return
+        }
+
+        if pendingSessionFinalize {
+            statusMessage = "Finalizing…"
         }
     }
 
