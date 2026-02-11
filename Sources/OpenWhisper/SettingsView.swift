@@ -153,13 +153,13 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, left/right/up/down, f1-f24, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         if !isHotkeyKeyDraftSupported {
-                            Text("Unsupported key. Use a single character, named key, arrow, or F1-F20.")
+                            Text("Unsupported key. Use a single character, named key, arrow, or F1-F24.")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         } else if let preview = canonicalHotkeyDraftPreview,
@@ -743,7 +743,7 @@ struct SettingsView: View {
             ),
             (
                 title: "Function",
-                keys: ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20"]
+                keys: ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"]
             ),
             (
                 title: "Punctuation",

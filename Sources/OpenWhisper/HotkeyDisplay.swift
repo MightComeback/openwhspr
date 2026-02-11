@@ -15,7 +15,7 @@ enum HotkeyDisplay {
         switch normalized {
         case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "del", "backspace", "bksp", "forwarddelete", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave":
             return true
-        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20":
+        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24":
             return true
         default:
             return normalized.count == 1
@@ -101,7 +101,7 @@ enum HotkeyDisplay {
         case "end": return "End"
         case "pageup", "pgup": return "PgUp"
         case "pagedown", "pgdn": return "PgDn"
-        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20":
+        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24":
             return normalized.uppercased()
         default:
             if normalized.count == 1 {
