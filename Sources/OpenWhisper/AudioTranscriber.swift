@@ -724,7 +724,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if let targetApp = insertionTargetApp,
            targetApp.isTerminated == false {
             _ = targetApp.activate()
-            Thread.sleep(forTimeInterval: 0.05)
+            _ = waitForFrontmostApp(pid: targetApp.processIdentifier, timeout: 0.2)
         }
 
         guard let source = CGEventSource(stateID: .combinedSessionState),
@@ -742,6 +742,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         Thread.sleep(forTimeInterval: 0.01)
         keyUp.post(tap: .cghidEventTap)
         return true
+    }
+
+    @MainActor
+    private func waitForFrontmostApp(pid: pid_t, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier == pid {
+                return true
+            }
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        return NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
     }
 
     @MainActor
