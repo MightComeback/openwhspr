@@ -198,7 +198,6 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .disabled(!accessibilityAuthorized)
 
                         Button("Clear") {
                             Task { @MainActor in
@@ -213,7 +212,9 @@ struct ContentView: View {
                         Text("Enable Accessibility permission to use Insert.")
                             .font(.caption2)
                             .foregroundStyle(.orange)
-                    } else if let insertTargetAppName, !insertTargetAppName.isEmpty {
+                    }
+
+                    if let insertTargetAppName, !insertTargetAppName.isEmpty {
                         Text("Insert target: \(insertTargetAppName)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -313,12 +314,8 @@ struct ContentView: View {
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
 
-        if accessibilityAuthorized {
-            Task { @MainActor in
-                insertTargetAppName = transcriber.manualInsertTargetAppName()
-            }
-        } else {
-            insertTargetAppName = nil
+        Task { @MainActor in
+            insertTargetAppName = transcriber.manualInsertTargetAppName()
         }
 
         let hotkeyReady = accessibilityAuthorized && inputMonitoringAuthorized
