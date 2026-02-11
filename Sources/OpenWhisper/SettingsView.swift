@@ -852,16 +852,18 @@ struct SettingsView: View {
     }
 
     private func parseHotkeyDraft(_ raw: String) -> ParsedHotkeyDraft? {
-        let normalized = raw
+        // Preserve a literal single-space input so pressing Space in the key field
+        // is treated as the Space key instead of being trimmed to empty.
+        let loweredRaw = raw.lowercased()
+        if loweredRaw == " " {
+            return ParsedHotkeyDraft(key: "space", requiredModifiers: nil)
+        }
+
+        let normalized = loweredRaw
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
 
         guard !normalized.isEmpty else {
             return nil
-        }
-
-        if normalized == " " {
-            return ParsedHotkeyDraft(key: "space", requiredModifiers: nil)
         }
 
         if normalized.contains("+") {
