@@ -554,6 +554,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return lhs
         }
 
+        // Whisper chunks often repeat the same sentence with slightly different
+        // trailing punctuation. Prefer the richer variant instead of appending
+        // punctuation as a separate token ("hello world .").
+        if canonicalChunkForMerge(lowerLHS) == canonicalChunkForMerge(lowerRHS) {
+            return rhs.count >= lhs.count ? rhs : lhs
+        }
+
         let maxOverlap = min(lowerLHS.count, lowerRHS.count)
         var overlap = 0
 
@@ -577,6 +584,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !remainder.isEmpty else { return lhs }
         if lhs.hasSuffix(" ") { return lhs + remainder }
         return lhs + " " + remainder
+    }
+
+    private func canonicalChunkForMerge(_ text: String) -> String {
+        text.trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:"))
+    }
+
+    func mergeChunkForTesting(_ chunk: String, into existing: String) -> String {
+        mergeChunk(chunk, into: existing)
     }
 
     private func compactAudioBufferIfNeeded() {

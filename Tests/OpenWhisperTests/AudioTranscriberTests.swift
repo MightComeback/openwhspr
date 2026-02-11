@@ -175,4 +175,16 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertEqual(output, "bar test")
         }
     }
+
+    func testMergeChunkPrefersPunctuatedVariantInsteadOfAppendingDotToken() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world.", into: "hello world")
+        XCTAssertEqual(merged, "hello world.")
+    }
+
+    func testMergeChunkStillAppendsNewContentWithOverlap() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("world from swift", into: "hello world")
+        XCTAssertEqual(merged, "hello world from swift")
+    }
 }
