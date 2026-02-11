@@ -26,6 +26,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var recordingStartedAt: Date? = nil
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
+    private var insertionTargetApp: NSRunningApplication?
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -82,6 +83,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         frontmostAppName = app.localizedName ?? "Unknown App"
         frontmostBundleIdentifier = app.bundleIdentifier ?? ""
+    }
+
+    @MainActor
+    private func captureInsertionTargetApp() {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return }
+        guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+        insertionTargetApp = app
     }
 
     @MainActor
@@ -245,6 +253,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         lastError = nil
         inputLevel = 0
+        captureInsertionTargetApp()
         recordingOutputSettings = effectiveOutputSettingsForCurrentApp()
         pendingSessionFinalize = false
         pendingChunks.removeAll()
@@ -712,6 +721,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     private func pasteIntoFocusedApp() -> Bool {
+        if let targetApp = insertionTargetApp,
+           targetApp.isTerminated == false {
+            _ = targetApp.activate()
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
         guard let source = CGEventSource(stateID: .combinedSessionState),
               let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) else {
