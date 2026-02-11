@@ -188,6 +188,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
+                        .disabled(!accessibilityAuthorized)
 
                         Button("Clear") {
                             Task { @MainActor in
@@ -196,6 +197,12 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                    }
+
+                    if !accessibilityAuthorized {
+                        Text("Enable Accessibility permission to use Insert.")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
                     }
                 }
             }
