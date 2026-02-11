@@ -715,7 +715,7 @@ struct SettingsView: View {
         }
 
         switch normalizedKey {
-        case "space", "tab", "return", "delete":
+        case "space", "tab", "return", "delete", "forwarddelete", "escape", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
             return true
         default:
             return false
