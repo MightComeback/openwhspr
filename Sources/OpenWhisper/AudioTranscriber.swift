@@ -807,21 +807,26 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             insertionTargetApp = fallback
         }
 
-        let targetPID = insertionTargetApp?.isTerminated == false ? insertionTargetApp?.processIdentifier : nil
-
-        if let targetApp = insertionTargetApp,
-           targetApp.isTerminated == false {
-            _ = targetApp.activate()
-            _ = waitForFrontmostApp(pid: targetApp.processIdentifier, timeout: 0.2)
+        if insertionTargetApp?.isTerminated != false,
+           let frontmost = NSWorkspace.shared.frontmostApplication,
+           frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            insertionTargetApp = frontmost
+            lastKnownExternalApp = frontmost
         }
 
-        if let targetPID,
-           NSWorkspace.shared.frontmostApplication?.processIdentifier != targetPID {
-            if let targetApp = insertionTargetApp,
-               targetApp.isTerminated == false {
-                _ = targetApp.activate()
-                _ = waitForFrontmostApp(pid: targetPID, timeout: 0.35)
-            }
+        guard let targetApp = insertionTargetApp,
+              targetApp.isTerminated == false else {
+            return false
+        }
+
+        let targetPID = targetApp.processIdentifier
+
+        _ = targetApp.activate()
+        _ = waitForFrontmostApp(pid: targetPID, timeout: 0.2)
+
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier != targetPID {
+            _ = targetApp.activate()
+            _ = waitForFrontmostApp(pid: targetPID, timeout: 0.35)
         }
 
         guard postPasteKeystroke() else {
