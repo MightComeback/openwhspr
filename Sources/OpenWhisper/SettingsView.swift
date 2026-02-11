@@ -153,7 +153,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, left/right/up/down, f1-f24, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, left/right/up/down, f1-f24, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -909,6 +909,19 @@ struct SettingsView: View {
             let tokens = normalized
                 .split(whereSeparator: { $0.isWhitespace })
                 .map(String.init)
+                .filter { !$0.isEmpty }
+
+            if tokens.contains(where: { parseModifierToken($0) != nil }) {
+                return parseHotkeyTokens(tokens)
+            }
+        }
+
+        // Also accept hyphen-separated combos copied from docs/chat,
+        // e.g. "cmd-shift-space".
+        if normalized.contains("-") {
+            let tokens = normalized
+                .split(separator: "-")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
 
             if tokens.contains(where: { parseModifierToken($0) != nil }) {
