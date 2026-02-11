@@ -231,6 +231,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         appendHistoryEntry(normalized)
+        lastError = nil
         statusMessage = "Inserted into active app"
         if settings.clearAfterInsert {
             transcription = ""
@@ -505,6 +506,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if shouldAutoPaste {
             if pasteIntoFocusedApp() {
+                lastError = nil
                 statusMessage = "Inserted into active app"
                 if clearAfterInsert {
                     transcription = ""
@@ -516,6 +518,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
+        lastError = nil
         statusMessage = shouldAutoCopy ? "Copied to clipboard" : "Ready"
     }
 
@@ -747,12 +750,32 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     private func pasteIntoFocusedApp() -> Bool {
+        let targetPID = insertionTargetApp?.isTerminated == false ? insertionTargetApp?.processIdentifier : nil
+
         if let targetApp = insertionTargetApp,
            targetApp.isTerminated == false {
             _ = targetApp.activate()
             _ = waitForFrontmostApp(pid: targetApp.processIdentifier, timeout: 0.2)
         }
 
+        if let targetPID,
+           NSWorkspace.shared.frontmostApplication?.processIdentifier != targetPID {
+            if let targetApp = insertionTargetApp,
+               targetApp.isTerminated == false {
+                _ = targetApp.activate()
+                _ = waitForFrontmostApp(pid: targetPID, timeout: 0.35)
+            }
+        }
+
+        guard postPasteKeystroke() else {
+            return false
+        }
+
+        return true
+    }
+
+    @MainActor
+    private func postPasteKeystroke() -> Bool {
         guard let source = CGEventSource(stateID: .combinedSessionState),
               let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) else {
