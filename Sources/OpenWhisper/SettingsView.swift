@@ -77,6 +77,26 @@ struct SettingsView: View {
                         }
 
                         HStack(spacing: 10) {
+                            Button("Preset: Toggle") {
+                                applyHotkeyPreset(.toggle)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button("Preset: Push to talk") {
+                                applyHotkeyPreset(.hold)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Spacer()
+
+                            Text("One-click hotkey mode presets")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 10) {
                             Circle()
                                 .fill(hotkeyMonitor.isHotkeyActive ? Color.green : Color.orange)
                                 .frame(width: 8, height: 8)
@@ -651,7 +671,11 @@ struct SettingsView: View {
     }
 
     private func resetHotkeyDefaults() {
-        hotkeyModeRaw = HotkeyMode.toggle.rawValue
+        applyHotkeyPreset(.toggle)
+    }
+
+    private func applyHotkeyPreset(_ mode: HotkeyMode) {
+        hotkeyModeRaw = mode.rawValue
         hotkeyKey = "space"
         hotkeyKeyDraft = "space"
 
