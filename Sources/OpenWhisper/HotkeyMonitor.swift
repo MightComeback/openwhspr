@@ -109,7 +109,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestInputMonitoringIfNeeded()
 
         guard hasValidTriggerKey else {
-            setStatus(active: false, message: "Hotkey disabled: unsupported trigger key")
+            setStatus(active: false, message: unsupportedTriggerKeyMessage())
             isListening = false
             return
         }
@@ -188,7 +188,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             if isListening {
                 stop()
             }
-            setStatus(active: false, message: "Hotkey disabled: unsupported trigger key")
+            setStatus(active: false, message: unsupportedTriggerKeyMessage())
             return
         }
 
@@ -324,6 +324,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func holdActiveStatusMessage() -> String {
         "Hold active: recording while pressed (\(currentComboSummary()))"
+    }
+
+    private func unsupportedTriggerKeyMessage() -> String {
+        "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
     }
 
     private func requestAccessibilityIfNeeded() {
