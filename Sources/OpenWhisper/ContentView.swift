@@ -104,6 +104,18 @@ struct ContentView: View {
                                 .font(.caption2)
                         }
                     }
+
+                    if transcriber.processedChunkCount > 1,
+                       transcriber.averageChunkLatencySeconds > 0 {
+                        HStack {
+                            Text("Avg chunk latency")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(String(format: "%.2fs", transcriber.averageChunkLatencySeconds))
+                                .font(.caption2)
+                        }
+                    }
                 }
                 .padding(8)
                 .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))

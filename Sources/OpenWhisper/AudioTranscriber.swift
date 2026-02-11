@@ -23,6 +23,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var pendingChunkCount: Int = 0
     @Published var processedChunkCount: Int = 0
     @Published var lastChunkLatencySeconds: Double = 0
+    @Published var averageChunkLatencySeconds: Double = 0
     @Published var recordingStartedAt: Date? = nil
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
@@ -396,6 +397,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingChunkCount = 0
         processedChunkCount = 0
         lastChunkLatencySeconds = 0
+        averageChunkLatencySeconds = 0
         lastAcceptedChunkText = ""
         recordingStartedAt = Date()
 
@@ -532,8 +534,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             let text = await self.transcribe(samples: nextChunk)
             await MainActor.run {
                 self.consumeTranscribedText(text)
+                let latency = max(0, Date().timeIntervalSince(queuedAt))
                 self.processedChunkCount += 1
-                self.lastChunkLatencySeconds = max(0, Date().timeIntervalSince(queuedAt))
+                self.lastChunkLatencySeconds = latency
+                let processed = max(1, self.processedChunkCount)
+                self.averageChunkLatencySeconds += (latency - self.averageChunkLatencySeconds) / Double(processed)
                 self.isTranscribing = false
                 self.refreshStreamingStatusIfNeeded()
                 self.processTranscriptionQueueIfNeeded()
