@@ -140,10 +140,14 @@ struct SettingsView: View {
                             .disabled(!isHotkeyKeyDraftSupported || !isHotkeyDraftDifferentFromSaved)
 
                             Menu("Common keys") {
-                                ForEach(commonHotkeyKeyOptions, id: \.self) { key in
-                                    Button(HotkeyDisplay.displayKey(key)) {
-                                        hotkeyKeyDraft = key
-                                        applyHotkeyKeyDraft()
+                                ForEach(commonHotkeyKeySections, id: \.title) { section in
+                                    Section(section.title) {
+                                        ForEach(section.keys, id: \.self) { key in
+                                            Button(HotkeyDisplay.displayKey(key)) {
+                                                hotkeyKeyDraft = key
+                                                applyHotkeyKeyDraft()
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -720,11 +724,24 @@ struct SettingsView: View {
         return parts.joined(separator: "+")
     }
 
-    private var commonHotkeyKeyOptions: [String] {
+    private var commonHotkeyKeySections: [(title: String, keys: [String])] {
         [
-            "space", "tab", "return", "esc", "delete",
-            "left", "right", "up", "down",
-            "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"
+            (
+                title: "Basic",
+                keys: ["space", "tab", "return", "escape", "delete", "forwarddelete"]
+            ),
+            (
+                title: "Navigation",
+                keys: ["left", "right", "up", "down", "home", "end", "pageup", "pagedown"]
+            ),
+            (
+                title: "Function",
+                keys: ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"]
+            ),
+            (
+                title: "Punctuation",
+                keys: ["minus", "equals", "openbracket", "closebracket", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "backtick"]
+            )
         ]
     }
 
