@@ -106,8 +106,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestAccessibilityIfNeeded()
         requestInputMonitoringIfNeeded()
 
-        if !Self.hasAccessibilityPermission() || !Self.hasInputMonitoringPermission() {
-            setStatus(active: false, message: "Hotkey disabled: missing Accessibility and/or Input Monitoring permission")
+        let missingPermissions = Self.missingHotkeyPermissionNames()
+        if !missingPermissions.isEmpty {
+            let missingList = Self.humanList(missingPermissions)
+            setStatus(active: false, message: "Hotkey disabled: missing \(missingList) permission")
             isListening = false
             return
         }
@@ -311,6 +313,27 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     static func requestInputMonitoringPermissionPrompt() {
         _ = CGRequestListenEventAccess()
+    }
+
+    private static func missingHotkeyPermissionNames() -> [String] {
+        var missing: [String] = []
+        if !hasAccessibilityPermission() { missing.append("Accessibility") }
+        if !hasInputMonitoringPermission() { missing.append("Input Monitoring") }
+        return missing
+    }
+
+    private static func humanList(_ items: [String]) -> String {
+        switch items.count {
+        case 0:
+            return ""
+        case 1:
+            return items[0]
+        case 2:
+            return "\(items[0]) and \(items[1])"
+        default:
+            let head = items.dropLast().joined(separator: ", ")
+            return "\(head), and \(items[items.count - 1])"
+        }
     }
 
     private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?) {
