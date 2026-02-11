@@ -1035,17 +1035,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private func bringAppToFrontForInsertion(_ app: NSRunningApplication) -> Bool {
         let targetPID = app.processIdentifier
 
-        // Use stronger activation options for insertion flows so background or
-        // hidden apps are brought forward more reliably before Cmd+V.
-        let activationOptions: NSApplication.ActivationOptions = [.activateAllWindows]
+        // Escalate activation patience: stay fast when activation is instant,
+        // but give stubborn apps/spaces a longer settle window.
+        let activationPlan: [(options: NSApplication.ActivationOptions, timeout: TimeInterval)] = [
+            ([.activateAllWindows], 0.18),
+            ([.activateAllWindows], 0.35),
+            ([.activateAllWindows], 0.5)
+        ]
 
-        // Stage escalating waits so we stay fast when activation is instant,
-        // while still handling slower apps/spaces reliably.
-        let activationAttempts: [TimeInterval] = [0.18, 0.35]
-
-        for timeout in activationAttempts {
-            _ = app.activate(options: activationOptions)
-            if waitForFrontmostApp(pid: targetPID, timeout: timeout) {
+        for step in activationPlan {
+            _ = app.activate(options: step.options)
+            if waitForFrontmostApp(pid: targetPID, timeout: step.timeout) {
                 return true
             }
         }
@@ -1053,8 +1053,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Final recovery pass: if the app is hidden/minimized in another space,
         // unhide before activating to improve front-app insertion reliability.
         app.unhide()
-        _ = app.activate(options: activationOptions)
-        if waitForFrontmostApp(pid: targetPID, timeout: 0.55) {
+        _ = app.activate(options: [.activateAllWindows])
+        if waitForFrontmostApp(pid: targetPID, timeout: 0.65) {
             return true
         }
 
