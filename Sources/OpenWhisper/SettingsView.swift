@@ -133,6 +133,16 @@ struct SettingsView: View {
                             .controlSize(.small)
                             .disabled(!isHotkeyKeyDraftSupported)
 
+                            Menu("Common keys") {
+                                ForEach(commonHotkeyKeyOptions, id: \.self) { key in
+                                    Button(HotkeyDisplay.displayKey(key)) {
+                                        hotkeyKeyDraft = key
+                                        applyHotkeyKeyDraft()
+                                    }
+                                }
+                            }
+                            .controlSize(.small)
+
                             Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -667,6 +677,14 @@ struct SettingsView: View {
 
     private var isHotkeyKeyDraftSupported: Bool {
         HotkeyDisplay.isSupportedKey(hotkeyKeyDraft)
+    }
+
+    private var commonHotkeyKeyOptions: [String] {
+        [
+            "space", "tab", "return", "esc", "delete",
+            "left", "right", "up", "down",
+            "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"
+        ]
     }
 
     private var showsAutoPastePermissionWarning: Bool {
