@@ -96,7 +96,7 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, a, 1")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
