@@ -219,7 +219,7 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Click Retarget after focusing your destination app.")
+                        Text("If target is unknown, Insert will use your last active app. Click Retarget to refresh.")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -358,12 +358,12 @@ struct ContentView: View {
     }
 
     private var canInsertIntoTargetApp: Bool {
-        accessibilityAuthorized && insertTargetAppName != nil
+        accessibilityAuthorized
     }
 
     private func insertButtonTitle() -> String {
         guard let target = insertTargetAppName, !target.isEmpty else {
-            return "Insert"
+            return "Insert → Last App"
         }
         return "Insert → \(target)"
     }
