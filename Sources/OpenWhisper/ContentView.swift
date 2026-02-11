@@ -203,7 +203,11 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
-                                _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                if canInsertDirectly {
+                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                } else {
+                                    _ = transcriber.copyTranscriptionToClipboard()
+                                }
                                 insertTargetAppName = transcriber.manualInsertTargetAppName()
                             }
                         }
@@ -229,7 +233,7 @@ struct ContentView: View {
                     }
 
                     if !accessibilityAuthorized {
-                        Text("Enable Accessibility permission to use Insert.")
+                        Text("Insert needs Accessibility permission. Command+Return will copy to clipboard until enabled.")
                             .font(.caption2)
                             .foregroundStyle(.orange)
                     }
@@ -393,7 +397,15 @@ struct ContentView: View {
         HotkeyDisplay.summaryIncludingMode()
     }
 
+    private var canInsertDirectly: Bool {
+        accessibilityAuthorized
+    }
+
     private func insertButtonTitle() -> String {
+        guard canInsertDirectly else {
+            return "Copy"
+        }
+
         guard let target = insertTargetAppName, !target.isEmpty else {
             return "Insert → Last App"
         }
