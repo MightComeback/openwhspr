@@ -13,7 +13,7 @@ enum HotkeyDisplay {
         }
 
         switch normalized {
-        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "backspace", "forwarddelete", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn":
+        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "backspace", "forwarddelete", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave":
             return true
         case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20":
             return true
@@ -54,6 +54,17 @@ enum HotkeyDisplay {
         case "escape", "esc": return "Esc"
         case "delete", "backspace": return "Delete"
         case "forwarddelete": return "FwdDelete"
+        case "minus", "hyphen": return "-"
+        case "equals", "equal", "plus": return "="
+        case "openbracket", "leftbracket": return "["
+        case "closebracket", "rightbracket": return "]"
+        case "semicolon": return ";"
+        case "apostrophe", "quote": return "'"
+        case "comma": return ","
+        case "period", "dot": return "."
+        case "slash", "forwardslash": return "/"
+        case "backslash": return "\\"
+        case "backtick", "grave": return "`"
         case "left": return "←"
         case "right": return "→"
         case "up": return "↑"

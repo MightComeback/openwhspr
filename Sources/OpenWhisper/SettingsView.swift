@@ -149,7 +149,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
