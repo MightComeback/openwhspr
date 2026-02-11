@@ -1209,7 +1209,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             // Final escalation: keep trying with a longer settle window for apps
             // that are slow to surface across Spaces/Mission Control transitions.
             ([.activateAllWindows], 0.75),
-            ([.activateAllWindows], 0.95)
+            ([.activateAllWindows], 0.95),
+            // Last in-plan escalation: longer settle window for stubborn
+            // apps/spaces before we fall back to unhide recovery.
+            ([.activateAllWindows], 1.2)
         ]
 
         for step in activationPlan {
