@@ -181,6 +181,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .keyboardShortcut("c", modifiers: [.command])
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
@@ -190,6 +191,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
+                        .keyboardShortcut(.return, modifiers: [.command])
 
                         Button("Retarget") {
                             Task { @MainActor in
