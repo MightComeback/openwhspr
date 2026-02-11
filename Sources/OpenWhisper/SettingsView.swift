@@ -194,6 +194,20 @@ struct SettingsView: View {
                         Toggle("Clear transcript after insert", isOn: $clearAfterInsert)
                             .disabled(!autoPaste)
 
+                        if showsAutoPastePermissionWarning {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label("Auto-paste needs Accessibility permission.", systemImage: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+
+                                Button("Open Accessibility Privacy") {
+                                    openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+                                }
+                                .buttonStyle(.link)
+                                .font(.caption)
+                            }
+                        }
+
                         HStack {
                             Text("History items")
                                 .frame(width: 110, alignment: .leading)
@@ -653,6 +667,10 @@ struct SettingsView: View {
 
     private var isHotkeyKeyDraftSupported: Bool {
         HotkeyDisplay.isSupportedKey(hotkeyKeyDraft)
+    }
+
+    private var showsAutoPastePermissionWarning: Bool {
+        autoPaste && !accessibilityAuthorized
     }
 
     private func refreshPermissionState() {
