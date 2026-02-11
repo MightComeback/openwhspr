@@ -695,6 +695,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         if shouldAutoPaste {
+            // Re-capture right before auto-insert so the destination follows the
+            // app the user actually ended on (common in push-to-talk flows).
+            captureInsertionTargetApp()
             let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
 
             guard canAutoPasteIntoTargetApp() else {
