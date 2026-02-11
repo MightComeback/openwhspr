@@ -153,7 +153,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
