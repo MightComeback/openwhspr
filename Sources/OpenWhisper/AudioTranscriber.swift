@@ -1102,6 +1102,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return true
         }
 
+        // Last chance: some apps need an extra unhide/activate cycle after space changes.
+        app.unhide()
+        _ = app.activate(options: [.activateAllWindows])
+        if waitForFrontmostApp(pid: targetPID, timeout: 0.9) {
+            return true
+        }
+
         return NSWorkspace.shared.frontmostApplication?.processIdentifier == targetPID
     }
 
