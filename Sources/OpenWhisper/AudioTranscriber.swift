@@ -27,6 +27,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
+    private var lastKnownExternalApp: NSRunningApplication?
+    private var workspaceActivationObserver: NSObjectProtocol?
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -57,9 +59,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     private init() {
         Task { @MainActor in
+            self.registerWorkspaceActivationObserver()
             self.reloadProfiles()
             self.refreshFrontmostAppContext()
             self.reloadConfiguredModel()
+        }
+    }
+
+    deinit {
+        if let observer = workspaceActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
     }
 
@@ -75,6 +84,24 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    private func registerWorkspaceActivationObserver() {
+        if let existing = workspaceActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(existing)
+        }
+
+        workspaceActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+            self.lastKnownExternalApp = app
+        }
+    }
+
+    @MainActor
     func refreshFrontmostAppContext() {
         guard let app = NSWorkspace.shared.frontmostApplication else {
             frontmostAppName = "Unknown App"
@@ -84,13 +111,28 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         frontmostAppName = app.localizedName ?? "Unknown App"
         frontmostBundleIdentifier = app.bundleIdentifier ?? ""
+
+        if app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            lastKnownExternalApp = app
+        }
     }
 
     @MainActor
     private func captureInsertionTargetApp() {
-        guard let app = NSWorkspace.shared.frontmostApplication else { return }
-        guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
-        insertionTargetApp = app
+        if let app = NSWorkspace.shared.frontmostApplication,
+           app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            insertionTargetApp = app
+            lastKnownExternalApp = app
+            return
+        }
+
+        if let fallback = lastKnownExternalApp,
+           fallback.isTerminated == false {
+            insertionTargetApp = fallback
+            return
+        }
+
+        insertionTargetApp = nil
     }
 
     @MainActor
@@ -750,6 +792,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     private func pasteIntoFocusedApp() -> Bool {
+        if insertionTargetApp?.isTerminated != false,
+           let fallback = lastKnownExternalApp,
+           fallback.isTerminated == false {
+            insertionTargetApp = fallback
+        }
+
         let targetPID = insertionTargetApp?.isTerminated == false ? insertionTargetApp?.processIdentifier : nil
 
         if let targetApp = insertionTargetApp,
