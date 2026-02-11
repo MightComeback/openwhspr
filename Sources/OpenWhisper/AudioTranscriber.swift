@@ -683,7 +683,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let shouldAutoPaste = settings.autoPaste
         let clearAfterInsert = settings.clearAfterInsert
 
-        if shouldAutoCopy || shouldAutoPaste {
+        if shouldAutoCopy {
             _ = copyToPasteboard(finalText)
         }
 
@@ -691,7 +691,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
 
             guard canAutoPasteIntoTargetApp() else {
-                statusMessage = "Transcribed, copied to clipboard"
+                if shouldAutoCopy {
+                    statusMessage = "Transcribed, copied to clipboard"
+                } else {
+                    _ = copyToPasteboard(finalText)
+                    statusMessage = "Transcribed, copied to clipboard"
+                }
+
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Accessibility permission is required to auto-insert into \(resolvedTargetName)."
                 } else {
@@ -700,7 +706,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 return
             }
 
-            let pasteResult = pasteIntoFocusedApp()
+            let pasteResult: PasteAttemptResult
+            if shouldAutoCopy {
+                pasteResult = pasteIntoFocusedApp()
+            } else {
+                pasteResult = withTemporaryPasteboardString(finalText) {
+                    pasteIntoFocusedApp()
+                }
+            }
 
             if pasteResult == .success {
                 lastError = nil
