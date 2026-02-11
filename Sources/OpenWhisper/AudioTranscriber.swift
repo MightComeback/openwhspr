@@ -57,6 +57,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         var customCommandsRaw: String
     }
 
+    private enum PasteAttemptResult {
+        case success
+        case noTargetApp
+        case pasteKeystrokeFailed
+    }
+
     private init() {
         Task { @MainActor in
             self.registerWorkspaceActivationObserver()
@@ -268,15 +274,22 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         captureInsertionTargetApp()
         let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
 
-        let pasted = withTemporaryPasteboardString(normalized) {
+        let pasteResult = withTemporaryPasteboardString(normalized) {
             pasteIntoFocusedApp()
         }
 
-        guard pasted else {
-            if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
-            } else {
-                lastError = "Failed to paste into active app. Check Accessibility permissions."
+        guard pasteResult == .success else {
+            switch pasteResult {
+            case .noTargetApp:
+                lastError = "No target app available for insertion. Switch to the destination app and try again."
+            case .pasteKeystrokeFailed:
+                if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                    lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                } else {
+                    lastError = "Failed to paste into active app. Check Accessibility permissions."
+                }
+            case .success:
+                break
             }
             return false
         }
@@ -561,8 +574,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if shouldAutoPaste {
             let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+            let pasteResult = pasteIntoFocusedApp()
 
-            if pasteIntoFocusedApp() {
+            if pasteResult == .success {
                 lastError = nil
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     statusMessage = "Inserted into \(resolvedTargetName)"
@@ -573,11 +587,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                     transcription = ""
                 }
             } else {
-                statusMessage = "Transcribed, paste failed"
-                if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                    lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
-                } else {
-                    lastError = "Failed to paste into active app. Check Accessibility permissions."
+                switch pasteResult {
+                case .noTargetApp:
+                    statusMessage = "Transcribed, waiting for destination app"
+                    lastError = "No target app available for auto-insert. Bring the destination app to front before recording."
+                case .pasteKeystrokeFailed:
+                    statusMessage = "Transcribed, paste failed"
+                    if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                    } else {
+                        lastError = "Failed to paste into active app. Check Accessibility permissions."
+                    }
+                case .success:
+                    break
                 }
             }
             return
@@ -774,14 +796,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func withTemporaryPasteboardString(_ text: String, perform: () -> Bool) -> Bool {
-        guard !text.isEmpty else { return false }
+    private func withTemporaryPasteboardString(_ text: String, perform: () -> PasteAttemptResult) -> PasteAttemptResult {
+        guard !text.isEmpty else { return .pasteKeystrokeFailed }
 
         let pasteboard = NSPasteboard.general
         let originalItems = pasteboard.pasteboardItems
 
         pasteboard.clearContents()
-        guard pasteboard.setString(text, forType: .string) else { return false }
+        guard pasteboard.setString(text, forType: .string) else { return .pasteKeystrokeFailed }
 
         let result = perform()
 
@@ -837,9 +859,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     @discardableResult
-    private func pasteIntoFocusedApp() -> Bool {
+    private func pasteIntoFocusedApp() -> PasteAttemptResult {
         guard let targetApp = resolveInsertionTargetApp() else {
-            return false
+            return .noTargetApp
         }
 
         let targetPID = targetApp.processIdentifier
@@ -853,10 +875,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         guard postPasteKeystroke() else {
-            return false
+            return .pasteKeystrokeFailed
         }
 
-        return true
+        return .success
     }
 
     @MainActor
