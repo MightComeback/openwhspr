@@ -153,7 +153,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste a combo like cmd+shift+space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1, minus, slash. You can also paste combos like cmd+shift+space or cmd shift space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -864,15 +864,31 @@ struct SettingsView: View {
             return ParsedHotkeyDraft(key: "space", requiredModifiers: nil)
         }
 
-        if !normalized.contains("+") {
-            return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+        if normalized.contains("+") {
+            let tokens = normalized
+                .split(separator: "+")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            return parseHotkeyTokens(tokens)
         }
 
-        let tokens = normalized
-            .split(separator: "+")
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+        // UX nicety: allow pasting combos without plus separators,
+        // e.g. "cmd shift space" or "command option f6".
+        if normalized.contains(" ") {
+            let tokens = normalized
+                .split(whereSeparator: { $0.isWhitespace })
+                .map(String.init)
+                .filter { !$0.isEmpty }
 
+            if tokens.contains(where: { parseModifierToken($0) != nil }) {
+                return parseHotkeyTokens(tokens)
+            }
+        }
+
+        return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+    }
+
+    private func parseHotkeyTokens(_ tokens: [String]) -> ParsedHotkeyDraft? {
         guard !tokens.isEmpty else {
             return nil
         }
