@@ -455,6 +455,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case "f18": return CGKeyCode(kVK_F18)
         case "f19": return CGKeyCode(kVK_F19)
         case "f20": return CGKeyCode(kVK_F20)
+        // Carbon doesn't expose kVK_F21...kVK_F24 in all SDKs. Use stable
+        // virtual keycode values from Events.h for extended function keys.
+        case "f21": return CGKeyCode(0x6E)
+        case "f22": return CGKeyCode(0x6F)
+        case "f23": return CGKeyCode(0x70)
+        case "f24": return CGKeyCode(0x71)
         default: break
         }
 
