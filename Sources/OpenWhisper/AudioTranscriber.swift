@@ -716,7 +716,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         keyDown.flags = .maskCommand
         keyUp.flags = .maskCommand
+
+        // Some apps are flaky if the key down/up events are posted back-to-back.
+        // A tiny delay makes insertion noticeably more reliable without impacting UX.
         keyDown.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.01)
         keyUp.post(tap: .cghidEventTap)
         return true
     }
