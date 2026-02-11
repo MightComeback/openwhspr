@@ -11,4 +11,13 @@ final class OpenWhisperTests: XCTestCase {
         let allCases = ModelSource.allCases.map { $0.title }
         XCTAssertFalse(allCases.isEmpty)
     }
+
+    func testHotkeySupportedKeyValidation() throws {
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("space"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("F12"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("z"))
+        XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
+        XCTAssertFalse(HotkeyDisplay.isSupportedKey("capslock"))
+        XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
+    }
 }

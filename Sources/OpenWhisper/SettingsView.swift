@@ -95,10 +95,17 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
+                            .disabled(!isHotkeyKeyDraftSupported)
 
                             Text("Examples: space/spacebar, tab, return/enter, esc, delete/backspace, forwarddelete, left/right/up/down, f1-f20, a, 1")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        if !isHotkeyKeyDraftSupported {
+                            Text("Unsupported key. Use a single character, named key, arrow, or F1-F20.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
                         }
 
                         Divider()
@@ -608,6 +615,10 @@ struct SettingsView: View {
         )
     }
 
+    private var isHotkeyKeyDraftSupported: Bool {
+        HotkeyDisplay.isSupportedKey(hotkeyKeyDraft)
+    }
+
     private func refreshPermissionState() {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
@@ -617,6 +628,9 @@ struct SettingsView: View {
     private func applyHotkeyKeyDraft() {
         let sanitized = sanitizeKeyValue(hotkeyKeyDraft)
         hotkeyKeyDraft = sanitized
+        guard HotkeyDisplay.isSupportedKey(sanitized) else {
+            return
+        }
         hotkeyKey = sanitized
     }
 

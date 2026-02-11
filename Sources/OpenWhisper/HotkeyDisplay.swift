@@ -6,6 +6,22 @@ enum HotkeyDisplay {
         comboSummary(defaults: defaults)
     }
 
+    static func isSupportedKey(_ raw: String) -> Bool {
+        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.isEmpty {
+            return false
+        }
+
+        switch normalized {
+        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "backspace", "forwarddelete", "left", "right", "up", "down":
+            return true
+        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20":
+            return true
+        default:
+            return normalized.count == 1
+        }
+    }
+
     /// Returns a short, user-facing string including the configured hotkey mode.
     /// Example: `Toggle • ⌘+⇧+Space` or `Hold • ⌘+⇧+Space`.
     static func summaryIncludingMode(defaults: UserDefaults = .standard) -> String {
