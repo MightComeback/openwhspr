@@ -126,7 +126,7 @@ struct SettingsView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 120)
                                 .onChange(of: hotkeyKeyDraft) { _, newValue in
-                                    hotkeyKeyDraft = sanitizeKeyValue(newValue)
+                                    hotkeyKeyDraft = sanitizeHotkeyDraftValue(newValue)
                                 }
                                 .onSubmit {
                                     applyHotkeyKeyDraft()
@@ -682,7 +682,10 @@ struct SettingsView: View {
     }
 
     private var isHotkeyKeyDraftSupported: Bool {
-        HotkeyDisplay.isSupportedKey(hotkeyKeyDraft)
+        guard let key = normalizedHotkeyDraftForApply else {
+            return false
+        }
+        return HotkeyDisplay.isSupportedKey(key)
     }
 
     private var commonHotkeyKeyOptions: [String] {
@@ -726,7 +729,11 @@ struct SettingsView: View {
     }
 
     private func applyHotkeyKeyDraft() {
-        let sanitized = sanitizeKeyValue(hotkeyKeyDraft)
+        guard let normalized = normalizedHotkeyDraftForApply else {
+            return
+        }
+
+        let sanitized = sanitizeKeyValue(normalized)
         hotkeyKeyDraft = sanitized
         guard HotkeyDisplay.isSupportedKey(sanitized) else {
             return
@@ -754,6 +761,26 @@ struct SettingsView: View {
         forbiddenOption = true
         forbiddenControl = true
         forbiddenCapsLock = false
+    }
+
+    private var normalizedHotkeyDraftForApply: String? {
+        let normalized = hotkeyKeyDraft
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        guard !normalized.isEmpty else {
+            return nil
+        }
+
+        if normalized == " " {
+            return "space"
+        }
+
+        return normalized
+    }
+
+    private func sanitizeHotkeyDraftValue(_ raw: String) -> String {
+        raw.lowercased()
     }
 
     private func sanitizeKeyValue(_ raw: String) -> String {
