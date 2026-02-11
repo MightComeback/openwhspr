@@ -743,21 +743,39 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                     transcription = ""
                 }
             } else {
+                let copiedFallback = shouldAutoCopy || copyToPasteboard(finalText)
+
                 switch pasteResult {
                 case .noTargetApp:
-                    statusMessage = "Transcribed, waiting for destination app"
-                    lastError = "No target app available for auto-insert. Bring the destination app to front before recording."
+                    statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, waiting for destination app"
+                    if copiedFallback {
+                        lastError = "No target app available for auto-insert. Copied text to clipboard so you can paste manually."
+                    } else {
+                        lastError = "No target app available for auto-insert. Bring the destination app to front before recording."
+                    }
                 case .activationFailed:
-                    statusMessage = "Transcribed, destination app not focused"
+                    statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, destination app not focused"
                     if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                        lastError = "Couldn’t focus \(resolvedTargetName) in time. Bring it to front and use Insert."
+                        if copiedFallback {
+                            lastError = "Couldn’t focus \(resolvedTargetName) in time. Copied text to clipboard so you can paste manually."
+                        } else {
+                            lastError = "Couldn’t focus \(resolvedTargetName) in time. Bring it to front and use Insert."
+                        }
+                    } else if copiedFallback {
+                        lastError = "Couldn’t focus destination app in time. Copied text to clipboard so you can paste manually."
                     } else {
                         lastError = "Couldn’t focus destination app in time. Bring it to front and use Insert."
                     }
                 case .pasteKeystrokeFailed:
-                    statusMessage = "Transcribed, paste failed"
+                    statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, paste failed"
                     if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                        lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                        if copiedFallback {
+                            lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard so you can paste manually."
+                        } else {
+                            lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                        }
+                    } else if copiedFallback {
+                        lastError = "Failed to paste into active app. Copied text to clipboard so you can paste manually."
                     } else {
                         lastError = "Failed to paste into active app. Check Accessibility permissions."
                     }
