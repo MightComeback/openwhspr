@@ -836,11 +836,18 @@ struct SettingsView: View {
     }
 
     private var canRunInsertionTest: Bool {
-        insertionTestTargetAppName != nil
+        guard accessibilityAuthorized else {
+            return false
+        }
+        return insertionTestTargetAppName != nil
     }
 
     private var insertionTestDisabledReason: String {
-        "No destination app is available for insertion yet. Switch to your target app, then refresh."
+        if !accessibilityAuthorized {
+            return "Insertion testing needs Accessibility permission to send Cmd+V. Grant it, then try again."
+        }
+
+        return "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
 
     private var hasAnyRequiredModifier: Bool {
