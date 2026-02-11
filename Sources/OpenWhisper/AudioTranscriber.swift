@@ -266,21 +266,25 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Manual insert should target the app currently in front, not the app
         // that happened to be active when recording started.
         captureInsertionTargetApp()
-        let targetName = insertionTargetApp?.localizedName
+        let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
 
         let pasted = withTemporaryPasteboardString(normalized) {
             pasteIntoFocusedApp()
         }
 
         guard pasted else {
-            lastError = "Failed to paste into active app. Check Accessibility permissions."
+            if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+            } else {
+                lastError = "Failed to paste into active app. Check Accessibility permissions."
+            }
             return false
         }
 
         appendHistoryEntry(normalized)
         lastError = nil
-        if let targetName, !targetName.isEmpty {
-            statusMessage = "Inserted into \(targetName)"
+        if let resolvedTargetName, !resolvedTargetName.isEmpty {
+            statusMessage = "Inserted into \(resolvedTargetName)"
         } else {
             statusMessage = "Inserted into active app"
         }
@@ -556,15 +560,25 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         if shouldAutoPaste {
+            let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+
             if pasteIntoFocusedApp() {
                 lastError = nil
-                statusMessage = "Inserted into active app"
+                if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                    statusMessage = "Inserted into \(resolvedTargetName)"
+                } else {
+                    statusMessage = "Inserted into active app"
+                }
                 if clearAfterInsert {
                     transcription = ""
                 }
             } else {
                 statusMessage = "Transcribed, paste failed"
-                lastError = "Failed to paste into active app. Check Accessibility permissions."
+                if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                    lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                } else {
+                    lastError = "Failed to paste into active app. Check Accessibility permissions."
+                }
             }
             return
         }
@@ -799,8 +813,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    @discardableResult
-    private func pasteIntoFocusedApp() -> Bool {
+    private func resolveInsertionTargetApp() -> NSRunningApplication? {
         if insertionTargetApp?.isTerminated != false,
            let fallback = lastKnownExternalApp,
            fallback.isTerminated == false {
@@ -816,6 +829,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         guard let targetApp = insertionTargetApp,
               targetApp.isTerminated == false else {
+            return nil
+        }
+
+        return targetApp
+    }
+
+    @MainActor
+    @discardableResult
+    private func pasteIntoFocusedApp() -> Bool {
+        guard let targetApp = resolveInsertionTargetApp() else {
             return false
         }
 
