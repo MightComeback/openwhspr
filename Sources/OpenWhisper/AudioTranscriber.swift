@@ -527,13 +527,56 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if transcription.isEmpty {
             transcription = cleaned
-        } else if transcription.hasSuffix(" ") {
-            transcription += cleaned
-        } else {
-            transcription += " \(cleaned)"
+            statusMessage = "Transcribing…"
+            return
         }
 
+        let merged = mergeChunk(cleaned, into: transcription)
+        if merged.caseInsensitiveCompare(transcription) == .orderedSame {
+            return
+        }
+
+        transcription = merged
         statusMessage = "Transcribing…"
+    }
+
+    private func mergeChunk(_ chunk: String, into existing: String) -> String {
+        let lhs = existing.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rhs = chunk.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !lhs.isEmpty else { return rhs }
+        guard !rhs.isEmpty else { return lhs }
+
+        let lowerLHS = lhs.lowercased()
+        let lowerRHS = rhs.lowercased()
+
+        if lowerLHS.hasSuffix(lowerRHS) {
+            return lhs
+        }
+
+        let maxOverlap = min(lowerLHS.count, lowerRHS.count)
+        var overlap = 0
+
+        if maxOverlap > 0 {
+            for length in stride(from: maxOverlap, through: 1, by: -1) {
+                let lhsSuffixStart = lowerLHS.index(lowerLHS.endIndex, offsetBy: -length)
+                let lhsSuffix = lowerLHS[lhsSuffixStart...]
+                let rhsPrefixEnd = lowerRHS.index(lowerRHS.startIndex, offsetBy: length)
+                let rhsPrefix = lowerRHS[..<rhsPrefixEnd]
+
+                if lhsSuffix == rhsPrefix {
+                    overlap = length
+                    break
+                }
+            }
+        }
+
+        let appendStart = rhs.index(rhs.startIndex, offsetBy: overlap)
+        let remainder = String(rhs[appendStart...]).trimmingCharacters(in: .whitespaces)
+
+        guard !remainder.isEmpty else { return lhs }
+        if lhs.hasSuffix(" ") { return lhs + remainder }
+        return lhs + " " + remainder
     }
 
     private func compactAudioBufferIfNeeded() {
