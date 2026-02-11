@@ -263,6 +263,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !normalized.isEmpty else { return false }
         transcription = normalized
 
+        // Manual insert should target the app currently in front, not the app
+        // that happened to be active when recording started.
+        captureInsertionTargetApp()
+        let targetName = insertionTargetApp?.localizedName
+
         let pasted = withTemporaryPasteboardString(normalized) {
             pasteIntoFocusedApp()
         }
@@ -274,7 +279,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         appendHistoryEntry(normalized)
         lastError = nil
-        statusMessage = "Inserted into active app"
+        if let targetName, !targetName.isEmpty {
+            statusMessage = "Inserted into \(targetName)"
+        } else {
+            statusMessage = "Inserted into active app"
+        }
         if settings.clearAfterInsert {
             transcription = ""
         }
