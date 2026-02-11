@@ -276,6 +276,13 @@ struct SettingsView: View {
                                 }
                             }
                             .buttonStyle(.borderedProminent)
+                            .disabled(!canCaptureFrontmostProfile)
+                        }
+
+                        if !canCaptureFrontmostProfile {
+                            Text(captureProfileDisabledReason)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
                         }
 
                         if transcriber.appProfiles.isEmpty {
@@ -747,6 +754,28 @@ struct SettingsView: View {
 
     private var showsAutoPastePermissionWarning: Bool {
         autoPaste && !accessibilityAuthorized
+    }
+
+    private var canCaptureFrontmostProfile: Bool {
+        let bundleIdentifier = transcriber.frontmostBundleIdentifier
+        guard !bundleIdentifier.isEmpty else {
+            return false
+        }
+
+        if let ownBundleIdentifier = Bundle.main.bundleIdentifier,
+           bundleIdentifier == ownBundleIdentifier {
+            return false
+        }
+
+        return true
+    }
+
+    private var captureProfileDisabledReason: String {
+        if transcriber.frontmostBundleIdentifier.isEmpty {
+            return "Couldn’t detect a frontmost app with a bundle identifier. Switch to your target app, then refresh."
+        }
+
+        return "Frontmost app is OpenWhisper itself. Switch to the app where insertion should happen, then refresh."
     }
 
     private var hasAnyRequiredModifier: Bool {
