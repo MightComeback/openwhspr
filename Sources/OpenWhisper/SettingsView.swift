@@ -899,17 +899,21 @@ struct SettingsView: View {
         var keyToken: String?
 
         for token in tokens {
-            if let modifier = parseModifierToken(token) {
-                modifiers.insert(modifier)
-                continue
-            }
+            let expandedTokens = expandCompactModifierToken(token)
 
-            if keyToken != nil {
-                // Reject ambiguous combos like "cmd+shift+a+b" instead of
-                // silently accepting only the last key token.
-                return nil
+            for expandedToken in expandedTokens {
+                if let modifier = parseModifierToken(expandedToken) {
+                    modifiers.insert(modifier)
+                    continue
+                }
+
+                if keyToken != nil {
+                    // Reject ambiguous combos like "cmd+shift+a+b" instead of
+                    // silently accepting only the last key token.
+                    return nil
+                }
+                keyToken = expandedToken
             }
-            keyToken = token
         }
 
         guard let keyToken else {
@@ -917,6 +921,51 @@ struct SettingsView: View {
         }
 
         return ParsedHotkeyDraft(key: keyToken, requiredModifiers: modifiers)
+    }
+
+    private func expandCompactModifierToken(_ token: String) -> [String] {
+        let normalized = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else {
+            return []
+        }
+
+        var remainder = normalized
+        var expanded: [String] = []
+
+        let modifierPrefixes: [(symbol: String, token: String)] = [
+            ("⌘", "cmd"),
+            ("@", "cmd"),
+            ("⇧", "shift"),
+            ("$", "shift"),
+            ("⌥", "opt"),
+            ("~", "opt"),
+            ("⌃", "ctrl"),
+            ("^", "ctrl"),
+            ("⇪", "caps")
+        ]
+
+        while remainder.count > 1 {
+            var matchedPrefix = false
+
+            for prefix in modifierPrefixes {
+                if remainder.hasPrefix(prefix.symbol) {
+                    expanded.append(prefix.token)
+                    remainder.removeFirst(prefix.symbol.count)
+                    matchedPrefix = true
+                    break
+                }
+            }
+
+            if !matchedPrefix {
+                break
+            }
+        }
+
+        if !remainder.isEmpty {
+            expanded.append(remainder)
+        }
+
+        return expanded
     }
 
     private func parseModifierToken(_ token: String) -> ParsedModifier? {
