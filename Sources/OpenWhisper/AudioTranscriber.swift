@@ -40,6 +40,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var pendingChunkEnqueueTimes: [Date] = []
     private var isTranscribing: Bool = false
     private var pendingSessionFinalize: Bool = false
+    private var lastAcceptedChunkText: String = ""
 
     private let engine = AVAudioEngine()
     private var converter: AVAudioConverter?
@@ -331,6 +332,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingChunkCount = 0
         processedChunkCount = 0
         lastChunkLatencySeconds = 0
+        lastAcceptedChunkText = ""
         recordingStartedAt = Date()
 
         bufferQueue.async { [weak self] in
@@ -499,6 +501,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty else { return }
 
+        if cleaned.caseInsensitiveCompare(lastAcceptedChunkText) == .orderedSame {
+            return
+        }
+
+        lastAcceptedChunkText = cleaned
+
         if transcription.isEmpty {
             transcription = cleaned
         } else if transcription.hasSuffix(" ") {
@@ -556,6 +564,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let settings = recordingOutputSettings ?? effectiveOutputSettingsForCurrentApp()
         let finalText = normalizeOutputText(transcription, settings: settings)
         transcription = finalText
+        lastAcceptedChunkText = ""
 
         guard !finalText.isEmpty else {
             statusMessage = "Ready"
