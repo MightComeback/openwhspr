@@ -296,17 +296,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             case .noTargetApp:
                 lastError = "No target app available for insertion. Switch to the destination app and try again."
             case .activationFailed:
+                _ = copyToPasteboard(normalized)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                    lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Bring it to front and retry."
+                    lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Copied text to clipboard instead."
                 } else {
-                    lastError = "Couldn’t focus the destination app for insertion. Bring it to front and retry."
+                    lastError = "Couldn’t focus the destination app for insertion. Copied text to clipboard instead."
                 }
+                statusMessage = "Copied to clipboard"
             case .pasteKeystrokeFailed:
+                _ = copyToPasteboard(normalized)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
-                    lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
+                    lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard instead."
                 } else {
-                    lastError = "Failed to paste into active app. Check Accessibility permissions."
+                    lastError = "Failed to paste into active app. Copied text to clipboard instead."
                 }
+                statusMessage = "Copied to clipboard"
             case .success:
                 break
             }
