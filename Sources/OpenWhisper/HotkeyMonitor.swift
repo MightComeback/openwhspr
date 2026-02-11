@@ -17,6 +17,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
     private var hasValidTriggerKey: Bool = true
+    private var invalidTriggerKeyInput: String? = nil
     private var holdSessionArmed: Bool = false
     private var toggleKeyDownConsumed: Bool = false
     private var isListening: Bool = false
@@ -180,6 +181,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         self.keyCharacter = normalized.character
         self.keyCode = normalized.keyCode
         self.hasValidTriggerKey = normalized.isValid
+        self.invalidTriggerKeyInput = normalized.isValid ? nil : key
 
         holdSessionArmed = false
         toggleKeyDownConsumed = false
@@ -340,7 +342,13 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func unsupportedTriggerKeyMessage() -> String {
-        "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
+        if let invalidTriggerKeyInput {
+            let trimmed = invalidTriggerKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return "Hotkey disabled: unsupported trigger key ‘\(trimmed)’. Use one key like space, f6, or /."
+            }
+        }
+        return "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
     }
 
     private func requestAccessibilityIfNeeded() {

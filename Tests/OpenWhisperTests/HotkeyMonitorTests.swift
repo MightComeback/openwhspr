@@ -416,7 +416,7 @@ final class HotkeyMonitorTests: XCTestCase {
         monitor.updateConfig(required: [], forbidden: [], key: "invalid key name", mode: .toggle)
 
         XCTAssertFalse(monitor.isHotkeyActive)
-        XCTAssertEqual(monitor.statusMessage, "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /.")
+        XCTAssertEqual(monitor.statusMessage, "Hotkey disabled: unsupported trigger key ‘invalid key name’. Use one key like space, f6, or /.")
 
         let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
         XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
