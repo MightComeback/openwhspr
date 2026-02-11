@@ -998,6 +998,14 @@ struct SettingsView: View {
             }
         }
 
+        // Accept compact symbol-prefix combos without separators,
+        // e.g. "⌘⇧space", "@~f6", or "⌃⌥return".
+        let expandedCompactTokens = expandCompactModifierToken(normalized)
+        if expandedCompactTokens.count > 1,
+           expandedCompactTokens.contains(where: { parseModifierToken($0) != nil }) {
+            return parseHotkeyTokens(expandedCompactTokens)
+        }
+
         return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
     }
 
