@@ -1037,12 +1037,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         // Stage escalating waits so we stay fast when activation is instant,
         // while still handling slower apps/spaces reliably.
-        let activationAttempts: [TimeInterval] = [0.18, 0.35, 0.55]
+        let activationAttempts: [TimeInterval] = [0.18, 0.35]
+
         for timeout in activationAttempts {
             _ = app.activate()
             if waitForFrontmostApp(pid: targetPID, timeout: timeout) {
                 return true
             }
+        }
+
+        // Final recovery pass: if the app is hidden/minimized in another space,
+        // unhide before activating to improve front-app insertion reliability.
+        app.unhide()
+        _ = app.activate()
+        if waitForFrontmostApp(pid: targetPID, timeout: 0.55) {
+            return true
         }
 
         return NSWorkspace.shared.frontmostApplication?.processIdentifier == targetPID
