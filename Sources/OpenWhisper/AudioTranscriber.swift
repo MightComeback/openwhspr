@@ -32,7 +32,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var accessibilityPermissionChecker: () -> Bool = { AXIsProcessTrusted() }
 
     private let sampleRate: Double = 16_000
-    private let chunkSeconds: Double = 4
+    // 3s chunks feel notably snappier in the live loop while keeping transcript quality stable.
+    private let chunkSeconds: Double = 3
     private let bufferQueue = DispatchQueue(label: "OpenWhisper.AudioBuffer")
 
     private var audioBuffer: [Float] = []
