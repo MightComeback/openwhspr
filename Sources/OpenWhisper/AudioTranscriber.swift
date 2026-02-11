@@ -680,12 +680,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pasteboard.clearContents()
         guard pasteboard.setString(text, forType: .string) else { return false }
 
-        let changeCountAfterInsert = pasteboard.changeCount
         let result = perform()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             let pb = NSPasteboard.general
-            guard pb.changeCount == changeCountAfterInsert else { return }
+
+            // Restore the previous clipboard contents if we still appear to "own" the pasteboard.
+            // Some apps can mutate the pasteboard during paste (bumping changeCount) without the
+            // user actually copying something new. Checking the current string is a safer heuristic.
+            let currentString = pb.string(forType: .string)
+            guard currentString == text else { return }
 
             pb.clearContents()
             if let originalItems {
