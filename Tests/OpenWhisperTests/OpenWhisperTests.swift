@@ -24,4 +24,13 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
     }
+
+    func testHotkeyCanonicalAliases() throws {
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("spacebar"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("enter"), "return")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("esc"), "escape")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("backspace"), "delete")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("page-up"), "pageup")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("page down"), "pagedown")
+    }
 }

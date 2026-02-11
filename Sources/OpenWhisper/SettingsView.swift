@@ -715,7 +715,7 @@ struct SettingsView: View {
         }
 
         switch normalizedKey {
-        case "space", "tab", "return", "enter", "delete", "backspace":
+        case "space", "tab", "return", "delete":
             return true
         default:
             return false
@@ -790,7 +790,7 @@ struct SettingsView: View {
 
         if normalized.isEmpty { return "space" }
         if normalized == " " { return "space" }
-        return normalized
+        return HotkeyDisplay.canonicalKey(normalized)
     }
 
     private func hotkeySummary() -> String {

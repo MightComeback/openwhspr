@@ -7,7 +7,7 @@ enum HotkeyDisplay {
     }
 
     static func isSupportedKey(_ raw: String) -> Bool {
-        let normalized = normalizeKey(raw)
+        let normalized = canonicalKey(raw)
         if normalized.isEmpty {
             return false
         }
@@ -30,6 +30,29 @@ enum HotkeyDisplay {
         return "\(mode.title) • \(comboSummary(defaults: defaults))"
     }
 
+    /// Converts aliases like `enter`, `spacebar`, `page up`, and `page-up` into the
+    /// canonical key value stored in user defaults.
+    static func canonicalKey(_ raw: String) -> String {
+        let normalized = normalizeKey(raw)
+        switch normalized {
+        case "spacebar": return "space"
+        case "enter": return "return"
+        case "esc": return "escape"
+        case "backspace": return "delete"
+        case "hyphen": return "minus"
+        case "equal", "plus": return "equals"
+        case "leftbracket": return "openbracket"
+        case "rightbracket": return "closebracket"
+        case "quote": return "apostrophe"
+        case "dot": return "period"
+        case "forwardslash": return "slash"
+        case "grave": return "backtick"
+        case "pgup": return "pageup"
+        case "pgdn": return "pagedown"
+        default: return normalized
+        }
+    }
+
     private static func comboSummary(defaults: UserDefaults) -> String {
         var parts: [String] = []
 
@@ -39,14 +62,14 @@ enum HotkeyDisplay {
         if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredControl) { parts.append("⌃") }
         if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCapsLock) { parts.append("⇪") }
 
-        let key = defaults.string(forKey: AppDefaults.Keys.hotkeyKey) ?? "space"
+        let key = canonicalKey(defaults.string(forKey: AppDefaults.Keys.hotkeyKey) ?? "space")
         parts.append(displayKey(key))
 
         return parts.joined(separator: "+")
     }
 
     static func displayKey(_ raw: String) -> String {
-        let normalized = normalizeKey(raw)
+        let normalized = canonicalKey(raw)
         switch normalized {
         case "space", "spacebar": return "Space"
         case "tab": return "Tab"
