@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     @State private var accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
     @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+    @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
     @State private var showingOnboarding = false
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
@@ -286,6 +287,14 @@ struct ContentView: View {
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+
+        let hotkeyReady = accessibilityAuthorized && inputMonitoringAuthorized
+        if hotkeyReady && !lastHotkeyPermissionsReady {
+            hotkeyMonitor.start()
+        } else if !hotkeyReady && lastHotkeyPermissionsReady {
+            hotkeyMonitor.stop()
+        }
+        lastHotkeyPermissionsReady = hotkeyReady
     }
 
     private func statusTitle() -> String {
