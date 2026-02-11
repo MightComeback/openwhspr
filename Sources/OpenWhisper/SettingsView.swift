@@ -77,9 +77,17 @@ struct SettingsView: View {
                         }
 
                         if showsHighRiskHotkeyWarning {
-                            Label("This combo has no required modifiers, so it can trigger accidentally while typing.", systemImage: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
+                            HStack(alignment: .center, spacing: 10) {
+                                Label("This combo has no required modifiers, so it can trigger accidentally while typing.", systemImage: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+
+                                Button("Make safer") {
+                                    applySafeRequiredModifiers()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
                         }
 
                         HStack(spacing: 10) {
@@ -843,6 +851,10 @@ struct SettingsView: View {
         hotkeyKey = "space"
         hotkeyKeyDraft = "space"
 
+        applySafeRequiredModifiers()
+    }
+
+    private func applySafeRequiredModifiers() {
         requiredCommand = true
         requiredShift = true
         requiredOption = false
