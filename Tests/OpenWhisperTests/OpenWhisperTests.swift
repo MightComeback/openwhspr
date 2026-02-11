@@ -21,6 +21,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("page down"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("f24"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("page-up"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
@@ -43,5 +45,13 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("↓"), "down")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("page-up"), "pageup")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("page down"), "pagedown")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad0"), "keypad0")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad enter"), "keypadenter")
+    }
+
+    func testHotkeyDisplayForKeypadKeys() throws {
+        XCTAssertEqual(HotkeyDisplay.displayKey("keypad0"), "Num0")
+        XCTAssertEqual(HotkeyDisplay.displayKey("numpadplus"), "Num+")
+        XCTAssertEqual(HotkeyDisplay.displayKey("keypadenter"), "NumEnter")
     }
 }
