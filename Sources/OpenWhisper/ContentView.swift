@@ -192,6 +192,15 @@ struct ContentView: View {
                         .controlSize(.small)
                         .disabled(!canInsertIntoTargetApp)
 
+                        Button("Retarget") {
+                            Task { @MainActor in
+                                insertTargetAppName = transcriber.manualInsertTargetAppName()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(!accessibilityAuthorized)
+
                         Button("Clear") {
                             Task { @MainActor in
                                 transcriber.clearTranscription()
@@ -205,8 +214,12 @@ struct ContentView: View {
                         Text("Enable Accessibility permission to use Insert.")
                             .font(.caption2)
                             .foregroundStyle(.orange)
-                    } else if insertTargetAppName == nil {
-                        Text("Switch to the destination app once so OpenWhisper knows where to insert.")
+                    } else if let insertTargetAppName, !insertTargetAppName.isEmpty {
+                        Text("Insert target: \(insertTargetAppName)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Click Retarget after focusing your destination app.")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
