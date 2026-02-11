@@ -35,6 +35,10 @@ struct ContentView: View {
                     Text("Hotkey: \(hotkeySummary())")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Text(hotkeyMonitor.statusMessage)
+                        .font(.caption2)
+                        .foregroundColor(hotkeyMonitor.isHotkeyActive ? .secondary : .orange)
                 }
 
                 Spacer()

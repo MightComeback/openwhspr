@@ -6,6 +6,9 @@ import CoreFoundation
 final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     weak var transcriber: AudioTranscriber?
 
+    @Published private(set) var isHotkeyActive: Bool = false
+    @Published private(set) var statusMessage: String = "Not started"
+
     private let defaults: UserDefaults
     private let observesDefaults: Bool
     private var mode: HotkeyMode = .toggle
@@ -103,10 +106,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestAccessibilityIfNeeded()
         requestInputMonitoringIfNeeded()
 
-        guard eventTap == nil else {
-            isListening = true
+        if !Self.hasAccessibilityPermission() || !Self.hasInputMonitoringPermission() {
+            setStatus(active: false, message: "Hotkey disabled: missing Accessibility and/or Input Monitoring permission")
+            isListening = false
             return
         }
+
+        guard eventTap == nil else {
+            isListening = true
+            setStatus(active: true, message: "Hotkey active")
+            return
+        }
+
         let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue))
 
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -118,6 +129,8 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             callback: HotkeyMonitor.eventTapCallback,
             userInfo: refcon
         ) else {
+            isListening = false
+            setStatus(active: false, message: "Hotkey disabled: failed to create event tap")
             return
         }
 
@@ -128,6 +141,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         }
         CGEvent.tapEnable(tap: tap, enable: true)
+        setStatus(active: true, message: "Hotkey active")
     }
 
     func stop() {
@@ -142,6 +156,8 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         runLoopSource = nil
         eventTap = nil
         holdSessionArmed = false
+
+        setStatus(active: false, message: "Hotkey stopped")
     }
 
     func updateConfig(required: CGEventFlags, forbidden: CGEventFlags, key: String, mode: HotkeyMode) {
@@ -171,8 +187,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             Task { @MainActor [weak transcriber = monitor.transcriber] in
                 transcriber?.stopRecordingFromHotkey()
             }
+
+            monitor.setStatus(active: false, message: "Hotkey temporarily disabled by the system; attempting to re-enable")
+
             if let tap = monitor.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
+                monitor.setStatus(active: true, message: "Hotkey active")
             }
             return Unmanaged.passUnretained(event)
         }
@@ -245,6 +265,20 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     var holdSessionArmedForTesting: Bool {
         holdSessionArmed
+    }
+
+    private func setStatus(active: Bool, message: String) {
+        if Thread.isMainThread {
+            isHotkeyActive = active
+            statusMessage = message
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isHotkeyActive = active
+            self.statusMessage = message
+        }
     }
 
     private func requestAccessibilityIfNeeded() {
