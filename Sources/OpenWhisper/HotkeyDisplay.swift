@@ -35,10 +35,15 @@ enum HotkeyDisplay {
     static func canonicalKey(_ raw: String) -> String {
         let normalized = normalizeKey(raw)
         switch normalized {
-        case "spacebar": return "space"
-        case "enter": return "return"
-        case "esc": return "escape"
-        case "backspace": return "delete"
+        case "spacebar", "␣": return "space"
+        case "enter", "↩", "⏎": return "return"
+        case "esc", "⎋": return "escape"
+        case "backspace", "⌫": return "delete"
+        case "⌦": return "forwarddelete"
+        case "←": return "left"
+        case "→": return "right"
+        case "↑": return "up"
+        case "↓": return "down"
         case "hyphen": return "minus"
         case "equal", "plus": return "equals"
         case "leftbracket": return "openbracket"

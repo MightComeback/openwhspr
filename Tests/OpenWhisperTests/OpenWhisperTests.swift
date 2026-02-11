@@ -27,9 +27,19 @@ final class OpenWhisperTests: XCTestCase {
 
     func testHotkeyCanonicalAliases() throws {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("spacebar"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("␣"), "space")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("enter"), "return")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("↩"), "return")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⏎"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("esc"), "escape")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⎋"), "escape")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("backspace"), "delete")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⌫"), "delete")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⌦"), "forwarddelete")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("←"), "left")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("→"), "right")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("↑"), "up")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("↓"), "down")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("page-up"), "pageup")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("page down"), "pagedown")
     }
