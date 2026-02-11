@@ -25,7 +25,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
-        XCTAssertFalse(HotkeyDisplay.isSupportedKey("capslock"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
     }
 
@@ -40,6 +40,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("backspace"), "delete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌫"), "delete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌦"), "forwarddelete")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("caps"), "capslock")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("←"), "left")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("→"), "right")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("↑"), "up")
