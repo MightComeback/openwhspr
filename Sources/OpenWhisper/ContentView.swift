@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
     @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
     @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
+    @State private var insertTargetAppName: String? = nil
     @State private var showingOnboarding = false
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
@@ -181,14 +182,15 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
-                        Button("Insert") {
+                        Button(insertButtonTitle()) {
                             Task { @MainActor in
                                 _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                insertTargetAppName = transcriber.manualInsertTargetAppName()
                             }
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
-                        .disabled(!accessibilityAuthorized)
+                        .disabled(!canInsertIntoTargetApp)
 
                         Button("Clear") {
                             Task { @MainActor in
@@ -203,6 +205,10 @@ struct ContentView: View {
                         Text("Enable Accessibility permission to use Insert.")
                             .font(.caption2)
                             .foregroundStyle(.orange)
+                    } else if insertTargetAppName == nil {
+                        Text("Switch to the destination app once so OpenWhisper knows where to insert.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -295,6 +301,14 @@ struct ContentView: View {
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
 
+        if accessibilityAuthorized {
+            Task { @MainActor in
+                insertTargetAppName = transcriber.manualInsertTargetAppName()
+            }
+        } else {
+            insertTargetAppName = nil
+        }
+
         let hotkeyReady = accessibilityAuthorized && inputMonitoringAuthorized
         if hotkeyReady && !lastHotkeyPermissionsReady {
             hotkeyMonitor.start()
@@ -328,6 +342,17 @@ struct ContentView: View {
 
     private func hotkeySummary() -> String {
         HotkeyDisplay.summaryIncludingMode()
+    }
+
+    private var canInsertIntoTargetApp: Bool {
+        accessibilityAuthorized && insertTargetAppName != nil
+    }
+
+    private func insertButtonTitle() -> String {
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Insert"
+        }
+        return "Insert → \(target)"
     }
 
     @ViewBuilder

@@ -263,6 +263,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func manualInsertTargetAppName() -> String? {
+        captureInsertionTargetApp()
+        guard let app = resolveInsertionTargetApp(),
+              let name = app.localizedName,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        return name
+    }
+
+    @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
         let settings = effectiveOutputSettingsForCurrentApp()
