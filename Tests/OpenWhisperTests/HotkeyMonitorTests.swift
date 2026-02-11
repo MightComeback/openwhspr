@@ -278,4 +278,19 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(upEvent, type: .keyUp))
         XCTAssertTrue(monitor.statusMessage.hasPrefix("Hotkey active"))
     }
+
+    func testInvalidTriggerKeyDisablesHotkeyWithStatusMessage() {
+        let defaults = makeDefaults()
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.updateConfig(required: [], forbidden: [], key: "invalid key name", mode: .toggle)
+
+        XCTAssertFalse(monitor.isHotkeyActive)
+        XCTAssertEqual(monitor.statusMessage, "Hotkey disabled: unsupported trigger key")
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
+    }
 }

@@ -16,6 +16,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var forbiddenModifiers: CGEventFlags = [.maskAlternate, .maskControl]
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
+    private var hasValidTriggerKey: Bool = true
     private var holdSessionArmed: Bool = false
     private var toggleKeyDownConsumed: Bool = false
     private var isListening: Bool = false
@@ -107,6 +108,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestAccessibilityIfNeeded()
         requestInputMonitoringIfNeeded()
 
+        guard hasValidTriggerKey else {
+            setStatus(active: false, message: "Hotkey disabled: unsupported trigger key")
+            isListening = false
+            return
+        }
+
         let missingPermissions = Self.missingHotkeyPermissionNames()
         if !missingPermissions.isEmpty {
             let missingList = Self.humanList(missingPermissions)
@@ -172,9 +179,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let normalized = normalizeKeyString(key)
         self.keyCharacter = normalized.character
         self.keyCode = normalized.keyCode
+        self.hasValidTriggerKey = normalized.isValid
 
         holdSessionArmed = false
         toggleKeyDownConsumed = false
+
+        if !normalized.isValid {
+            if isListening {
+                stop()
+            }
+            setStatus(active: false, message: "Hotkey disabled: unsupported trigger key")
+            return
+        }
 
         // Only restart the event tap if we're actively listening.
         if isListening {
@@ -363,24 +379,24 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?) {
+    private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?, isValid: Bool) {
         let normalized = normalizeNamedKey(raw)
         if let keyCode = keyCodeForKeyString(normalized) {
-            return (normalized, keyCode)
+            return (normalized, keyCode, true)
         }
 
         switch normalized {
-        case "space", "spacebar": return (" ", nil)
-        case "tab": return ("\t", nil)
-        case "return", "enter": return ("\r", nil)
-        case "escape", "esc": return ("\u{1B}", nil)
+        case "space", "spacebar": return (" ", nil, true)
+        case "tab": return ("\t", nil, true)
+        case "return", "enter": return ("\r", nil, true)
+        case "escape", "esc": return ("\u{1B}", nil, true)
         default: break
         }
 
         if normalized.count == 1 {
-            return (normalized, nil)
+            return (normalized, nil, true)
         }
-        return (normalized, nil)
+        return (normalized, nil, false)
     }
 
     private func normalizeNamedKey(_ raw: String) -> String {
