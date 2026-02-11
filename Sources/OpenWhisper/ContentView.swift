@@ -21,8 +21,10 @@ struct ContentView: View {
     @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
     @State private var insertTargetAppName: String? = nil
     @State private var showingOnboarding = false
+    @State private var uiNow = Date()
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+    private let recordingMetricsTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     private let appActivationPublisher = NotificationCenter.default.publisher(
         for: NSWorkspace.didActivateApplicationNotification,
         object: NSWorkspace.shared
@@ -302,6 +304,7 @@ struct ContentView: View {
         .frame(width: 360)
         .onAppear {
             hotkeyMonitor.setTranscriber(transcriber)
+            uiNow = Date()
             refreshPermissionState()
             if !onboardingCompleted {
                 showingOnboarding = true
@@ -309,6 +312,12 @@ struct ContentView: View {
         }
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
+        }
+        .onReceive(recordingMetricsTimer) { now in
+            guard transcriber.isRecording || transcriber.pendingChunkCount > 0 else {
+                return
+            }
+            uiNow = now
         }
         .onReceive(appActivationPublisher) { notification in
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
@@ -358,7 +367,7 @@ struct ContentView: View {
 
     private func recordingDuration() -> TimeInterval {
         guard let startedAt = transcriber.recordingStartedAt else { return 0 }
-        return max(0, Date().timeIntervalSince(startedAt))
+        return max(0, uiNow.timeIntervalSince(startedAt))
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
