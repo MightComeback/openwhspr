@@ -261,8 +261,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             }
 
             toggleKeyDownConsumed = true
-            Task { @MainActor [weak transcriber] in
+            Task { @MainActor [weak self, weak transcriber] in
                 transcriber?.toggleRecording()
+                guard let self else { return }
+                self.setStatus(active: true, message: self.toggleStatusMessage(isRecording: transcriber?.isRecording ?? false))
             }
             return true
 
@@ -319,7 +321,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func standbyStatusMessage() -> String {
-        "Hotkey active (\(currentComboSummary()))"
+        if mode == .toggle {
+            return toggleStatusMessage(isRecording: transcriber?.isRecording ?? false)
+        }
+        return "Hotkey active (\(currentComboSummary()))"
+    }
+
+    private func toggleStatusMessage(isRecording: Bool) -> String {
+        let combo = currentComboSummary()
+        if isRecording {
+            return "Hotkey active (\(combo)) — press again to stop"
+        }
+        return "Hotkey active (\(combo)) — press to record"
     }
 
     private func holdActiveStatusMessage() -> String {
