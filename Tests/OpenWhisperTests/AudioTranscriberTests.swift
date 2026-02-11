@@ -188,6 +188,12 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world from swift")
     }
 
+    func testMergeChunkPrefersExpandedChunkWhenItExtendsPartialTail() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world", into: "hello wor")
+        XCTAssertEqual(merged, "hello world")
+    }
+
     func testSetAccessibilityPermissionCheckerForTestingOverridesChecker() async {
         let transcriber = AudioTranscriber.shared
         transcriber.setAccessibilityPermissionCheckerForTesting { false }

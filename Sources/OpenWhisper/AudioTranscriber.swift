@@ -570,6 +570,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return lhs
         }
 
+        // Live chunks also expand partial trailing words/sentences, e.g.
+        // "hello wor" -> "hello world". In that case replace with the richer
+        // chunk instead of appending a broken suffix ("hello wor ld").
+        if lowerRHS.hasPrefix(lowerLHS) {
+            return rhs
+        }
+
         // Whisper chunks often repeat the same sentence with slightly different
         // trailing punctuation. Prefer the richer variant instead of appending
         // punctuation as a separate token ("hello world .").
