@@ -337,12 +337,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?) {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if let keyCode = keyCodeForKeyString(trimmed) {
-            return (trimmed, keyCode)
+        let normalized = normalizeNamedKey(raw)
+        if let keyCode = keyCodeForKeyString(normalized) {
+            return (normalized, keyCode)
         }
 
-        switch trimmed {
+        switch normalized {
         case "space", "spacebar": return (" ", nil)
         case "tab": return ("\t", nil)
         case "return", "enter": return ("\r", nil)
@@ -350,10 +350,19 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         default: break
         }
 
-        if trimmed.count == 1 {
-            return (trimmed, nil)
+        if normalized.count == 1 {
+            return (normalized, nil)
         }
-        return (trimmed, nil)
+        return (normalized, nil)
+    }
+
+    private func normalizeNamedKey(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard trimmed.count > 1 else { return trimmed }
+
+        let separators = CharacterSet(charactersIn: " -_")
+        let collapsed = trimmed.components(separatedBy: separators).joined()
+        return collapsed.isEmpty ? trimmed : collapsed
     }
 
     private func keyCodeForKeyString(_ key: String) -> CGKeyCode? {

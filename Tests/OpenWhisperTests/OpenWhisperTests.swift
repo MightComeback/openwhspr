@@ -18,6 +18,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("z"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("home"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("pgdn"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("page down"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("page-up"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))

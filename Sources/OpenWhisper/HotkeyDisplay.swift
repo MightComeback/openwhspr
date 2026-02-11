@@ -7,7 +7,7 @@ enum HotkeyDisplay {
     }
 
     static func isSupportedKey(_ raw: String) -> Bool {
-        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalized = normalizeKey(raw)
         if normalized.isEmpty {
             return false
         }
@@ -46,7 +46,7 @@ enum HotkeyDisplay {
     }
 
     static func displayKey(_ raw: String) -> String {
-        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalized = normalizeKey(raw)
         switch normalized {
         case "space", "spacebar": return "Space"
         case "tab": return "Tab"
@@ -70,5 +70,16 @@ enum HotkeyDisplay {
             }
             return normalized.capitalized
         }
+    }
+
+    private static func normalizeKey(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard trimmed.count > 1 else {
+            return trimmed
+        }
+
+        let separators = CharacterSet(charactersIn: " -_")
+        let collapsed = trimmed.components(separatedBy: separators).joined()
+        return collapsed.isEmpty ? trimmed : collapsed
     }
 }
