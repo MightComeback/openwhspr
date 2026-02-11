@@ -23,6 +23,10 @@ struct ContentView: View {
     @State private var showingOnboarding = false
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
+    private let appActivationPublisher = NotificationCenter.default.publisher(
+        for: NSWorkspace.didActivateApplicationNotification,
+        object: NSWorkspace.shared
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -306,6 +310,15 @@ struct ContentView: View {
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
         }
+        .onReceive(appActivationPublisher) { notification in
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                return
+            }
+            guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+                return
+            }
+            refreshInsertTargetAppName()
+        }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
         }
@@ -316,9 +329,7 @@ struct ContentView: View {
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
 
-        Task { @MainActor in
-            insertTargetAppName = transcriber.manualInsertTargetAppName()
-        }
+        refreshInsertTargetAppName()
 
         let hotkeyReady = accessibilityAuthorized && inputMonitoringAuthorized
         if hotkeyReady && !lastHotkeyPermissionsReady {
@@ -327,6 +338,12 @@ struct ContentView: View {
             hotkeyMonitor.stop()
         }
         lastHotkeyPermissionsReady = hotkeyReady
+    }
+
+    private func refreshInsertTargetAppName() {
+        Task { @MainActor in
+            insertTargetAppName = transcriber.manualInsertTargetAppName()
+        }
     }
 
     private func statusTitle() -> String {
