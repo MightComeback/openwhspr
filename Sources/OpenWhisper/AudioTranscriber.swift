@@ -619,6 +619,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return rhs.count >= lhs.count ? rhs : lhs
         }
 
+        // When Whisper emits punctuation-only fragments (".", "!?", "…"),
+        // attach them directly to the existing text instead of introducing an
+        // extra space token ("hello world .").
+        if isStandalonePunctuationFragment(rhs) {
+            guard let lhsLast = lhs.last else { return lhs }
+            if Self.isSentencePunctuation(lhsLast) {
+                return lhs
+            }
+            if lhsLast.isWhitespace {
+                return lhs + rhs
+            }
+            return lhs + rhs
+        }
+
         let maxOverlap = min(lowerLHS.count, lowerRHS.count)
         var overlap = 0
 
@@ -653,6 +667,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     private func canonicalChunkForMerge(_ text: String) -> String {
         text.trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:"))
+    }
+
+    private func isStandalonePunctuationFragment(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return trimmed.unicodeScalars.allSatisfy { scalar in
+            CharacterSet.punctuationCharacters.contains(scalar) || CharacterSet.symbols.contains(scalar)
+        }
+    }
+
+    private static func isSentencePunctuation(_ character: Character) -> Bool {
+        ".,!?;:".contains(character)
     }
 
     func mergeChunkForTesting(_ chunk: String, into existing: String) -> String {
