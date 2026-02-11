@@ -741,21 +741,23 @@ struct SettingsView: View {
     }
 
     private var canonicalHotkeyDraftPreview: String? {
-        guard let normalized = normalizedHotkeyDraftForApply else {
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
             return nil
         }
 
-        let sanitized = sanitizeKeyValue(normalized)
+        let sanitized = sanitizeKeyValue(parsed.key)
         guard HotkeyDisplay.isSupportedKey(sanitized) else {
             return nil
         }
 
+        let previewModifiers = parsed.requiredModifiers ?? currentRequiredModifierSet
+
         var parts: [String] = []
-        if requiredCommand { parts.append("⌘") }
-        if requiredShift { parts.append("⇧") }
-        if requiredOption { parts.append("⌥") }
-        if requiredControl { parts.append("⌃") }
-        if requiredCapsLock { parts.append("⇪") }
+        if previewModifiers.contains(.command) { parts.append("⌘") }
+        if previewModifiers.contains(.shift) { parts.append("⇧") }
+        if previewModifiers.contains(.option) { parts.append("⌥") }
+        if previewModifiers.contains(.control) { parts.append("⌃") }
+        if previewModifiers.contains(.capsLock) { parts.append("⇪") }
         parts.append(HotkeyDisplay.displayKey(sanitized))
         return parts.joined(separator: "+")
     }
