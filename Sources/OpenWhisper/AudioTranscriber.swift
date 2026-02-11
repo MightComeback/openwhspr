@@ -623,14 +623,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func updateStreamingActivityStatusAfterChunkMerge() {
-        if isRecording {
-            statusMessage = "Transcribing…"
-            return
-        }
-
-        if pendingSessionFinalize {
-            statusMessage = "Finalizing…"
-        }
+        // Keep live-loop status consistent with queue depth instead of switching
+        // to a generic "Transcribing…" message after each accepted chunk.
+        // This preserves actionable feedback like "2 chunks in flight" while
+        // recording and "1 chunk left" during finalization.
+        refreshStreamingStatusIfNeeded()
     }
 
     private func mergeChunk(_ chunk: String, into existing: String) -> String {
