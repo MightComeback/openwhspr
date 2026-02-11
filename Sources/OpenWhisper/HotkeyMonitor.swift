@@ -14,6 +14,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
     private var holdSessionArmed: Bool = false
+    private var isListening: Bool = false
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -21,10 +22,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     init(defaults: UserDefaults = .standard, startListening: Bool = true, observeDefaults: Bool = true) {
         self.defaults = defaults
         self.observesDefaults = observeDefaults
+
+        // Load configuration without side effects.
         reloadConfig()
+
         if startListening {
             start()
         }
+
         if observeDefaults {
             NotificationCenter.default.addObserver(
                 self,
@@ -98,7 +103,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         requestAccessibilityIfNeeded()
         requestInputMonitoringIfNeeded()
 
-        guard eventTap == nil else { return }
+        guard eventTap == nil else {
+            isListening = true
+            return
+        }
         let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue))
 
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -114,6 +122,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         eventTap = tap
+        isListening = true
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         if let source = runLoopSource {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
@@ -122,6 +131,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     func stop() {
+        isListening = false
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             CFMachPortInvalidate(tap)
@@ -144,8 +154,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         self.keyCode = normalized.keyCode
 
         holdSessionArmed = false
-        stop()
-        start()
+
+        // Only restart the event tap if we're actively listening.
+        if isListening {
+            stop()
+            start()
+        }
     }
 
     private static let eventTapCallback: CGEventTapCallBack = { _, type, event, refcon in
