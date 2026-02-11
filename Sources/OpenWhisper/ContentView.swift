@@ -212,6 +212,7 @@ struct ContentView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
+                        .help(insertButtonHelpText())
                         .controlSize(.small)
                         .keyboardShortcut(.return, modifiers: [.command])
 
@@ -409,7 +410,28 @@ struct ContentView: View {
         guard let target = insertTargetAppName, !target.isEmpty else {
             return "Insert → Last App"
         }
-        return "Insert → \(target)"
+        return "Insert → \(abbreviatedAppName(target))"
+    }
+
+    private func insertButtonHelpText() -> String {
+        guard canInsertDirectly else {
+            return "Copy transcription to clipboard"
+        }
+
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Insert into the last active app"
+        }
+
+        return "Insert into \(target)"
+    }
+
+    private func abbreviatedAppName(_ name: String, maxCharacters: Int = 18) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > maxCharacters else { return trimmed }
+
+        let prefixLength = max(1, maxCharacters - 1)
+        let endIndex = trimmed.index(trimmed.startIndex, offsetBy: prefixLength)
+        return String(trimmed[..<endIndex]) + "…"
     }
 
     @ViewBuilder
