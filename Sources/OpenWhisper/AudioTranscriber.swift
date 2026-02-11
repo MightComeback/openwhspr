@@ -1157,11 +1157,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .activationFailed
         }
 
-        guard postPasteKeystroke() else {
-            return .pasteKeystrokeFailed
+        if postPasteKeystroke() {
+            return .success
         }
 
-        return .success
+        // Recovery pass: some apps occasionally drop the first synthetic paste
+        // after focus switches. Re-activate and retry once before failing.
+        guard bringAppToFrontForInsertion(targetApp) else {
+            return .activationFailed
+        }
+
+        if postPasteKeystroke() {
+            return .success
+        }
+
+        return .pasteKeystrokeFailed
     }
 
     @MainActor
