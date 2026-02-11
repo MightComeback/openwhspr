@@ -1087,6 +1087,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private func bringAppToFrontForInsertion(_ app: NSRunningApplication) -> Bool {
         let targetPID = app.processIdentifier
 
+        // Fast path: if destination is already frontmost, don't re-activate
+        // and risk visible focus flicker before posting ⌘V.
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier == targetPID {
+            return true
+        }
+
         // Escalate activation patience: stay fast when activation is instant,
         // but give stubborn apps/spaces a longer settle window.
         let activationPlan: [(options: NSApplication.ActivationOptions, timeout: TimeInterval)] = [
