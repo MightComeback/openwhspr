@@ -29,6 +29,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var insertionTargetApp: NSRunningApplication?
     private var lastKnownExternalApp: NSRunningApplication?
     private var workspaceActivationObserver: NSObjectProtocol?
+    private var accessibilityPermissionChecker: () -> Bool = { AXIsProcessTrusted() }
 
     private let sampleRate: Double = 16_000
     private let chunkSeconds: Double = 4
@@ -286,6 +287,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // that happened to be active when recording started.
         captureInsertionTargetApp()
         let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+
+        guard canAutoPasteIntoTargetApp() else {
+            _ = copyToPasteboard(normalized)
+            if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                lastError = "Accessibility permission is required to insert into \(resolvedTargetName). Copied text to clipboard instead."
+            } else {
+                lastError = "Accessibility permission is required to insert text automatically. Copied text to clipboard instead."
+            }
+            statusMessage = "Copied to clipboard"
+            return false
+        }
 
         let pasteResult = withTemporaryPasteboardString(normalized) {
             pasteIntoFocusedApp()
@@ -598,6 +610,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         mergeChunk(chunk, into: existing)
     }
 
+    func setAccessibilityPermissionCheckerForTesting(_ checker: @escaping () -> Bool) {
+        accessibilityPermissionChecker = checker
+    }
+
+    @MainActor
+    private func canAutoPasteIntoTargetApp() -> Bool {
+        accessibilityPermissionChecker()
+    }
+
+    @MainActor
+    func canAutoPasteIntoTargetAppForTesting() -> Bool {
+        canAutoPasteIntoTargetApp()
+    }
+
     private func compactAudioBufferIfNeeded() {
         guard audioBufferHead > 0 else { return }
 
@@ -663,6 +689,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if shouldAutoPaste {
             let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+
+            guard canAutoPasteIntoTargetApp() else {
+                statusMessage = "Transcribed, copied to clipboard"
+                if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                    lastError = "Accessibility permission is required to auto-insert into \(resolvedTargetName)."
+                } else {
+                    lastError = "Accessibility permission is required to auto-insert transcribed text."
+                }
+                return
+            }
+
             let pasteResult = pasteIntoFocusedApp()
 
             if pasteResult == .success {
