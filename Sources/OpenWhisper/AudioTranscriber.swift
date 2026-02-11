@@ -338,7 +338,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard pasteResult == .success else {
             switch pasteResult {
             case .noTargetApp:
-                lastError = "No target app available for insertion. Switch to the destination app and try again."
+                _ = copyToPasteboard(text)
+                lastError = "No target app available for insertion. Copied text to clipboard instead. Switch to the destination app and try again."
+                statusMessage = "Copied to clipboard"
             case .activationFailed:
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
