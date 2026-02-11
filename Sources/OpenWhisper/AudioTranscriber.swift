@@ -33,6 +33,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private let bufferQueue = DispatchQueue(label: "OpenWhisper.AudioBuffer")
 
     private var audioBuffer: [Float] = []
+    private var audioBufferHead: Int = 0
     private var pendingChunks: [[Float]] = []
     private var pendingChunkEnqueueTimes: [Date] = []
     private var isTranscribing: Bool = false
@@ -264,7 +265,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         recordingStartedAt = Date()
 
         bufferQueue.async { [weak self] in
-            self?.audioBuffer.removeAll()
+            self?.audioBuffer.removeAll(keepingCapacity: true)
+            self?.audioBufferHead = 0
         }
 
         let input = engine.inputNode
@@ -349,13 +351,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             self.audioBuffer.append(contentsOf: samples)
             let chunkSize = Int(self.sampleRate * self.chunkSeconds)
 
-            while self.audioBuffer.count >= chunkSize {
-                let chunk = Array(self.audioBuffer.prefix(chunkSize))
-                self.audioBuffer.removeFirst(chunkSize)
+            while (self.audioBuffer.count - self.audioBufferHead) >= chunkSize {
+                let start = self.audioBufferHead
+                let end = start + chunkSize
+                let chunk = Array(self.audioBuffer[start..<end])
+                self.audioBufferHead = end
                 Task { @MainActor in
                     self.queueTranscription(for: chunk)
                 }
             }
+
+            self.compactAudioBufferIfNeeded()
         }
     }
 
@@ -435,11 +441,31 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         statusMessage = "Transcribing…"
     }
 
+    private func compactAudioBufferIfNeeded() {
+        guard audioBufferHead > 0 else { return }
+
+        // Avoid O(n) removeFirst on every chunk. Instead consume with a head index
+        // and compact occasionally once enough prefix data has been consumed.
+        let shouldCompact = audioBufferHead >= 16_000 && audioBufferHead >= (audioBuffer.count / 2)
+        guard shouldCompact else { return }
+
+        audioBuffer.removeFirst(audioBufferHead)
+        audioBufferHead = 0
+    }
+
     private func flushRemainingAudio() {
         bufferQueue.async { [weak self] in
             guard let self else { return }
-            let remaining = self.audioBuffer
-            self.audioBuffer.removeAll()
+
+            let remaining: [Float]
+            if self.audioBufferHead < self.audioBuffer.count {
+                remaining = Array(self.audioBuffer[self.audioBufferHead..<self.audioBuffer.count])
+            } else {
+                remaining = []
+            }
+
+            self.audioBuffer.removeAll(keepingCapacity: true)
+            self.audioBufferHead = 0
 
             Task { @MainActor in
                 if !remaining.isEmpty {
