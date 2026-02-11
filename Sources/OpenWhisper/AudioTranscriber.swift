@@ -1210,6 +1210,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         keyDown.flags = .maskCommand
         keyUp.flags = .maskCommand
 
+        // After activation, some apps need a brief settle window before they
+        // consistently accept synthetic key events in the focused text field.
+        Thread.sleep(forTimeInterval: 0.03)
+
         // Some apps are flaky if the key down/up events are posted back-to-back.
         // A tiny delay makes insertion noticeably more reliable without impacting UX.
         keyDown.post(tap: .cghidEventTap)
