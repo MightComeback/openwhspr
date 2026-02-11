@@ -61,6 +61,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private enum PasteAttemptResult {
         case success
         case noTargetApp
+        case activationFailed
         case pasteKeystrokeFailed
     }
 
@@ -294,6 +295,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             switch pasteResult {
             case .noTargetApp:
                 lastError = "No target app available for insertion. Switch to the destination app and try again."
+            case .activationFailed:
+                if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                    lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Bring it to front and retry."
+                } else {
+                    lastError = "Couldn’t focus the destination app for insertion. Bring it to front and retry."
+                }
             case .pasteKeystrokeFailed:
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Failed to paste into \(resolvedTargetName). Check Accessibility permissions."
@@ -611,6 +618,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 case .noTargetApp:
                     statusMessage = "Transcribed, waiting for destination app"
                     lastError = "No target app available for auto-insert. Bring the destination app to front before recording."
+                case .activationFailed:
+                    statusMessage = "Transcribed, destination app not focused"
+                    if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        lastError = "Couldn’t focus \(resolvedTargetName) in time. Bring it to front and use Insert."
+                    } else {
+                        lastError = "Couldn’t focus destination app in time. Bring it to front and use Insert."
+                    }
                 case .pasteKeystrokeFailed:
                     statusMessage = "Transcribed, paste failed"
                     if let resolvedTargetName, !resolvedTargetName.isEmpty {
@@ -884,14 +898,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .noTargetApp
         }
 
-        let targetPID = targetApp.processIdentifier
-
-        _ = targetApp.activate()
-        _ = waitForFrontmostApp(pid: targetPID, timeout: 0.2)
-
-        if NSWorkspace.shared.frontmostApplication?.processIdentifier != targetPID {
-            _ = targetApp.activate()
-            _ = waitForFrontmostApp(pid: targetPID, timeout: 0.35)
+        guard bringAppToFrontForInsertion(targetApp) else {
+            return .activationFailed
         }
 
         guard postPasteKeystroke() else {
@@ -899,6 +907,23 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         return .success
+    }
+
+    @MainActor
+    private func bringAppToFrontForInsertion(_ app: NSRunningApplication) -> Bool {
+        let targetPID = app.processIdentifier
+
+        // Stage escalating waits so we stay fast when activation is instant,
+        // while still handling slower apps/spaces reliably.
+        let activationAttempts: [TimeInterval] = [0.18, 0.35, 0.55]
+        for timeout in activationAttempts {
+            _ = app.activate()
+            if waitForFrontmostApp(pid: targetPID, timeout: timeout) {
+                return true
+            }
+        }
+
+        return NSWorkspace.shared.frontmostApplication?.processIdentifier == targetPID
     }
 
     @MainActor
