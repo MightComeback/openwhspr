@@ -400,12 +400,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func normalizeNamedKey(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard trimmed.count > 1 else { return trimmed }
-
-        let separators = CharacterSet(charactersIn: " -_")
-        let collapsed = trimmed.components(separatedBy: separators).joined()
-        return collapsed.isEmpty ? trimmed : collapsed
+        HotkeyDisplay.canonicalKey(raw)
     }
 
     private func keyCodeForKeyString(_ key: String) -> CGKeyCode? {
