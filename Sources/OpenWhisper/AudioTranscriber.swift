@@ -1159,7 +1159,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let activationPlan: [(options: NSApplication.ActivationOptions, timeout: TimeInterval)] = [
             ([.activateAllWindows], 0.18),
             ([.activateAllWindows], 0.35),
-            ([.activateAllWindows], 0.5)
+            ([.activateAllWindows], 0.5),
+            // Final escalation: keep trying with a longer settle window for apps
+            // that are slow to surface across Spaces/Mission Control transitions.
+            ([.activateAllWindows], 0.75)
         ]
 
         for step in activationPlan {
