@@ -655,29 +655,8 @@ struct SettingsView: View {
         if requiredOption { parts.append("⌥") }
         if requiredControl { parts.append("⌃") }
         if requiredCapsLock { parts.append("⇪") }
-        parts.append(displayKey(hotkeyKey))
+        parts.append(HotkeyDisplay.displayKey(hotkeyKey))
         return parts.joined(separator: "+")
-    }
-
-    private func displayKey(_ raw: String) -> String {
-        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        switch normalized {
-        case "space", "spacebar": return "Space"
-        case "tab": return "Tab"
-        case "return", "enter": return "Return"
-        case "escape", "esc": return "Esc"
-        case "delete", "backspace": return "Delete"
-        case "forwarddelete": return "FwdDelete"
-        case "left": return "←"
-        case "right": return "→"
-        case "up": return "↑"
-        case "down": return "↓"
-        default:
-            if normalized.count == 1 {
-                return normalized.uppercased()
-            }
-            return normalized.capitalized
-        }
     }
 
     private func formatBytes(_ bytes: Int64) -> String {

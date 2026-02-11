@@ -311,34 +311,7 @@ struct ContentView: View {
     }
 
     private func hotkeySummary() -> String {
-        let defaults = UserDefaults.standard
-        var parts: [String] = []
-
-        if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCommand) { parts.append("⌘") }
-        if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredShift) { parts.append("⇧") }
-        if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredOption) { parts.append("⌥") }
-        if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredControl) { parts.append("⌃") }
-        if defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCapsLock) { parts.append("⇪") }
-
-        let key = defaults.string(forKey: AppDefaults.Keys.hotkeyKey) ?? "space"
-        let displayKey = displayKeyName(key)
-        parts.append(displayKey)
-        return parts.joined(separator: "+")
-    }
-
-    private func displayKeyName(_ raw: String) -> String {
-        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        switch normalized {
-        case "space": return "Space"
-        case "tab": return "Tab"
-        case "return", "enter": return "Return"
-        case "escape", "esc": return "Esc"
-        default:
-            if normalized.count == 1 {
-                return normalized.uppercased()
-            }
-            return normalized.capitalized
-        }
+        HotkeyDisplay.summary()
     }
 
     @ViewBuilder
