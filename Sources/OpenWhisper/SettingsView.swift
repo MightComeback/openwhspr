@@ -76,6 +76,22 @@ struct SettingsView: View {
                                 .font(.headline)
                         }
 
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(hotkeyMonitor.isHotkeyActive ? Color.green : Color.orange)
+                                .frame(width: 8, height: 8)
+                            Text(hotkeyMonitor.statusMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Restart monitor") {
+                                hotkeyMonitor.stop()
+                                hotkeyMonitor.start()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text("Trigger key")
                                 .frame(width: 110, alignment: .leading)
