@@ -76,6 +76,12 @@ struct SettingsView: View {
                                 .font(.headline)
                         }
 
+                        if showsHighRiskHotkeyWarning {
+                            Label("This combo has no required modifiers, so it can trigger accidentally while typing.", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
                         HStack(spacing: 10) {
                             Button("Preset: Toggle") {
                                 applyHotkeyPreset(.toggle)
@@ -689,6 +695,28 @@ struct SettingsView: View {
 
     private var showsAutoPastePermissionWarning: Bool {
         autoPaste && !accessibilityAuthorized
+    }
+
+    private var hasAnyRequiredModifier: Bool {
+        requiredCommand || requiredShift || requiredOption || requiredControl || requiredCapsLock
+    }
+
+    private var showsHighRiskHotkeyWarning: Bool {
+        guard !hasAnyRequiredModifier else {
+            return false
+        }
+
+        let normalizedKey = sanitizeKeyValue(hotkeyKey)
+        if normalizedKey.count == 1 {
+            return true
+        }
+
+        switch normalizedKey {
+        case "space", "tab", "return", "enter", "delete", "backspace":
+            return true
+        default:
+            return false
+        }
     }
 
     private func refreshPermissionState() {
