@@ -35,6 +35,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private let sampleRate: Double = 16_000
     // 3s chunks feel notably snappier in the live loop while keeping transcript quality stable.
     private let chunkSeconds: Double = 3
+    // Tiny trailing buffers at stop often decode as garbage filler words.
+    // Ignore sub-250ms tails to keep finalization cleaner.
+    private let minimumTailChunkSeconds: Double = 0.25
     private let bufferQueue = DispatchQueue(label: "OpenWhisper.AudioBuffer")
 
     private var audioBuffer: [Float] = []
@@ -760,7 +763,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             self.audioBufferHead = 0
 
             Task { @MainActor in
-                if !remaining.isEmpty {
+                let minimumTailSamples = Int(self.sampleRate * self.minimumTailChunkSeconds)
+                if remaining.count >= minimumTailSamples {
                     self.queueTranscription(for: remaining)
                 }
                 self.pendingSessionFinalize = true
