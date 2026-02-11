@@ -883,9 +883,15 @@ struct SettingsView: View {
         for token in tokens {
             if let modifier = parseModifierToken(token) {
                 modifiers.insert(modifier)
-            } else {
-                keyToken = token
+                continue
             }
+
+            if keyToken != nil {
+                // Reject ambiguous combos like "cmd+shift+a+b" instead of
+                // silently accepting only the last key token.
+                return nil
+            }
+            keyToken = token
         }
 
         guard let keyToken else {
