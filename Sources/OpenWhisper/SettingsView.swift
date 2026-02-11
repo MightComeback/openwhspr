@@ -1012,10 +1012,10 @@ struct SettingsView: View {
 
     private func parseModifierToken(_ token: String) -> ParsedModifier? {
         switch token {
-        case "cmd", "command", "⌘": return .command
-        case "shift", "⇧": return .shift
-        case "opt", "option", "alt", "⌥": return .option
-        case "ctrl", "control", "⌃": return .control
+        case "cmd", "command", "⌘", "@": return .command
+        case "shift", "⇧", "$": return .shift
+        case "opt", "option", "alt", "⌥", "~": return .option
+        case "ctrl", "control", "ctl", "⌃", "^": return .control
         case "caps", "capslock", "⇪": return .capsLock
         default: return nil
         }
