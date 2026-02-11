@@ -117,7 +117,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         guard eventTap == nil else {
             isListening = true
-            setStatus(active: true, message: "Hotkey active")
+            setStatus(active: true, message: "Hotkey active (\(currentComboSummary()))")
             return
         }
 
@@ -144,7 +144,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         }
         CGEvent.tapEnable(tap: tap, enable: true)
-        setStatus(active: true, message: "Hotkey active")
+        setStatus(active: true, message: "Hotkey active (\(currentComboSummary()))")
     }
 
     func stop() {
@@ -198,7 +198,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
             if let tap = monitor.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
-                monitor.setStatus(active: true, message: "Hotkey active")
+                monitor.setStatus(active: true, message: "Hotkey active (\(monitor.currentComboSummary()))")
             }
             return Unmanaged.passUnretained(event)
         }
@@ -294,6 +294,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             self.isHotkeyActive = active
             self.statusMessage = message
         }
+    }
+
+    private func currentComboSummary() -> String {
+        HotkeyDisplay.summaryIncludingMode(defaults: defaults)
     }
 
     private func requestAccessibilityIfNeeded() {
