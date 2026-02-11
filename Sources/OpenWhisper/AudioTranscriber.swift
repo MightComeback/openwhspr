@@ -598,6 +598,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return lhs
         }
 
+        // Whisper can also regress to an earlier phrase that already exists
+        // inside the accumulated transcript (not necessarily at the end).
+        // Avoid re-appending that duplicate fragment.
+        if lowerRHS.count >= 4, lowerLHS.contains(lowerRHS) {
+            return lhs
+        }
+
         // Live chunks also expand partial trailing words/sentences, e.g.
         // "hello wor" -> "hello world". In that case replace with the richer
         // chunk instead of appending a broken suffix ("hello wor ld").

@@ -188,6 +188,18 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world from swift")
     }
 
+    func testMergeChunkSkipsDuplicateFragmentFoundInsideTranscript() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("world from", into: "hello world from swift")
+        XCTAssertEqual(merged, "hello world from swift")
+    }
+
+    func testMergeChunkStillAppendsShortNonDuplicateChunks() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("new", into: "hello world")
+        XCTAssertEqual(merged, "hello world new")
+    }
+
     func testMergeChunkIgnoresTinyOverlapThatWouldCorruptWords() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("atlas", into: "cat")
