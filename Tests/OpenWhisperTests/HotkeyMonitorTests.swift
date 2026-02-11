@@ -243,4 +243,23 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
         XCTAssertFalse(monitor.holdSessionArmedForTesting)
     }
+
+    func testHoldModeUpdatesStatusMessageWhilePressed() {
+        let defaults = makeDefaults()
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.hold.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let downEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(downEvent, type: .keyDown))
+        XCTAssertTrue(monitor.statusMessage.hasPrefix("Hold active:"))
+
+        let upEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
+        XCTAssertTrue(monitor.handleForTesting(upEvent, type: .keyUp))
+        XCTAssertTrue(monitor.statusMessage.hasPrefix("Hotkey active"))
+    }
 }

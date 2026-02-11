@@ -117,7 +117,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         guard eventTap == nil else {
             isListening = true
-            setStatus(active: true, message: "Hotkey active (\(currentComboSummary()))")
+            setStatus(active: true, message: standbyStatusMessage())
             return
         }
 
@@ -144,7 +144,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         }
         CGEvent.tapEnable(tap: tap, enable: true)
-        setStatus(active: true, message: "Hotkey active (\(currentComboSummary()))")
+        setStatus(active: true, message: standbyStatusMessage())
     }
 
     func stop() {
@@ -198,7 +198,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
             if let tap = monitor.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
-                monitor.setStatus(active: true, message: "Hotkey active (\(monitor.currentComboSummary()))")
+                monitor.setStatus(active: true, message: monitor.standbyStatusMessage())
             }
             return Unmanaged.passUnretained(event)
         }
@@ -255,6 +255,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 guard comboMatches else { return false }
                 if !holdSessionArmed {
                     holdSessionArmed = true
+                    setStatus(active: true, message: holdActiveStatusMessage())
                     Task { @MainActor [weak transcriber] in
                         transcriber?.startRecordingFromHotkey()
                     }
@@ -264,6 +265,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
             if holdSessionArmed {
                 holdSessionArmed = false
+                setStatus(active: true, message: standbyStatusMessage())
                 Task { @MainActor [weak transcriber] in
                     transcriber?.stopRecordingFromHotkey()
                 }
@@ -298,6 +300,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func currentComboSummary() -> String {
         HotkeyDisplay.summaryIncludingMode(defaults: defaults)
+    }
+
+    private func standbyStatusMessage() -> String {
+        "Hotkey active (\(currentComboSummary()))"
+    }
+
+    private func holdActiveStatusMessage() -> String {
+        "Hold active: recording while pressed (\(currentComboSummary()))"
     }
 
     private func requestAccessibilityIfNeeded() {
