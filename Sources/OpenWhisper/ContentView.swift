@@ -225,7 +225,7 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
-                        Button("Probe Insert") {
+                        Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
                             Task { @MainActor in
                                 _ = transcriber.runInsertionProbe()
                                 insertTargetAppName = transcriber.manualInsertTargetAppName()
@@ -233,7 +233,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
+                        .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0 || transcriber.isRunningInsertionProbe)
 
                         Button("Clear") {
                             Task { @MainActor in
@@ -258,6 +258,12 @@ struct ContentView: View {
                         Text("If target is unknown, Insert will use your last active app. Click Retarget to refresh.")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                    }
+
+                    if let probeDate = transcriber.lastInsertionProbeDate {
+                        Text("\(transcriber.lastInsertionProbeSucceeded == true ? "✅" : "⚠️") \(transcriber.lastInsertionProbeMessage) · \(probeDate.formatted(date: .omitted, time: .shortened))")
+                            .font(.caption2)
+                            .foregroundStyle(transcriber.lastInsertionProbeSucceeded == true ? Color.secondary : Color.orange)
                     }
                 }
             }
