@@ -410,10 +410,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             _ = copyToPasteboard(text)
             if let resolvedTargetName, !resolvedTargetName.isEmpty {
                 lastError = "Accessibility permission is required to insert into \(resolvedTargetName). Copied text to clipboard instead."
+                statusMessage = "Copied to clipboard for \(resolvedTargetName)"
             } else {
                 lastError = "Accessibility permission is required to insert text automatically. Copied text to clipboard instead."
+                statusMessage = "Copied to clipboard"
             }
-            statusMessage = "Copied to clipboard"
             return ManualInsertResult(outcome: .copiedFallbackAccessibilityMissing, targetName: resolvedTargetName)
         }
 
@@ -944,10 +945,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
             guard canAutoPasteIntoTargetApp() else {
                 if shouldAutoCopy {
-                    statusMessage = "Transcribed, copied to clipboard"
+                    if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        statusMessage = "Transcribed, copied for \(resolvedTargetName)"
+                    } else {
+                        statusMessage = "Transcribed, copied to clipboard"
+                    }
                 } else {
                     _ = copyToPasteboard(finalText)
-                    statusMessage = "Transcribed, copied to clipboard"
+                    if let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        statusMessage = "Transcribed, copied for \(resolvedTargetName)"
+                    } else {
+                        statusMessage = "Transcribed, copied to clipboard"
+                    }
                 }
 
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
