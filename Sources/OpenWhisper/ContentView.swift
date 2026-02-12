@@ -119,6 +119,22 @@ struct ContentView: View {
                         }
                     }
 
+                    if let progress = finalizationProgress {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("Finalize progress")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text("\(Int((progress * 100).rounded()))%")
+                                    .font(.caption2)
+                            }
+
+                            ProgressView(value: progress)
+                                .progressViewStyle(.linear)
+                        }
+                    }
+
                     if let remaining = estimatedFinalizationSeconds {
                         HStack {
                             Text("Estimated finalize")
@@ -493,6 +509,19 @@ struct ContentView: View {
         let minutes = rounded / 60
         let remainder = rounded % 60
         return "\(minutes)m \(remainder)s"
+    }
+
+    private var finalizationProgress: Double? {
+        let pending = transcriber.pendingChunkCount
+        let processed = transcriber.processedChunkCount
+        let total = pending + processed
+
+        guard pending > 0, total > 0 else {
+            return nil
+        }
+
+        let rawProgress = Double(processed) / Double(total)
+        return min(max(rawProgress, 0), 1)
     }
 
     private var estimatedFinalizationSeconds: TimeInterval? {
