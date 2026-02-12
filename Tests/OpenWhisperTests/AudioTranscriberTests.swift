@@ -328,4 +328,53 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording…")
         }
     }
+
+    func testRunInsertionProbeBlockedWhileRecording() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = true
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Stop recording before running an insertion test.")
+            XCTAssertEqual(transcriber.lastError, "Stop recording before running an insertion test.")
+        }
+    }
+
+    func testRunInsertionProbeBlockedWhileFinalizingPendingChunks() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 2
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
+        }
+    }
 }

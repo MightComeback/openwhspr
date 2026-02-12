@@ -373,6 +373,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !probe.isEmpty else { return false }
         guard !isRunningInsertionProbe else { return false }
 
+        guard !isRecording else {
+            let message = "Stop recording before running an insertion test."
+            statusMessage = message
+            lastError = message
+            return false
+        }
+
+        guard pendingChunkCount == 0 else {
+            let message = "Wait for live transcription to finish finalizing before running an insertion test."
+            statusMessage = message
+            lastError = message
+            return false
+        }
+
         let previousClipboardItems = NSPasteboard.general.pasteboardItems
         let previousClipboardString = NSPasteboard.general.string(forType: .string)
 
