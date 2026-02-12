@@ -289,6 +289,12 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
+                        if let nonConfigurableModifierNotice = hotkeyDraftNonConfigurableModifierNotice {
+                            Text(nonConfigurableModifierNotice)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
                         Divider()
 
                         Text("Required modifiers")
@@ -1015,6 +1021,15 @@ struct SettingsView: View {
         return active.joined(separator: " + ")
     }
 
+    private var hotkeyDraftNonConfigurableModifierNotice: String? {
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft),
+              parsed.containsNonConfigurableModifiers else {
+            return nil
+        }
+
+        return "Fn/Globe modifiers aren't configurable yet. We'll apply the trigger key and keep your existing required modifiers."
+    }
+
     private var commonHotkeyKeySections: [(title: String, keys: [String])] {
         [
             (
@@ -1544,6 +1559,7 @@ struct SettingsView: View {
     private struct ParsedHotkeyDraft {
         var key: String
         var requiredModifiers: Set<ParsedModifier>?
+        var containsNonConfigurableModifiers: Bool
     }
 
     private enum ParsedModifier: Hashable {
@@ -1559,7 +1575,7 @@ struct SettingsView: View {
         // is treated as the Space key instead of being trimmed to empty.
         let loweredRaw = raw.lowercased()
         if loweredRaw == " " {
-            return ParsedHotkeyDraft(key: "space", requiredModifiers: nil)
+            return ParsedHotkeyDraft(key: "space", requiredModifiers: nil, containsNonConfigurableModifiers: false)
         }
 
         let normalized = loweredRaw
@@ -1572,7 +1588,7 @@ struct SettingsView: View {
         let normalizedAsWholeKey = HotkeyDisplay.canonicalKey(normalized)
         if !looksLikeModifierComboInput(normalized),
            HotkeyDisplay.isSupportedKey(normalizedAsWholeKey) {
-            return ParsedHotkeyDraft(key: normalizedAsWholeKey, requiredModifiers: nil)
+            return ParsedHotkeyDraft(key: normalizedAsWholeKey, requiredModifiers: nil, containsNonConfigurableModifiers: false)
         }
 
         if normalized.contains("+") || normalized.contains(",") {
@@ -1645,7 +1661,7 @@ struct SettingsView: View {
             return parseHotkeyTokens(expandedCompactTokens)
         }
 
-        return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+        return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil, containsNonConfigurableModifiers: false)
     }
 
     private func looksLikeModifierComboInput(_ raw: String) -> Bool {
@@ -1733,7 +1749,11 @@ struct SettingsView: View {
         let parsedRequiredModifiers: Set<ParsedModifier>? =
             (sawConfigurableModifier || !sawNonConfigurableModifier) ? modifiers : nil
 
-        return ParsedHotkeyDraft(key: keyToken, requiredModifiers: parsedRequiredModifiers)
+        return ParsedHotkeyDraft(
+            key: keyToken,
+            requiredModifiers: parsedRequiredModifiers,
+            containsNonConfigurableModifiers: sawNonConfigurableModifier
+        )
     }
 
     private func expandCompactModifierToken(_ token: String) -> [String] {
