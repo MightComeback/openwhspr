@@ -23,6 +23,7 @@ struct ContentView: View {
     @State private var insertTargetDisplay: String? = nil
     @State private var showingOnboarding = false
     @State private var uiNow = Date()
+    @State private var finalizationInitialPendingChunks: Int? = nil
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
     private let recordingMetricsTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
@@ -429,6 +430,7 @@ struct ContentView: View {
             hotkeyMonitor.setTranscriber(transcriber)
             uiNow = Date()
             refreshPermissionState()
+            refreshFinalizationProgressBaseline(pendingChunks: transcriber.pendingChunkCount)
             if !onboardingCompleted {
                 showingOnboarding = true
             }
@@ -453,9 +455,11 @@ struct ContentView: View {
         }
         .onReceive(transcriber.$isRecording.removeDuplicates()) { _ in
             hotkeyMonitor.refreshStatusFromRuntimeState()
+            refreshFinalizationProgressBaseline(pendingChunks: transcriber.pendingChunkCount)
         }
-        .onReceive(transcriber.$pendingChunkCount.removeDuplicates()) { _ in
+        .onReceive(transcriber.$pendingChunkCount.removeDuplicates()) { pending in
             hotkeyMonitor.refreshStatusFromRuntimeState()
+            refreshFinalizationProgressBaseline(pendingChunks: pending)
         }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
@@ -529,16 +533,36 @@ struct ContentView: View {
         return "\(minutes)m \(remainder)s"
     }
 
+    private func refreshFinalizationProgressBaseline(pendingChunks: Int) {
+        if transcriber.isRecording {
+            finalizationInitialPendingChunks = nil
+            return
+        }
+
+        guard pendingChunks > 0 else {
+            finalizationInitialPendingChunks = nil
+            return
+        }
+
+        if let currentBaseline = finalizationInitialPendingChunks {
+            finalizationInitialPendingChunks = max(currentBaseline, pendingChunks)
+        } else {
+            finalizationInitialPendingChunks = pendingChunks
+        }
+    }
+
     private var finalizationProgress: Double? {
         let pending = transcriber.pendingChunkCount
-        let processed = transcriber.processedChunkCount
-        let total = pending + processed
 
-        guard pending > 0, total > 0 else {
+        guard !transcriber.isRecording,
+              pending > 0,
+              let initialPending = finalizationInitialPendingChunks,
+              initialPending > 0 else {
             return nil
         }
 
-        let rawProgress = Double(processed) / Double(total)
+        let completed = max(0, initialPending - pending)
+        let rawProgress = Double(completed) / Double(initialPending)
         return min(max(rawProgress, 0), 1)
     }
 
