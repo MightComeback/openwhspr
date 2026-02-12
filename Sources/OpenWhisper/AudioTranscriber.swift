@@ -55,6 +55,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private let engine = AVAudioEngine()
     private var converter: AVAudioConverter?
     private var whisper: Whisper?
+    private var statusRefreshTimer: DispatchSourceTimer?
 
     static let shared = AudioTranscriber()
 
@@ -88,6 +89,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if let observer = workspaceActivationObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
+
+        statusRefreshTimer?.setEventHandler {}
+        statusRefreshTimer?.cancel()
+        statusRefreshTimer = nil
     }
 
     @MainActor
@@ -566,6 +571,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         do {
             try engine.start()
             isRecording = true
+            startStatusRefreshTimerIfNeeded()
             statusMessage = "Listening…"
         } catch {
             recordingStartedAt = nil
@@ -706,6 +712,29 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             }
             return ""
         }
+    }
+
+    @MainActor
+    private func startStatusRefreshTimerIfNeeded() {
+        guard statusRefreshTimer == nil else { return }
+
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                self.refreshStreamingStatusIfNeeded()
+            }
+        }
+        timer.resume()
+        statusRefreshTimer = timer
+    }
+
+    @MainActor
+    private func stopStatusRefreshTimer() {
+        statusRefreshTimer?.setEventHandler {}
+        statusRefreshTimer?.cancel()
+        statusRefreshTimer = nil
     }
 
     @MainActor
@@ -1010,6 +1039,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         inputLevel = 0
         pendingChunkCount = 0
         recordingStartedAt = nil
+        stopStatusRefreshTimer()
 
         let settings = recordingOutputSettings ?? effectiveOutputSettingsForCurrentApp()
         let finalText = normalizeOutputText(transcription, settings: settings)
