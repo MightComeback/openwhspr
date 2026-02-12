@@ -1379,6 +1379,8 @@ struct SettingsView: View {
 
         var modifiers = Set<ParsedModifier>()
         var keyToken: String?
+        var sawConfigurableModifier = false
+        var sawNonConfigurableModifier = false
 
         for token in tokens {
             let expandedTokens = expandCompactModifierToken(token)
@@ -1386,6 +1388,7 @@ struct SettingsView: View {
             for expandedToken in expandedTokens {
                 if let modifier = parseModifierToken(expandedToken) {
                     modifiers.insert(modifier)
+                    sawConfigurableModifier = true
                     continue
                 }
 
@@ -1394,6 +1397,7 @@ struct SettingsView: View {
                     // docs or macOS shortcuts. We don't expose these as
                     // configurable required modifiers yet, so ignore them
                     // instead of treating the paste as invalid.
+                    sawNonConfigurableModifier = true
                     continue
                 }
 
@@ -1410,7 +1414,13 @@ struct SettingsView: View {
             return nil
         }
 
-        return ParsedHotkeyDraft(key: keyToken, requiredModifiers: modifiers)
+        // UX: if the pasted combo only included non-configurable modifiers
+        // (like Fn/Globe), keep current required modifier toggles unchanged
+        // instead of clearing them to none.
+        let parsedRequiredModifiers: Set<ParsedModifier>? =
+            (sawConfigurableModifier || !sawNonConfigurableModifier) ? modifiers : nil
+
+        return ParsedHotkeyDraft(key: keyToken, requiredModifiers: parsedRequiredModifiers)
     }
 
     private func expandCompactModifierToken(_ token: String) -> [String] {
