@@ -451,18 +451,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Copied text to clipboard instead."
+                    statusMessage = "Copied to clipboard for \(resolvedTargetName)"
                 } else {
                     lastError = "Couldn’t focus the destination app for insertion. Copied text to clipboard instead."
+                    statusMessage = "Copied to clipboard"
                 }
-                statusMessage = "Copied to clipboard"
             case .pasteKeystrokeFailed:
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard instead."
+                    statusMessage = "Copied to clipboard for \(resolvedTargetName)"
                 } else {
                     lastError = "Failed to paste into active app. Copied text to clipboard instead."
+                    statusMessage = "Copied to clipboard"
                 }
-                statusMessage = "Copied to clipboard"
             case .success:
                 break
             }
@@ -1019,7 +1021,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                         lastError = "No target app available for auto-insert. Bring the destination app to front before recording."
                     }
                 case .activationFailed:
-                    statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, destination app not focused"
+                    if copiedFallback, let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        statusMessage = "Transcribed, copied for \(resolvedTargetName)"
+                    } else {
+                        statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, destination app not focused"
+                    }
                     if let resolvedTargetName, !resolvedTargetName.isEmpty {
                         if copiedFallback {
                             lastError = "Couldn’t focus \(resolvedTargetName) in time. Copied text to clipboard so you can paste manually."
@@ -1032,7 +1038,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                         lastError = "Couldn’t focus destination app in time. Bring it to front and use Insert."
                     }
                 case .pasteKeystrokeFailed:
-                    statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, paste failed"
+                    if copiedFallback, let resolvedTargetName, !resolvedTargetName.isEmpty {
+                        statusMessage = "Transcribed, copied for \(resolvedTargetName)"
+                    } else {
+                        statusMessage = copiedFallback ? "Transcribed, copied to clipboard" : "Transcribed, paste failed"
+                    }
                     if let resolvedTargetName, !resolvedTargetName.isEmpty {
                         if copiedFallback {
                             lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard so you can paste manually."
