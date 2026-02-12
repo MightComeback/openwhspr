@@ -117,6 +117,17 @@ struct ContentView: View {
                                 .font(.caption2)
                         }
                     }
+
+                    if let remaining = estimatedFinalizationSeconds {
+                        HStack {
+                            Text("Estimated finalize")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("~\(formatShortDuration(remaining))")
+                                .font(.caption2)
+                        }
+                    }
                 }
                 .padding(8)
                 .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
@@ -435,6 +446,33 @@ struct ContentView: View {
         let minutes = total / 60
         let remainder = total % 60
         return String(format: "%d:%02d", minutes, remainder)
+    }
+
+    private func formatShortDuration(_ seconds: TimeInterval) -> String {
+        let rounded = Int(max(0, seconds.rounded()))
+        if rounded < 60 {
+            return "\(rounded)s"
+        }
+
+        let minutes = rounded / 60
+        let remainder = rounded % 60
+        return "\(minutes)m \(remainder)s"
+    }
+
+    private var estimatedFinalizationSeconds: TimeInterval? {
+        guard transcriber.pendingChunkCount > 0 else {
+            return nil
+        }
+
+        let latency = transcriber.averageChunkLatencySeconds > 0
+            ? transcriber.averageChunkLatencySeconds
+            : transcriber.lastChunkLatencySeconds
+
+        guard latency > 0 else {
+            return nil
+        }
+
+        return Double(transcriber.pendingChunkCount) * latency
     }
 
     private func hotkeySummary() -> String {
