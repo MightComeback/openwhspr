@@ -1335,7 +1335,13 @@ struct SettingsView: View {
             return
         }
 
+        if isModifierOnlyHotkeyEvent(event) {
+            hotkeyCaptureError = "Press one non-modifier key while holding modifiers (for example: ⌘+⇧+Space)."
+            return
+        }
+
         guard let key = hotkeyKeyName(from: event) else {
+            hotkeyCaptureError = "Couldn't read that key. Try again with a different key."
             return
         }
 
@@ -1361,6 +1367,7 @@ struct SettingsView: View {
 
         let sanitized = sanitizeKeyValue(key)
         guard HotkeyDisplay.isSupportedKey(sanitized) else {
+            hotkeyCaptureError = "Unsupported key for hotkey trigger. Use one key like Space, F6, /, or a letter/number."
             return
         }
 
@@ -1384,6 +1391,20 @@ struct SettingsView: View {
         forbiddenCapsLock = !requiredCapsLock && forbiddenCapsLock
 
         stopHotkeyCapture()
+    }
+
+    private func isModifierOnlyHotkeyEvent(_ event: NSEvent) -> Bool {
+        switch Int(event.keyCode) {
+        case kVK_Command, kVK_RightCommand,
+             kVK_Shift, kVK_RightShift,
+             kVK_Option, kVK_RightOption,
+             kVK_Control, kVK_RightControl,
+             kVK_CapsLock,
+             kVK_Function:
+            return true
+        default:
+            return false
+        }
     }
 
     private func hotkeyKeyName(from event: NSEvent) -> String? {
