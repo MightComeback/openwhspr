@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var hotkeyKeyDraft: String = ""
     @State private var isCapturingHotkey: Bool = false
     @State private var hotkeyCaptureMonitor: Any?
+    @State private var hotkeyCaptureError: String?
     @State private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
@@ -248,6 +249,12 @@ struct SettingsView: View {
                             Text("Listening for the next key press. Hold modifiers and press your trigger key once. Press Esc to cancel.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+
+                            if let hotkeyCaptureError {
+                                Text(hotkeyCaptureError)
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
                         }
 
                         if !isHotkeyKeyDraftSupported {
@@ -1273,6 +1280,7 @@ struct SettingsView: View {
 
     private func startHotkeyCapture() {
         stopHotkeyCapture()
+        hotkeyCaptureError = nil
         isCapturingHotkey = true
 
         hotkeyCaptureMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -1286,6 +1294,7 @@ struct SettingsView: View {
             NSEvent.removeMonitor(hotkeyCaptureMonitor)
             self.hotkeyCaptureMonitor = nil
         }
+        hotkeyCaptureError = nil
         isCapturingHotkey = false
     }
 
@@ -1293,6 +1302,14 @@ struct SettingsView: View {
         guard isCapturingHotkey else {
             return
         }
+
+        let includesFunctionModifier = event.modifierFlags.contains(.function)
+        if includesFunctionModifier {
+            hotkeyCaptureError = "Fn/Globe can't be recorded as a required modifier yet. Use Command/Shift/Option/Control + key."
+            return
+        }
+
+        hotkeyCaptureError = nil
 
         // Ignore Caps Lock state during capture. If Caps Lock is currently on,
         // NSEvent reports `.capsLock` for every key press, which would
