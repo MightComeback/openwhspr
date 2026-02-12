@@ -332,6 +332,11 @@ struct SettingsView: View {
                             Text(captureProfileDisabledReason)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
+                        } else if captureProfileUsesRecentAppFallback,
+                                  let fallbackName = captureProfileFallbackAppName {
+                            Text("Using recent app context: \(fallbackName). This helps when Settings is frontmost.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
                         if !canRunInsertionTest {
@@ -879,25 +884,22 @@ struct SettingsView: View {
     }
 
     private var canCaptureFrontmostProfile: Bool {
-        let bundleIdentifier = transcriber.frontmostBundleIdentifier
-        guard !bundleIdentifier.isEmpty else {
-            return false
-        }
-
-        if let ownBundleIdentifier = Bundle.main.bundleIdentifier,
-           bundleIdentifier == ownBundleIdentifier {
-            return false
-        }
-
-        return true
+        transcriber.profileCaptureCandidate() != nil
     }
 
     private var captureProfileDisabledReason: String {
-        if transcriber.frontmostBundleIdentifier.isEmpty {
-            return "Couldn’t detect a frontmost app with a bundle identifier. Switch to your target app, then refresh."
-        }
+        "Couldn’t find a target app yet. Switch to the app where insertion should happen, then click Refresh frontmost app."
+    }
 
-        return "Frontmost app is OpenWhisper itself. Switch to the app where insertion should happen, then refresh."
+    private var captureProfileUsesRecentAppFallback: Bool {
+        transcriber.profileCaptureCandidate()?.isFallback == true
+    }
+
+    private var captureProfileFallbackAppName: String? {
+        guard let candidate = transcriber.profileCaptureCandidate(), candidate.isFallback else {
+            return nil
+        }
+        return candidate.appName
     }
 
     private var insertionTestTargetAppName: String? {

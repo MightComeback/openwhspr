@@ -155,17 +155,35 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func profileCaptureCandidate() -> (bundleIdentifier: String, appName: String, isFallback: Bool)? {
+        if !frontmostBundleIdentifier.isEmpty,
+           frontmostBundleIdentifier != Bundle.main.bundleIdentifier {
+            return (frontmostBundleIdentifier, frontmostAppName, false)
+        }
+
+        if let fallback = lastKnownExternalApp,
+           fallback.isTerminated == false,
+           let fallbackBundleIdentifier = fallback.bundleIdentifier,
+           !fallbackBundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return (fallbackBundleIdentifier, fallback.localizedName ?? "Unknown App", true)
+        }
+
+        return nil
+    }
+
+    @MainActor
     func captureProfileForFrontmostApp() {
         refreshFrontmostAppContext()
-        guard !frontmostBundleIdentifier.isEmpty else {
-            lastError = "Cannot capture profile: frontmost app has no bundle identifier."
+
+        guard let candidate = profileCaptureCandidate() else {
+            lastError = "Cannot capture profile: no external app is available yet. Switch to the target app and click Refresh frontmost app once."
             return
         }
 
         let currentDefaults = defaultOutputSettings()
         let profile = AppProfile(
-            bundleIdentifier: frontmostBundleIdentifier,
-            appName: frontmostAppName,
+            bundleIdentifier: candidate.bundleIdentifier,
+            appName: candidate.appName,
             autoCopy: currentDefaults.autoCopy,
             autoPaste: currentDefaults.autoPaste,
             clearAfterInsert: currentDefaults.clearAfterInsert,
@@ -183,7 +201,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         appProfiles.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
         persistProfiles()
-        statusMessage = "Saved profile for \(profile.appName)"
+        if candidate.isFallback {
+            statusMessage = "Saved profile for \(profile.appName) from recent app context"
+        } else {
+            statusMessage = "Saved profile for \(profile.appName)"
+        }
         lastError = nil
     }
 
