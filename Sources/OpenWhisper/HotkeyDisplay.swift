@@ -155,7 +155,12 @@ enum HotkeyDisplay {
     }
 
     private static func normalizeKey(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmed = raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\u{FE0E}", with: "")
+            .replacingOccurrences(of: "\u{FE0F}", with: "")
+
         guard trimmed.count > 1 else {
             return trimmed
         }
