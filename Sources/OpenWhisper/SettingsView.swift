@@ -1297,6 +1297,14 @@ struct SettingsView: View {
                     continue
                 }
 
+                if isNonConfigurableModifierToken(expandedToken) {
+                    // Users frequently paste combos containing Globe/Fn from
+                    // docs or macOS shortcuts. We don't expose these as
+                    // configurable required modifiers yet, so ignore them
+                    // instead of treating the paste as invalid.
+                    continue
+                }
+
                 if keyToken != nil {
                     // Reject ambiguous combos like "cmd+shift+a+b" instead of
                     // silently accepting only the last key token.
@@ -1366,6 +1374,15 @@ struct SettingsView: View {
         case "ctrl", "control", "ctl", "⌃", "^": return .control
         case "caps", "capslock", "⇪": return .capsLock
         default: return nil
+        }
+    }
+
+    private func isNonConfigurableModifierToken(_ token: String) -> Bool {
+        switch token {
+        case "fn", "function", "globe", "globekey", "🌐":
+            return true
+        default:
+            return false
         }
     }
 
