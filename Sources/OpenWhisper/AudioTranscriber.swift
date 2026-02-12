@@ -115,6 +115,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
             guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
             self.lastKnownExternalApp = app
+            self.frontmostAppName = app.localizedName ?? "Unknown App"
+            self.frontmostBundleIdentifier = app.bundleIdentifier ?? ""
         }
     }
 
