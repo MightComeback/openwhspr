@@ -172,6 +172,13 @@ enum HotkeyDisplay {
     }
 
     private static func normalizeKey(_ raw: String) -> String {
+        // When users press a literal key in the trigger field, we can receive
+        // control characters instead of aliases (e.g. " " for Space).
+        // Preserve those common raw-key inputs before trimming.
+        if raw == " " { return "space" }
+        if raw == "\t" { return "tab" }
+        if raw == "\r" || raw == "\n" { return "return" }
+
         let trimmed = raw
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
