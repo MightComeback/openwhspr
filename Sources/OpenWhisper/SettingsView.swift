@@ -967,8 +967,16 @@ struct SettingsView: View {
         transcriber.manualInsertTargetAppName()
     }
 
+    private var insertionProbeSampleTextTrimmed: String {
+        insertionProbeSampleText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hasInsertionProbeSampleText: Bool {
+        !insertionProbeSampleTextTrimmed.isEmpty
+    }
+
     private var canCaptureAndRunInsertionTest: Bool {
-        canCaptureFrontmostProfile && !transcriber.isRecording && !transcriber.isRunningInsertionProbe
+        canCaptureFrontmostProfile && !transcriber.isRecording && !transcriber.isRunningInsertionProbe && hasInsertionProbeSampleText
     }
 
     private var canRunInsertionTest: Bool {
@@ -976,6 +984,9 @@ struct SettingsView: View {
             return false
         }
         guard !transcriber.isRunningInsertionProbe else {
+            return false
+        }
+        guard hasInsertionProbeSampleText else {
             return false
         }
         return insertionTestTargetAppName != nil
@@ -987,6 +998,9 @@ struct SettingsView: View {
         }
         if transcriber.isRunningInsertionProbe {
             return "Insertion test is already running."
+        }
+        if !hasInsertionProbeSampleText {
+            return "Insertion test text is empty. Enter a short phrase first."
         }
         return "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
