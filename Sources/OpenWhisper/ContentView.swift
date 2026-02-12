@@ -51,13 +51,14 @@ struct ContentView: View {
 
                 Spacer()
 
-                Button(transcriber.isRecording ? "Stop" : "Start") {
+                Button(startStopButtonTitle()) {
                     Task { @MainActor in
                         transcriber.toggleRecording()
                     }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .disabled(!canToggleRecording)
             }
 
             if transcriber.isRecording {
@@ -429,6 +430,20 @@ struct ContentView: View {
 
     private func hotkeySummary() -> String {
         HotkeyDisplay.summaryIncludingMode()
+    }
+
+    private var canToggleRecording: Bool {
+        transcriber.isRecording || transcriber.pendingChunkCount == 0
+    }
+
+    private func startStopButtonTitle() -> String {
+        if transcriber.isRecording {
+            return "Stop"
+        }
+        if transcriber.pendingChunkCount > 0 {
+            return "Finalizing…"
+        }
+        return "Start"
     }
 
     private var canInsertDirectly: Bool {
