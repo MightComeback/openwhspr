@@ -1162,9 +1162,9 @@ struct SettingsView: View {
             return ParsedHotkeyDraft(key: normalizedAsWholeKey, requiredModifiers: nil)
         }
 
-        if normalized.contains("+") {
+        if normalized.contains("+") || normalized.contains(",") {
             let tokens = normalized
-                .split(separator: "+")
+                .split(whereSeparator: { $0 == "+" || $0 == "," })
                 .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
             return parseHotkeyTokens(tokens)
@@ -1206,9 +1206,9 @@ struct SettingsView: View {
         // Robust fallback for mixed separators copied from chats/docs,
         // e.g. "cmd + shift-space", "command_shift+page down", or
         // "ctrl- alt + delete".
-        if normalized.contains(where: { $0 == "+" || $0 == "-" || $0 == "_" || $0.isWhitespace }) {
+        if normalized.contains(where: { $0 == "+" || $0 == "-" || $0 == "_" || $0 == "," || $0.isWhitespace }) {
             let tokens = normalized
-                .components(separatedBy: CharacterSet(charactersIn: "+-_ "))
+                .components(separatedBy: CharacterSet(charactersIn: "+-_, "))
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
 
@@ -1241,7 +1241,7 @@ struct SettingsView: View {
         }
 
         let tokens = raw
-            .components(separatedBy: CharacterSet(charactersIn: "+-_ "))
+            .components(separatedBy: CharacterSet(charactersIn: "+-_, "))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
