@@ -312,9 +312,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let result = performManualInsert(text: probe)
         let now = Date()
         lastInsertionProbeDate = now
-        lastInsertionProbeSucceeded = result.success
 
-        if result.success {
+        switch result.outcome {
+        case .inserted:
+            lastInsertionProbeSucceeded = true
             if let targetName = result.targetName, !targetName.isEmpty {
                 let message = "Insertion test succeeded in \(targetName)"
                 statusMessage = message
@@ -324,17 +325,49 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 statusMessage = message
                 lastInsertionProbeMessage = message
             }
-        } else if let failure = lastError, !failure.isEmpty {
-            lastInsertionProbeMessage = "Insertion test failed: \(failure)"
-        } else {
-            lastInsertionProbeMessage = "Insertion test failed"
-        }
+            return true
 
-        return result.success
+        case .copiedFallbackAccessibilityMissing:
+            lastInsertionProbeSucceeded = true
+            if let targetName = result.targetName, !targetName.isEmpty {
+                let message = "Insertion test used clipboard fallback for \(targetName) (Accessibility permission missing)"
+                statusMessage = message
+                lastInsertionProbeMessage = message
+            } else {
+                let message = "Insertion test used clipboard fallback (Accessibility permission missing)"
+                statusMessage = message
+                lastInsertionProbeMessage = message
+            }
+            return true
+
+        case .failed:
+            lastInsertionProbeSucceeded = false
+            if let failure = lastError, !failure.isEmpty {
+                lastInsertionProbeMessage = "Insertion test failed: \(failure)"
+            } else {
+                lastInsertionProbeMessage = "Insertion test failed"
+            }
+            return false
+        }
+    }
+
+    private enum ManualInsertOutcome {
+        case inserted
+        case copiedFallbackAccessibilityMissing
+        case failed
+    }
+
+    private struct ManualInsertResult {
+        let outcome: ManualInsertOutcome
+        let targetName: String?
+
+        var success: Bool {
+            outcome == .inserted
+        }
     }
 
     @MainActor
-    private func performManualInsert(text: String) -> (success: Bool, targetName: String?) {
+    private func performManualInsert(text: String) -> ManualInsertResult {
         // Manual insert should target the app currently in front, not the app
         // that happened to be active when recording started.
         captureInsertionTargetApp()
@@ -348,7 +381,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 lastError = "Accessibility permission is required to insert text automatically. Copied text to clipboard instead."
             }
             statusMessage = "Copied to clipboard"
-            return (false, resolvedTargetName)
+            return ManualInsertResult(outcome: .copiedFallbackAccessibilityMissing, targetName: resolvedTargetName)
         }
 
         let pasteResult = withTemporaryPasteboardString(text) {
@@ -380,7 +413,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             case .success:
                 break
             }
-            return (false, resolvedTargetName)
+            return ManualInsertResult(outcome: .failed, targetName: resolvedTargetName)
         }
 
         lastError = nil
@@ -389,7 +422,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         } else {
             statusMessage = "Inserted into active app"
         }
-        return (true, resolvedTargetName)
+        return ManualInsertResult(outcome: .inserted, targetName: resolvedTargetName)
     }
 
     @MainActor
