@@ -1294,7 +1294,10 @@ struct SettingsView: View {
             return
         }
 
-        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control, .capsLock])
+        // Ignore Caps Lock state during capture. If Caps Lock is currently on,
+        // NSEvent reports `.capsLock` for every key press, which would
+        // accidentally force Caps Lock as a required modifier.
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
 
         guard let key = hotkeyKeyName(from: event) else {
             return
@@ -1319,7 +1322,6 @@ struct SettingsView: View {
         requiredShift = modifiers.contains(.shift)
         requiredOption = modifiers.contains(.option)
         requiredControl = modifiers.contains(.control)
-        requiredCapsLock = modifiers.contains(.capsLock)
 
         forbiddenCommand = !requiredCommand && forbiddenCommand
         forbiddenShift = !requiredShift && forbiddenShift
