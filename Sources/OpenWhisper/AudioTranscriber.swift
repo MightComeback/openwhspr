@@ -1237,7 +1237,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .activationFailed
         }
 
-        if postPasteKeystroke() {
+        if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
             return .success
         }
 
@@ -1247,7 +1247,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .activationFailed
         }
 
-        if postPasteKeystroke() {
+        if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
             return .success
         }
 
@@ -1255,7 +1255,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // settle gap. This improves insertion reliability in apps that need an
         // extra beat after activation before accepting synthetic key events.
         Thread.sleep(forTimeInterval: 0.06)
-        if postPasteKeystroke() {
+        if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
             return .success
         }
 
@@ -1314,7 +1314,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func postPasteKeystroke() -> Bool {
+    private func postPasteKeystroke(expectedPID: pid_t) -> Bool {
+        // Guard against focus races: if the destination app lost frontmost status
+        // between activation and synthetic key posting, fail fast so caller can
+        // re-activate instead of pasting into the wrong app.
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedPID else {
+            return false
+        }
+
         guard let source = CGEventSource(stateID: .combinedSessionState),
               let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) else {
@@ -1327,6 +1334,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // After activation, some apps need a brief settle window before they
         // consistently accept synthetic key events in the focused text field.
         Thread.sleep(forTimeInterval: 0.03)
+
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedPID else {
+            return false
+        }
 
         // Some apps are flaky if the key down/up events are posted back-to-back.
         // A tiny delay makes insertion noticeably more reliable without impacting UX.
