@@ -984,6 +984,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let remainder = String(rhs[appendStart...]).trimmingCharacters(in: .whitespaces)
 
         guard !remainder.isEmpty else { return lhs }
+
+        if let first = remainder.first,
+           Self.isSentencePunctuation(first) || first == "," {
+            return lhs + remainder
+        }
+
         if lhs.hasSuffix(" ") { return lhs + remainder }
         return lhs + " " + remainder
     }
