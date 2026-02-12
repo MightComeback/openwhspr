@@ -59,6 +59,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .help(startStopButtonHelpText())
                 .disabled(!canToggleRecording)
             }
 
@@ -562,7 +563,22 @@ struct ContentView: View {
     }
 
     private var canToggleRecording: Bool {
-        true
+        if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
+            return true
+        }
+        return microphoneAuthorized
+    }
+
+    private func startStopButtonHelpText() -> String {
+        guard !microphoneAuthorized,
+              !transcriber.isRecording,
+              transcriber.pendingChunkCount == 0 else {
+            return transcriber.isRecording
+                ? "Stop recording"
+                : "Start recording"
+        }
+
+        return "Microphone permission is required before recording can start"
     }
 
     private func startStopButtonTitle() -> String {
