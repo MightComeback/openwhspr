@@ -302,6 +302,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         transcription = normalized
         let copied = copyToPasteboard(normalized)
         if copied {
+            lastError = nil
             statusMessage = "Copied to clipboard"
         }
         return copied

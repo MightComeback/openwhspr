@@ -291,6 +291,30 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testCopyTranscriptionToClipboardClearsPreviousErrorOnSuccess() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalTranscription = transcriber.transcription
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.transcription = originalTranscription
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.transcription = "hello world"
+            transcriber.lastError = "old insertion error"
+
+            let copied = transcriber.copyTranscriptionToClipboard()
+            XCTAssertTrue(copied)
+            XCTAssertEqual(transcriber.statusMessage, "Copied to clipboard")
+            XCTAssertNil(transcriber.lastError)
+        }
+    }
+
     func testInsertTranscriptionShowsStatusWhenTextIsEmpty() async {
         let transcriber = AudioTranscriber.shared
 
