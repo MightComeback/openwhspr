@@ -31,6 +31,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd+shift+space"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd shift space"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("command-shift-page-down"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌘ + ⇧ + f6"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
@@ -68,6 +70,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad0"), "keypad0")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad enter"), "keypadenter")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd+shift+space"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd shift space"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("command-shift-page-down"), "pagedown")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌘ + ⇧ + f6"), "f6")
     }
 

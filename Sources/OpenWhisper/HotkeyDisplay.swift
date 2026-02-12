@@ -160,9 +160,27 @@ enum HotkeyDisplay {
             return trimmed
         }
 
-        // UX guardrail: users often paste a full shortcut like "cmd+shift+space"
-        // into the trigger-key field. We only store one trigger key, so extract the
-        // final segment instead of marking the whole value unsupported.
+        // UX guardrail: users often paste full shortcuts like "cmd+shift+space"
+        // or "command-shift-page-down" into the trigger-key field. We only store
+        // the trigger key, so strip known modifier tokens first and keep the
+        // remaining key tokens joined.
+        let shortcutTokens = trimmed
+            .components(separatedBy: CharacterSet(charactersIn: "+ -_"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let modifierTokens: Set<String> = [
+            "cmd", "command", "shift", "option", "opt", "alt", "control", "ctrl", "caps", "capslock", "fn", "function"
+        ]
+
+        if shortcutTokens.contains(where: { modifierTokens.contains($0) }) {
+            let keyTokens = shortcutTokens.filter { !modifierTokens.contains($0) }
+            if !keyTokens.isEmpty {
+                return keyTokens.joined()
+            }
+        }
+
+        // Fallback for classic + separated combo pastes.
         let comboTail = trimmed
             .split(separator: "+", omittingEmptySubsequences: true)
             .last
