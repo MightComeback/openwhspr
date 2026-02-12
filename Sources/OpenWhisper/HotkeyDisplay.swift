@@ -170,7 +170,10 @@ enum HotkeyDisplay {
 
         // Common keypad shorthand like "num+" / "kp*" should map to
         // supported keypad trigger keys instead of being split apart.
-        let compact = trimmed.replacingOccurrences(of: " ", with: "")
+        let compact = trimmed
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: "_", with: "")
         switch compact {
         case "num+", "kp+": return "numpadplus"
         case "num-", "kp-": return "numpadminus"
@@ -178,6 +181,7 @@ enum HotkeyDisplay {
         case "num/", "kp/": return "numpaddivide"
         case "num.", "kp.": return "numpaddecimal"
         case "num=", "kp=": return "numpadequals"
+        case "capslock", "capslockkey": return "capslock"
         default: break
         }
 

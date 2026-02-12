@@ -43,6 +43,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌃⌥return"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("caps lock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
     }
 
@@ -62,6 +63,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌫"), "delete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌦"), "forwarddelete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("caps"), "capslock")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("caps lock"), "capslock")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("caps-lock"), "capslock")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("globe"), "fn")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("🌐"), "fn")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("🌐︎"), "fn")
