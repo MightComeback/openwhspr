@@ -350,13 +350,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         defer { isRunningInsertionProbe = false }
 
         let result = performManualInsert(text: probe)
-        if result.outcome != .inserted {
-            restoreProbeClipboardIfNeeded(
-                probeText: probe,
-                previousClipboardItems: previousClipboardItems,
-                previousClipboardString: previousClipboardString
-            )
-        }
+        // Probe should be low-risk and leave clipboard intact regardless of
+        // success/failure. Restore only when probe text is still present so we
+        // don't clobber user clipboard changes made during the test.
+        restoreProbeClipboardIfNeeded(
+            probeText: probe,
+            previousClipboardItems: previousClipboardItems,
+            previousClipboardString: previousClipboardString
+        )
 
         let now = Date()
         lastInsertionProbeDate = now
