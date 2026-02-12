@@ -230,6 +230,18 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world.")
     }
 
+    func testMergeChunkPreservesExistingCapitalizationWhenAddingTrailingPunctuation() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world.", into: "Hello world")
+        XCTAssertEqual(merged, "Hello world.")
+    }
+
+    func testMergeChunkPreservesExistingCapitalizationForMultiCharacterTrailingPunctuation() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world?!", into: "Hello world")
+        XCTAssertEqual(merged, "Hello world?!")
+    }
+
     func testMergeChunkAttachesStandalonePunctuationWithoutExtraSpace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(".", into: "hello world")

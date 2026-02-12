@@ -795,6 +795,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             let lhsEndsWithSentencePunctuation = lhs.last.map(Self.isSentencePunctuation) ?? false
             let rhsEndsWithSentencePunctuation = compactedRHS.last.map(Self.isSentencePunctuation) ?? false
             if rhsEndsWithSentencePunctuation && !lhsEndsWithSentencePunctuation {
+                if let punctuation = trailingSentencePunctuation(in: compactedRHS) {
+                    return lhs + punctuation
+                }
                 return compactedRHS
             }
             return lhs
@@ -897,6 +900,23 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return trimmed.unicodeScalars.allSatisfy { scalar in
             CharacterSet.punctuationCharacters.contains(scalar) || CharacterSet.symbols.contains(scalar)
         }
+    }
+
+    private func trailingSentencePunctuation(in text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        var punctuation: [Character] = []
+        for character in trimmed.reversed() {
+            if Self.isSentencePunctuation(character) {
+                punctuation.append(character)
+                continue
+            }
+            break
+        }
+
+        guard !punctuation.isEmpty else { return nil }
+        return String(punctuation.reversed())
     }
 
     private static func isSentencePunctuation(_ character: Character) -> Bool {
