@@ -117,7 +117,31 @@ struct SettingsView: View {
                             Text(hotkeyMonitor.statusMessage)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+
+                            if let missingSummary = hotkeyMissingPermissionSummary {
+                                Text("Missing: \(missingSummary)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                            }
+
                             Spacer()
+
+                            if !accessibilityAuthorized {
+                                Button("Grant Accessibility") {
+                                    HotkeyMonitor.requestAccessibilityPermissionPrompt()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+
+                            if !inputMonitoringAuthorized {
+                                Button("Grant Input Monitoring") {
+                                    HotkeyMonitor.requestInputMonitoringPermissionPrompt()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+
                             Button("Restart monitor") {
                                 hotkeyMonitor.stop()
                                 hotkeyMonitor.start()
@@ -829,6 +853,20 @@ struct SettingsView: View {
 
     private var showsAutoPastePermissionWarning: Bool {
         autoPaste && !accessibilityAuthorized
+    }
+
+    private var hotkeyMissingPermissionSummary: String? {
+        var missing: [String] = []
+        if !accessibilityAuthorized {
+            missing.append("Accessibility")
+        }
+        if !inputMonitoringAuthorized {
+            missing.append("Input Monitoring")
+        }
+        guard !missing.isEmpty else {
+            return nil
+        }
+        return missing.joined(separator: " + ")
     }
 
     private var canCaptureFrontmostProfile: Bool {
