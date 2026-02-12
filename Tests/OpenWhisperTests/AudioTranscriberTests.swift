@@ -261,4 +261,26 @@ final class AudioTranscriberTests: XCTestCase {
 
         XCTAssertFalse(canPaste)
     }
+
+    func testCopyTranscriptionToClipboardShowsStatusWhenTextIsEmpty() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            transcriber.transcription = "   "
+            let copied = transcriber.copyTranscriptionToClipboard()
+            XCTAssertFalse(copied)
+            XCTAssertEqual(transcriber.statusMessage, "Nothing to copy")
+        }
+    }
+
+    func testInsertTranscriptionShowsStatusWhenTextIsEmpty() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            transcriber.transcription = "\n\n"
+            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+            XCTAssertFalse(inserted)
+            XCTAssertEqual(transcriber.statusMessage, "Nothing to insert")
+        }
+    }
 }

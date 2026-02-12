@@ -290,7 +290,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func copyTranscriptionToClipboard() -> Bool {
         let settings = effectiveOutputSettingsForCurrentApp()
         let normalized = normalizeOutputText(transcription, settings: settings)
-        guard !normalized.isEmpty else { return false }
+        guard !normalized.isEmpty else {
+            statusMessage = "Nothing to copy"
+            return false
+        }
         transcription = normalized
         let copied = copyToPasteboard(normalized)
         if copied {
@@ -315,7 +318,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func insertTranscriptionIntoFocusedApp() -> Bool {
         let settings = effectiveOutputSettingsForCurrentApp()
         let normalized = normalizeOutputText(transcription, settings: settings)
-        guard !normalized.isEmpty else { return false }
+        guard !normalized.isEmpty else {
+            statusMessage = "Nothing to insert"
+            return false
+        }
         transcription = normalized
 
         let result = performManualInsert(text: normalized)
