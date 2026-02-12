@@ -1149,6 +1149,18 @@ struct SettingsView: View {
             return "⌘+` is reserved for cycling windows in the front app on macOS."
         }
 
+        if key == "comma" && modifiers == Set([.command]) {
+            return "⌘+, usually opens app settings/preferences and is a frustrating dictation trigger."
+        }
+
+        if key == "period" && modifiers == Set([.command]) {
+            return "⌘+. is commonly used as Cancel/Stop in macOS apps and is easy to trigger accidentally."
+        }
+
+        if key == "escape" && modifiers == Set([.command, .option]) {
+            return "⌥+⌘+Esc opens Force Quit on macOS, so it’s a terrible hotkey choice."
+        }
+
         if key == "h" && modifiers == Set([.command]) {
             return "⌘+H hides the current app on macOS and makes a poor dictation hotkey."
         }
