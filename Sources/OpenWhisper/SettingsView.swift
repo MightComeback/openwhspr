@@ -309,6 +309,12 @@ struct SettingsView: View {
                             Text("Insertion test target: \(target)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+
+                            if !accessibilityAuthorized {
+                                Text("Accessibility permission is missing, so this test will validate target capture and copy the sample text to clipboard instead of auto-pasting.")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
                         }
 
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -852,18 +858,11 @@ struct SettingsView: View {
     }
 
     private var canRunInsertionTest: Bool {
-        guard accessibilityAuthorized else {
-            return false
-        }
-        return insertionTestTargetAppName != nil
+        insertionTestTargetAppName != nil
     }
 
     private var insertionTestDisabledReason: String {
-        if !accessibilityAuthorized {
-            return "Insertion testing needs Accessibility permission to send Cmd+V. Grant it, then try again."
-        }
-
-        return "No destination app is available for insertion yet. Switch to your target app, then refresh."
+        "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
 
     private var insertionProbeStatusColor: Color {
