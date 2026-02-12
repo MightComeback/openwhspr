@@ -28,6 +28,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var lastInsertionProbeDate: Date? = nil
     @Published var lastInsertionProbeMessage: String = "No insertion test run yet"
     @Published var lastInsertionProbeSucceeded: Bool? = nil
+    @Published var isRunningInsertionProbe: Bool = false
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
@@ -332,6 +333,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func runInsertionProbe(sampleText: String = "OpenWhisper insertion test") -> Bool {
         let probe = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !probe.isEmpty else { return false }
+        guard !isRunningInsertionProbe else { return false }
+
+        isRunningInsertionProbe = true
+        defer { isRunningInsertionProbe = false }
 
         let result = performManualInsert(text: probe)
         let now = Date()

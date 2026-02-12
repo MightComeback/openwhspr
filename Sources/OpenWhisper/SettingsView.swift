@@ -316,7 +316,7 @@ struct SettingsView: View {
                             .buttonStyle(.borderedProminent)
                             .disabled(!canCaptureFrontmostProfile)
 
-                            Button("Capture + insertion test") {
+                            Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Capture + insertion test") {
                                 Task { @MainActor in
                                     transcriber.captureProfileForFrontmostApp()
                                     _ = transcriber.runInsertionProbe()
@@ -325,7 +325,7 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                             .disabled(!canCaptureAndRunInsertionTest)
 
-                            Button("Run insertion test") {
+                            Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
                                 Task { @MainActor in
                                     _ = transcriber.runInsertionProbe()
                                 }
@@ -373,6 +373,16 @@ struct SettingsView: View {
                             if let date = transcriber.lastInsertionProbeDate {
                                 Text("(\(date.formatted(date: .omitted, time: .shortened)))")
                                     .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if transcriber.isRunningInsertionProbe {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Running insertion test…")
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -938,11 +948,14 @@ struct SettingsView: View {
     }
 
     private var canCaptureAndRunInsertionTest: Bool {
-        canCaptureFrontmostProfile && !transcriber.isRecording
+        canCaptureFrontmostProfile && !transcriber.isRecording && !transcriber.isRunningInsertionProbe
     }
 
     private var canRunInsertionTest: Bool {
         guard !transcriber.isRecording else {
+            return false
+        }
+        guard !transcriber.isRunningInsertionProbe else {
             return false
         }
         return insertionTestTargetAppName != nil
@@ -951,6 +964,9 @@ struct SettingsView: View {
     private var insertionTestDisabledReason: String {
         if transcriber.isRecording {
             return "Stop recording before running an insertion test."
+        }
+        if transcriber.isRunningInsertionProbe {
+            return "Insertion test is already running."
         }
         return "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
