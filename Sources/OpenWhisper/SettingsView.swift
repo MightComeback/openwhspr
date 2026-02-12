@@ -1049,9 +1049,18 @@ struct SettingsView: View {
     }
 
     private func refreshPermissionState() {
+        let previouslyMissingHotkeyPermissions = !accessibilityAuthorized || !inputMonitoringAuthorized
+
         microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
         inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
+
+        let missingHotkeyPermissions = !accessibilityAuthorized || !inputMonitoringAuthorized
+        if previouslyMissingHotkeyPermissions && !missingHotkeyPermissions {
+            // UX: as soon as both permissions are granted, recover hotkey capture
+            // automatically instead of forcing the user to click "Restart monitor".
+            hotkeyMonitor.start()
+        }
     }
 
     private func applyHotkeyKeyDraft() {
