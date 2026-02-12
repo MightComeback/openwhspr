@@ -797,11 +797,11 @@ final class HotkeyMonitorTests: XCTestCase {
         defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
 
         let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
-        monitor.updateConfig(required: [], forbidden: [], key: "cmd shift", mode: .toggle)
+        monitor.updateConfig(required: [], forbidden: [], key: "cmd shift potato", mode: .toggle)
 
         XCTAssertEqual(
             monitor.statusMessage,
-            "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘cmd shift’. Set modifiers with the toggles above."
+            "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘cmd shift potato’. Set modifiers with the toggles above."
         )
     }
 
@@ -819,7 +819,7 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
-    func testModifierGlyphOnlyInputShowsKeyFieldGuidance() {
+    func testModifierGlyphOnlyInputShowsModifierOnlyGuidance() {
         let defaults = makeDefaults()
         defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
         defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
@@ -829,7 +829,21 @@ final class HotkeyMonitorTests: XCTestCase {
 
         XCTAssertEqual(
             monitor.statusMessage,
-            "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘⌘⇧’. Set modifiers with the toggles above."
+            "Hotkey disabled: trigger key cannot be only a modifier ‘⌘⇧’. Choose one key like space or f6, then set modifiers with the toggles above."
+        )
+    }
+
+    func testModifierWordOnlyInputShowsModifierOnlyGuidance() {
+        let defaults = makeDefaults()
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.updateConfig(required: [], forbidden: [], key: "command", mode: .toggle)
+
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey disabled: trigger key cannot be only a modifier ‘command’. Choose one key like space or f6, then set modifiers with the toggles above."
         )
     }
 

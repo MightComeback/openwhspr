@@ -404,6 +404,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             if trimmed.isEmpty {
                 return "Hotkey disabled: trigger key is empty. Enter one key like space, f6, or /."
             }
+            if looksLikeModifierOnlyInput(trimmed) {
+                return "Hotkey disabled: trigger key cannot be only a modifier ‘\(trimmed)’. Choose one key like space or f6, then set modifiers with the toggles above."
+            }
             if looksLikeShortcutCombo(trimmed) {
                 return "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘\(trimmed)’. Set modifiers with the toggles above."
             }
@@ -418,28 +421,41 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return true
         }
 
-        let expanded = normalized
+        let tokens = expandedShortcutTokens(from: normalized)
+        let modifierWords = shortcutModifierWords()
+        let modifierCount = tokens.filter { modifierWords.contains($0) }.count
+        return modifierCount >= 1 && tokens.count >= 2
+    }
+
+    private func looksLikeModifierOnlyInput(_ raw: String) -> Bool {
+        let tokens = expandedShortcutTokens(from: raw.lowercased())
+        guard !tokens.isEmpty else { return false }
+        let modifierWords = shortcutModifierWords()
+        return tokens.allSatisfy { modifierWords.contains($0) }
+    }
+
+    private func expandedShortcutTokens(from raw: String) -> [String] {
+        let expanded = raw
             .replacingOccurrences(of: "⌘", with: " command ")
             .replacingOccurrences(of: "⇧", with: " shift ")
             .replacingOccurrences(of: "⌃", with: " control ")
             .replacingOccurrences(of: "⌥", with: " option ")
             .replacingOccurrences(of: "🌐", with: " globe ")
 
-        let tokens = expanded
+        return expanded
             .replacingOccurrences(of: "-", with: " ")
             .split(whereSeparator: { $0.isWhitespace || $0 == "+" || $0 == "," })
             .map(String.init)
+    }
 
-        let modifierWords: Set<String> = [
+    private func shortcutModifierWords() -> Set<String> {
+        [
             "cmd", "command", "meta", "super", "win", "windows",
             "shift",
             "ctrl", "control",
             "opt", "option", "alt",
             "fn", "function", "globe"
         ]
-
-        let modifierCount = tokens.filter { modifierWords.contains($0) }.count
-        return modifierCount >= 1 && tokens.count >= 2
     }
 
     private func requestAccessibilityIfNeeded() {
