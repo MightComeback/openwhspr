@@ -160,11 +160,20 @@ enum HotkeyDisplay {
             return trimmed
         }
 
+        // Users also paste symbol-only shortcuts like "⌘⇧space".
+        // Expand common modifier glyphs into tokenizable words first.
+        let expanded = trimmed
+            .replacingOccurrences(of: "⌘", with: " command ")
+            .replacingOccurrences(of: "⇧", with: " shift ")
+            .replacingOccurrences(of: "⌥", with: " option ")
+            .replacingOccurrences(of: "⌃", with: " control ")
+            .replacingOccurrences(of: "⇪", with: " capslock ")
+
         // UX guardrail: users often paste full shortcuts like "cmd+shift+space"
         // or "command-shift-page-down" into the trigger-key field. We only store
         // the trigger key, so strip known modifier tokens first and keep the
         // remaining key tokens joined.
-        let shortcutTokens = trimmed
+        let shortcutTokens = expanded
             .components(separatedBy: CharacterSet(charactersIn: "+ -_"))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }

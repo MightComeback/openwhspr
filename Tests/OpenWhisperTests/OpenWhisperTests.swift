@@ -34,6 +34,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd shift space"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("command-shift-page-down"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌘ + ⇧ + f6"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌘⇧space"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌃⌥return"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
@@ -73,6 +75,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd shift space"), "space")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("command-shift-page-down"), "pagedown")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌘ + ⇧ + f6"), "f6")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⌘⇧space"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⌃⌥return"), "return")
     }
 
     func testHotkeyDisplayForKeypadKeys() throws {
