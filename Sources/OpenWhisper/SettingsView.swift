@@ -1019,7 +1019,14 @@ struct SettingsView: View {
                 .filter { !$0.isEmpty }
 
             if tokens.contains(where: { parseModifierToken($0) != nil }) {
-                return parseHotkeyTokens(tokens)
+                if let parsed = parseHotkeyTokens(tokens) {
+                    return parsed
+                }
+
+                let mergedTokens = mergeSpaceSeparatedKeyTokens(tokens)
+                if mergedTokens != tokens {
+                    return parseHotkeyTokens(mergedTokens)
+                }
             }
         }
 
@@ -1045,6 +1052,30 @@ struct SettingsView: View {
         }
 
         return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+    }
+
+    private func mergeSpaceSeparatedKeyTokens(_ tokens: [String]) -> [String] {
+        guard !tokens.isEmpty else {
+            return tokens
+        }
+
+        guard let firstNonModifierIndex = tokens.firstIndex(where: { parseModifierToken($0) == nil }) else {
+            return tokens
+        }
+
+        guard firstNonModifierIndex < tokens.count - 1 else {
+            return tokens
+        }
+
+        let trailingTokens = Array(tokens[(firstNonModifierIndex + 1)...])
+        if trailingTokens.contains(where: { parseModifierToken($0) != nil }) {
+            return tokens
+        }
+
+        let mergedKey = tokens[firstNonModifierIndex...].joined(separator: " ")
+        var merged = Array(tokens[..<firstNonModifierIndex])
+        merged.append(mergedKey)
+        return merged
     }
 
     private func parseHotkeyTokens(_ tokens: [String]) -> ParsedHotkeyDraft? {
