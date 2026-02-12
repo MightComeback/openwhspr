@@ -1133,6 +1133,10 @@ struct SettingsView: View {
             return "⌃+Space is often used for input source switching on macOS."
         }
 
+        if key == "space" && modifiers == Set([.control, .option]) {
+            return "⌃+⌥+Space is commonly bound to previous input source on macOS and can steal your hotkey press."
+        }
+
         if key == "space" && modifiers == Set([.command, .control]) {
             return "⌃+⌘+Space usually opens the emoji/symbol picker on macOS and can block dictation trigger behavior."
         }
