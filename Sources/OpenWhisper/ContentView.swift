@@ -224,6 +224,16 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
+                        Button("Probe Insert") {
+                            Task { @MainActor in
+                                _ = transcriber.runInsertionProbe()
+                                insertTargetAppName = transcriber.manualInsertTargetAppName()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
+
                         Button("Clear") {
                             Task { @MainActor in
                                 transcriber.clearTranscription()
