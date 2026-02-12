@@ -781,10 +781,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Treat purely formatting-level differences (extra spaces/punctuation)
         // as duplicates so live-loop chunks don't re-append equivalent text.
         if canonicalChunkForMerge(lowerLHS) == canonicalChunkForMerge(lowerRHS) {
+            let compactedRHS = rhs.replacingOccurrences(
+                of: #"\s+([,.;:!?…])"#,
+                with: "$1",
+                options: .regularExpression
+            )
             let lhsEndsWithSentencePunctuation = lhs.last.map(Self.isSentencePunctuation) ?? false
-            let rhsEndsWithSentencePunctuation = rhs.last.map(Self.isSentencePunctuation) ?? false
+            let rhsEndsWithSentencePunctuation = compactedRHS.last.map(Self.isSentencePunctuation) ?? false
             if rhsEndsWithSentencePunctuation && !lhsEndsWithSentencePunctuation {
-                return rhs
+                return compactedRHS
             }
             return lhs
         }
@@ -800,6 +805,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // "hello wor" -> "hello world". In that case replace with the richer
         // chunk instead of appending a broken suffix ("hello wor ld").
         if lowerRHS.hasPrefix(lowerLHS) {
+            if lhs.count <= rhs.count {
+                let remainderStart = rhs.index(rhs.startIndex, offsetBy: lhs.count)
+                let remainder = String(rhs[remainderStart...]).trimmingCharacters(in: .whitespaces)
+
+                // Whisper occasionally emits punctuation as a spaced suffix
+                // when restating the full sentence ("hello world ."). Keep
+                // the transcript compact by attaching punctuation directly.
+                if isStandalonePunctuationFragment(remainder) {
+                    guard let lhsLast = lhs.last else { return lhs }
+                    if Self.isSentencePunctuation(lhsLast) {
+                        return lhs
+                    }
+                    return lhs + remainder
+                }
+            }
             return rhs
         }
 

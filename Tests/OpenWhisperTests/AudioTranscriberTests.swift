@@ -224,6 +224,12 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world")
     }
 
+    func testMergeChunkCollapsesSpacedPunctuationWhenChunkRestatesFullSentence() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world .", into: "hello world")
+        XCTAssertEqual(merged, "hello world.")
+    }
+
     func testMergeChunkAttachesStandalonePunctuationWithoutExtraSpace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(".", into: "hello world")
