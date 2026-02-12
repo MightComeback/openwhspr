@@ -236,6 +236,18 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world!")
     }
 
+    func testMergeChunkSkipsDuplicateEllipsisPunctuationFragment() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("…", into: "hello world…")
+        XCTAssertEqual(merged, "hello world…")
+    }
+
+    func testMergeChunkTreatsEllipsisVariantAsDuplicate() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello world…", into: "hello world")
+        XCTAssertEqual(merged, "hello world…")
+    }
+
     func testSetAccessibilityPermissionCheckerForTestingOverridesChecker() async {
         let transcriber = AudioTranscriber.shared
         transcriber.setAccessibilityPermissionCheckerForTesting { false }

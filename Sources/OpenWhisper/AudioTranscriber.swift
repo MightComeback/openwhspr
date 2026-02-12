@@ -820,7 +820,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             .joined(separator: " ")
 
         return collapsedWhitespace
-            .trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:"))
+            .trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:…"))
     }
 
     private func isStandalonePunctuationFragment(_ text: String) -> Bool {
@@ -832,7 +832,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     private static func isSentencePunctuation(_ character: Character) -> Bool {
-        ".,!?;:".contains(character)
+        ".,!?;:…".contains(character)
     }
 
     func mergeChunkForTesting(_ chunk: String, into existing: String) -> String {
