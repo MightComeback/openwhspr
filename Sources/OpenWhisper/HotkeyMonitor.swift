@@ -266,7 +266,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             Task { @MainActor [weak self, weak transcriber] in
                 transcriber?.toggleRecording()
                 guard let self else { return }
-                self.setStatus(active: true, message: self.toggleStatusMessage(isRecording: transcriber?.isRecording ?? false))
+                self.setStatus(active: true, message: self.toggleFeedbackMessage(transcriber: transcriber))
             }
             return true
 
@@ -335,6 +335,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return "Hotkey active (\(combo)) — press again to stop"
         }
         return "Hotkey active (\(combo)) — press to record"
+    }
+
+    private func toggleFeedbackMessage(transcriber: AudioTranscriber?) -> String {
+        guard let transcriber else {
+            return toggleStatusMessage(isRecording: false)
+        }
+
+        if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+            return "Hotkey active (\(currentComboSummary())) — finalizing previous recording"
+        }
+
+        return toggleStatusMessage(isRecording: transcriber.isRecording)
     }
 
     private func holdActiveStatusMessage() -> String {
