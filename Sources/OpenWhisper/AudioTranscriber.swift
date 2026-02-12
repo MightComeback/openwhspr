@@ -50,6 +50,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var pendingChunkEnqueueTimes: [Date] = []
     private var isTranscribing: Bool = false
     private var pendingSessionFinalize: Bool = false
+    private var startRecordingAfterFinalizeRequested: Bool = false
     private var lastAcceptedChunkText: String = ""
 
     private let engine = AVAudioEngine()
@@ -541,9 +542,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     private func startRecording() {
         if (!isRecording && recordingStartedAt != nil) || pendingChunkCount > 0 {
-            statusMessage = "Finalizing previous recording…"
+            startRecordingAfterFinalizeRequested = true
+            statusMessage = "Finalizing previous recording… next recording queued"
             return
         }
+
+        startRecordingAfterFinalizeRequested = false
 
         guard whisper != nil else {
             statusMessage = "Model unavailable"
@@ -1008,6 +1012,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         mergeChunk(chunk, into: existing)
     }
 
+    @MainActor
+    var startRecordingAfterFinalizeRequestedForTesting: Bool {
+        startRecordingAfterFinalizeRequested
+    }
+
     func setAccessibilityPermissionCheckerForTesting(_ checker: @escaping () -> Bool) {
         accessibilityPermissionChecker = checker
     }
@@ -1061,7 +1070,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func finalizeSessionIfNeeded() {
-        defer { recordingOutputSettings = nil }
+        let shouldStartNextRecording = startRecordingAfterFinalizeRequested
+        startRecordingAfterFinalizeRequested = false
+
+        defer {
+            recordingOutputSettings = nil
+            if shouldStartNextRecording {
+                startRecording()
+            }
+        }
+
         pendingSessionFinalize = false
         inputLevel = 0
         pendingChunkCount = 0
