@@ -337,6 +337,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !probe.isEmpty else { return false }
         guard !isRunningInsertionProbe else { return false }
 
+        let previousClipboardItems = NSPasteboard.general.pasteboardItems
         let previousClipboardString = NSPasteboard.general.string(forType: .string)
 
         isRunningInsertionProbe = true
@@ -344,7 +345,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         let result = performManualInsert(text: probe)
         if result.outcome != .inserted {
-            restoreProbeClipboardIfNeeded(probeText: probe, previousClipboardString: previousClipboardString)
+            restoreProbeClipboardIfNeeded(
+                probeText: probe,
+                previousClipboardItems: previousClipboardItems,
+                previousClipboardString: previousClipboardString
+            )
         }
 
         let now = Date()
@@ -1270,13 +1275,22 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func restoreProbeClipboardIfNeeded(probeText: String, previousClipboardString: String?) {
+    private func restoreProbeClipboardIfNeeded(
+        probeText: String,
+        previousClipboardItems: [NSPasteboardItem]?,
+        previousClipboardString: String?
+    ) {
         let pasteboard = NSPasteboard.general
         guard pasteboard.string(forType: .string) == probeText else {
             return
         }
 
         pasteboard.clearContents()
+        if let previousClipboardItems, !previousClipboardItems.isEmpty {
+            _ = pasteboard.writeObjects(previousClipboardItems)
+            return
+        }
+
         if let previousClipboardString {
             _ = pasteboard.setString(previousClipboardString, forType: .string)
         }
