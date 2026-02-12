@@ -1026,21 +1026,29 @@ struct SettingsView: View {
         }
     }
 
-    private var hasAnyRequiredModifier: Bool {
-        requiredCommand || requiredShift || requiredOption || requiredControl || requiredCapsLock
+    private var effectiveHotkeyRiskContext: (requiredModifiers: Set<ParsedModifier>, key: String) {
+        if let parsed = parseHotkeyDraft(hotkeyKeyDraft) {
+            let parsedKey = sanitizeKeyValue(parsed.key)
+            if HotkeyDisplay.isSupportedKey(parsedKey) {
+                let modifiers = parsed.requiredModifiers ?? currentRequiredModifierSet
+                return (modifiers, parsedKey)
+            }
+        }
+
+        return (currentRequiredModifierSet, sanitizeKeyValue(hotkeyKey))
     }
 
     private var showsHighRiskHotkeyWarning: Bool {
-        guard !hasAnyRequiredModifier else {
+        let context = effectiveHotkeyRiskContext
+        guard context.requiredModifiers.isEmpty else {
             return false
         }
 
-        let normalizedKey = sanitizeKeyValue(hotkeyKey)
-        if normalizedKey.count == 1 {
+        if context.key.count == 1 {
             return true
         }
 
-        switch normalizedKey {
+        switch context.key {
         case "space", "tab", "return", "delete", "forwarddelete", "escape", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
             return true
         default:
