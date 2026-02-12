@@ -18,6 +18,7 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.hotkeyKey) private var hotkeyKey: String = "space"
 
     @State private var hotkeyKeyDraft: String = ""
+    @State private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true
@@ -319,7 +320,7 @@ struct SettingsView: View {
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Capture + insertion test") {
                                 Task { @MainActor in
                                     transcriber.captureProfileForFrontmostApp()
-                                    _ = transcriber.runInsertionProbe()
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleText)
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -327,12 +328,31 @@ struct SettingsView: View {
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
                                 Task { @MainActor in
-                                    _ = transcriber.runInsertionProbe()
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleText)
                                 }
                             }
                             .buttonStyle(.bordered)
                             .disabled(!canRunInsertionTest)
                         }
+
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("Insertion test text")
+                                .frame(width: 125, alignment: .leading)
+
+                            TextField("OpenWhisper insertion test", text: $insertionProbeSampleText)
+                                .textFieldStyle(.roundedBorder)
+
+                            Button("Reset") {
+                                insertionProbeSampleText = "OpenWhisper insertion test"
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(insertionProbeSampleText == "OpenWhisper insertion test")
+                        }
+
+                        Text("Used by both insertion test buttons. Leave it short so you can quickly confirm the right destination app received it.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
 
                         if !canCaptureFrontmostProfile {
                             Text(captureProfileDisabledReason)
