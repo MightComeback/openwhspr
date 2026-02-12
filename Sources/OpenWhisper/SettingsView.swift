@@ -8,6 +8,7 @@
 @preconcurrency import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
+import Carbon.HIToolbox
 
 struct SettingsView: View {
     @ObservedObject var transcriber: AudioTranscriber
@@ -18,6 +19,8 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.hotkeyKey) private var hotkeyKey: String = "space"
 
     @State private var hotkeyKeyDraft: String = ""
+    @State private var isCapturingHotkey: Bool = false
+    @State private var hotkeyCaptureMonitor: Any?
     @State private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
@@ -204,6 +207,24 @@ struct SettingsView: View {
                             .controlSize(.small)
                             .help("Paste a shortcut like ⌘⇧Space or cmd+shift+space")
 
+                            Button(isCapturingHotkey ? "Press keys…" : "Record shortcut") {
+                                if isCapturingHotkey {
+                                    stopHotkeyCapture()
+                                } else {
+                                    startHotkeyCapture()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+
+                            if isCapturingHotkey {
+                                Button("Cancel") {
+                                    stopHotkeyCapture()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+
                             Menu("Common keys") {
                                 ForEach(commonHotkeyKeySections, id: \.title) { section in
                                     Section(section.title) {
@@ -219,6 +240,12 @@ struct SettingsView: View {
                             .controlSize(.small)
 
                             Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function, left/right/up/down, f1-f24, keypad1/numpad1, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if isCapturingHotkey {
+                            Text("Listening for the next key press. Hold modifiers and press your trigger key once.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -739,6 +766,9 @@ struct SettingsView: View {
                 transcriber.refreshFrontmostAppContext()
             }
         }
+        .onDisappear {
+            stopHotkeyCapture()
+        }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
         }
@@ -1215,6 +1245,132 @@ struct SettingsView: View {
         forbiddenOption = true
         forbiddenControl = true
         forbiddenCapsLock = false
+    }
+
+    private func startHotkeyCapture() {
+        stopHotkeyCapture()
+        isCapturingHotkey = true
+
+        hotkeyCaptureMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            captureHotkey(from: event)
+            return nil
+        }
+    }
+
+    private func stopHotkeyCapture() {
+        if let hotkeyCaptureMonitor {
+            NSEvent.removeMonitor(hotkeyCaptureMonitor)
+            self.hotkeyCaptureMonitor = nil
+        }
+        isCapturingHotkey = false
+    }
+
+    private func captureHotkey(from event: NSEvent) {
+        guard isCapturingHotkey else {
+            return
+        }
+
+        guard let key = hotkeyKeyName(from: event) else {
+            return
+        }
+
+        let sanitized = sanitizeKeyValue(key)
+        guard HotkeyDisplay.isSupportedKey(sanitized) else {
+            return
+        }
+
+        hotkeyKeyDraft = sanitized
+        hotkeyKey = sanitized
+
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control, .capsLock])
+        requiredCommand = modifiers.contains(.command)
+        requiredShift = modifiers.contains(.shift)
+        requiredOption = modifiers.contains(.option)
+        requiredControl = modifiers.contains(.control)
+        requiredCapsLock = modifiers.contains(.capsLock)
+
+        forbiddenCommand = !requiredCommand && forbiddenCommand
+        forbiddenShift = !requiredShift && forbiddenShift
+        forbiddenOption = !requiredOption && forbiddenOption
+        forbiddenControl = !requiredControl && forbiddenControl
+        forbiddenCapsLock = !requiredCapsLock && forbiddenCapsLock
+
+        stopHotkeyCapture()
+    }
+
+    private func hotkeyKeyName(from event: NSEvent) -> String? {
+        switch Int(event.keyCode) {
+        case kVK_Command, kVK_Shift, kVK_RightShift, kVK_Option, kVK_RightOption, kVK_Control, kVK_RightControl, kVK_CapsLock, kVK_Function:
+            return nil
+        case kVK_Space: return "space"
+        case kVK_Tab: return "tab"
+        case kVK_Return: return "return"
+        case kVK_Escape: return "escape"
+        case kVK_Delete: return "delete"
+        case kVK_ForwardDelete: return "forwarddelete"
+        case kVK_Help: return "insert"
+        case kVK_LeftArrow: return "left"
+        case kVK_RightArrow: return "right"
+        case kVK_UpArrow: return "up"
+        case kVK_DownArrow: return "down"
+        case kVK_Home: return "home"
+        case kVK_End: return "end"
+        case kVK_PageUp: return "pageup"
+        case kVK_PageDown: return "pagedown"
+        case kVK_F1: return "f1"
+        case kVK_F2: return "f2"
+        case kVK_F3: return "f3"
+        case kVK_F4: return "f4"
+        case kVK_F5: return "f5"
+        case kVK_F6: return "f6"
+        case kVK_F7: return "f7"
+        case kVK_F8: return "f8"
+        case kVK_F9: return "f9"
+        case kVK_F10: return "f10"
+        case kVK_F11: return "f11"
+        case kVK_F12: return "f12"
+        case kVK_F13: return "f13"
+        case kVK_F14: return "f14"
+        case kVK_F15: return "f15"
+        case kVK_F16: return "f16"
+        case kVK_F17: return "f17"
+        case kVK_F18: return "f18"
+        case kVK_F19: return "f19"
+        case kVK_F20: return "f20"
+        case 0x6E: return "f21"
+        case 0x6F: return "f22"
+        case 0x70: return "f23"
+        case 0x71: return "f24"
+        case kVK_ANSI_Keypad0: return "keypad0"
+        case kVK_ANSI_Keypad1: return "keypad1"
+        case kVK_ANSI_Keypad2: return "keypad2"
+        case kVK_ANSI_Keypad3: return "keypad3"
+        case kVK_ANSI_Keypad4: return "keypad4"
+        case kVK_ANSI_Keypad5: return "keypad5"
+        case kVK_ANSI_Keypad6: return "keypad6"
+        case kVK_ANSI_Keypad7: return "keypad7"
+        case kVK_ANSI_Keypad8: return "keypad8"
+        case kVK_ANSI_Keypad9: return "keypad9"
+        case kVK_ANSI_KeypadDecimal: return "keypaddecimal"
+        case kVK_ANSI_KeypadMultiply: return "keypadmultiply"
+        case kVK_ANSI_KeypadPlus: return "keypadplus"
+        case kVK_ANSI_KeypadClear: return "keypadclear"
+        case kVK_ANSI_KeypadDivide: return "keypaddivide"
+        case kVK_ANSI_KeypadEnter: return "keypadenter"
+        case kVK_ANSI_KeypadMinus: return "keypadminus"
+        case kVK_ANSI_KeypadEquals: return "keypadequals"
+        default:
+            guard let characters = event.charactersIgnoringModifiers?.lowercased(),
+                  let scalar = characters.unicodeScalars.first else {
+                return nil
+            }
+
+            if scalar.properties.isWhitespace {
+                return "space"
+            }
+
+            return HotkeyDisplay.canonicalKey(String(scalar))
+        }
     }
 
     private var normalizedHotkeyDraftForApply: String? {
