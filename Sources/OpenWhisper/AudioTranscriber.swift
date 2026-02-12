@@ -412,7 +412,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
-        guard pendingChunkCount == 0 else {
+        let isFinalizing = pendingChunkCount > 0 || (!isRecording && recordingStartedAt != nil)
+        guard !isFinalizing else {
             let message = "Wait for live transcription to finish finalizing before running an insertion test."
             statusMessage = message
             lastError = message

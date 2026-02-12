@@ -423,18 +423,50 @@ final class AudioTranscriberTests: XCTestCase {
         await MainActor.run {
             let originalIsRecording = transcriber.isRecording
             let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
             let originalStatusMessage = transcriber.statusMessage
             let originalLastError = transcriber.lastError
 
             defer {
                 transcriber.isRecording = originalIsRecording
                 transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
                 transcriber.statusMessage = originalStatusMessage
                 transcriber.lastError = originalLastError
             }
 
             transcriber.isRecording = false
+            transcriber.recordingStartedAt = Date()
             transcriber.pendingChunkCount = 2
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
+        }
+    }
+
+    func testRunInsertionProbeBlockedWhileFinalizingWithoutQueuedChunks() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 0
+            transcriber.recordingStartedAt = Date()
             let success = transcriber.runInsertionProbe(sampleText: "probe")
 
             XCTAssertFalse(success)

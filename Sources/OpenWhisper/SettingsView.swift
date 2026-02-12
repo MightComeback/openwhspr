@@ -1078,15 +1078,19 @@ struct SettingsView: View {
         !insertionProbeSampleTextTrimmed.isEmpty
     }
 
+    private var isTranscriptionFinalizingForInsertion: Bool {
+        transcriber.pendingChunkCount > 0 || (!transcriber.isRecording && transcriber.recordingStartedAt != nil)
+    }
+
     private var canCaptureAndRunInsertionTest: Bool {
-        canCaptureFrontmostProfile && !transcriber.isRecording && transcriber.pendingChunkCount == 0 && !transcriber.isRunningInsertionProbe && hasInsertionProbeSampleText
+        canCaptureFrontmostProfile && !transcriber.isRecording && !isTranscriptionFinalizingForInsertion && !transcriber.isRunningInsertionProbe && hasInsertionProbeSampleText
     }
 
     private var canRunInsertionTest: Bool {
         guard !transcriber.isRecording else {
             return false
         }
-        guard transcriber.pendingChunkCount == 0 else {
+        guard !isTranscriptionFinalizingForInsertion else {
             return false
         }
         guard !transcriber.isRunningInsertionProbe else {
@@ -1102,7 +1106,7 @@ struct SettingsView: View {
         if transcriber.isRecording {
             return "Stop recording before running an insertion test."
         }
-        if transcriber.pendingChunkCount > 0 {
+        if isTranscriptionFinalizingForInsertion {
             return "Wait for live transcription to finish finalizing before running an insertion test."
         }
         if transcriber.isRunningInsertionProbe {
