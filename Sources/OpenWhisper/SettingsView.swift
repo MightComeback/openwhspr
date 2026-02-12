@@ -195,7 +195,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, fn/function, left/right/up/down, f1-f24, keypad1/numpad1, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function, left/right/up/down, f1-f24, keypad1/numpad1, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -915,7 +915,7 @@ struct SettingsView: View {
         [
             (
                 title: "Basic",
-                keys: ["space", "tab", "return", "escape", "delete", "forwarddelete", "fn"]
+                keys: ["space", "tab", "return", "escape", "delete", "forwarddelete", "insert", "fn"]
             ),
             (
                 title: "Navigation",

@@ -13,7 +13,7 @@ enum HotkeyDisplay {
         }
 
         switch normalized {
-        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "del", "backspace", "bksp", "forwarddelete", "caps", "capslock", "fn", "function", "globe", "globekey", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadenter", "numpadenter", "keypadminus", "numpadminus", "keypadequals", "numpadequals":
+        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "del", "backspace", "bksp", "forwarddelete", "insert", "ins", "help", "caps", "capslock", "fn", "function", "globe", "globekey", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadenter", "numpadenter", "keypadminus", "numpadminus", "keypadequals", "numpadequals":
             return true
         case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24":
             return true
@@ -41,6 +41,7 @@ enum HotkeyDisplay {
         case "esc", "escapekey", "⎋": return "escape"
         case "del", "deletekey", "backspace", "backspacekey", "bksp", "⌫": return "delete"
         case "⌦", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
+        case "insertkey", "ins", "helpkey": return "insert"
         case "caps", "capskey": return "capslock"
         case "function", "fnkey", "globe", "globekey", "🌐": return "fn"
         case "←", "leftarrow", "leftkey": return "left"
@@ -118,6 +119,7 @@ enum HotkeyDisplay {
         case "escape", "esc": return "Esc"
         case "delete", "backspace": return "Delete"
         case "forwarddelete": return "FwdDelete"
+        case "insert", "ins", "help": return "Insert"
         case "caps", "capslock": return "CapsLock"
         case "fn", "function", "globe", "globekey": return "Fn/Globe"
         case "minus", "hyphen": return "-"
