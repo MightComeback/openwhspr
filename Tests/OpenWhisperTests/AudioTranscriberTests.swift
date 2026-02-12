@@ -182,6 +182,12 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world.")
     }
 
+    func testMergeChunkTreatsWhitespaceOnlyDifferencesAsDuplicate() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("hello   world", into: "hello world")
+        XCTAssertEqual(merged, "hello world")
+    }
+
     func testMergeChunkStillAppendsNewContentWithOverlap() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("world from swift", into: "hello world")

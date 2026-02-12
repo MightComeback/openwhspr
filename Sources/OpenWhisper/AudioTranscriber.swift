@@ -693,6 +693,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return lhs
         }
 
+        // Treat purely formatting-level differences (extra spaces/punctuation)
+        // as duplicates so live-loop chunks don't re-append equivalent text.
+        if canonicalChunkForMerge(lowerLHS) == canonicalChunkForMerge(lowerRHS) {
+            let lhsEndsWithSentencePunctuation = lhs.last.map(Self.isSentencePunctuation) ?? false
+            let rhsEndsWithSentencePunctuation = rhs.last.map(Self.isSentencePunctuation) ?? false
+            if rhsEndsWithSentencePunctuation && !lhsEndsWithSentencePunctuation {
+                return rhs
+            }
+            return lhs
+        }
+
         // Whisper can also regress to an earlier phrase that already exists
         // inside the accumulated transcript (not necessarily at the end).
         // Avoid re-appending that duplicate fragment.
@@ -761,7 +772,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     private func canonicalChunkForMerge(_ text: String) -> String {
-        text.trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:"))
+        let collapsedWhitespace = text
+            .split(whereSeparator: { $0.isWhitespace })
+            .joined(separator: " ")
+
+        return collapsedWhitespace
+            .trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r.,!?;:"))
     }
 
     private func isStandalonePunctuationFragment(_ text: String) -> Bool {
