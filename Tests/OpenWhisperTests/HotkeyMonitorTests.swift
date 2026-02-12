@@ -786,5 +786,23 @@ final class HotkeyMonitorTests: XCTestCase {
             "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘⌘⇧’. Set modifiers with the toggles above."
         )
     }
+
+    func testMissingSinglePermissionMessageIncludesSettingsPath() {
+        let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
+
+        XCTAssertEqual(
+            monitor.missingPermissionStatusMessage(["Accessibility"]),
+            "Hotkey disabled: missing Accessibility permission. Open System Settings → Privacy & Security → Accessibility and enable OpenWhisper."
+        )
+    }
+
+    func testMissingMultiplePermissionsMessageIncludesBothSectionsGuidance() {
+        let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
+
+        XCTAssertEqual(
+            monitor.missingPermissionStatusMessage(["Accessibility", "Input Monitoring"]),
+            "Hotkey disabled: missing Accessibility and Input Monitoring permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections."
+        )
+    }
 }
 

@@ -121,8 +121,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         let missingPermissions = Self.missingHotkeyPermissionNames()
         if !missingPermissions.isEmpty {
-            let missingList = Self.humanList(missingPermissions)
-            setStatus(active: false, message: "Hotkey disabled: missing \(missingList) permission")
+            setStatus(active: false, message: missingPermissionStatusMessage(missingPermissions))
             isListening = false
             return
         }
@@ -472,6 +471,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             let head = items.dropLast().joined(separator: ", ")
             return "\(head), and \(items[items.count - 1])"
         }
+    }
+
+    func missingPermissionStatusMessage(_ missingPermissions: [String]) -> String {
+        let missingList = Self.humanList(missingPermissions)
+        if missingPermissions.count == 1, let permission = missingPermissions.first {
+            return "Hotkey disabled: missing \(permission) permission. Open System Settings → Privacy & Security → \(permission) and enable OpenWhisper."
+        }
+        return "Hotkey disabled: missing \(missingList) permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections."
     }
 
     private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?, isValid: Bool) {
