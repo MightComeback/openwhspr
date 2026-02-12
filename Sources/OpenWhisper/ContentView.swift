@@ -439,6 +439,12 @@ struct ContentView: View {
             }
             refreshInsertTargetAppName()
         }
+        .onReceive(transcriber.$isRecording.removeDuplicates()) { _ in
+            hotkeyMonitor.refreshStatusFromRuntimeState()
+        }
+        .onReceive(transcriber.$pendingChunkCount.removeDuplicates()) { _ in
+            hotkeyMonitor.refreshStatusFromRuntimeState()
+        }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
         }

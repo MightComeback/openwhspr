@@ -321,6 +321,17 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         handle(event, type: type)
     }
 
+    func refreshStatusFromRuntimeState() {
+        guard isListening else { return }
+
+        if mode == .hold, holdSessionArmed {
+            setStatus(active: true, message: holdActiveStatusMessage())
+            return
+        }
+
+        setStatus(active: true, message: standbyStatusMessage())
+    }
+
     var holdSessionArmedForTesting: Bool {
         holdSessionArmed
     }
