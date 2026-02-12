@@ -345,10 +345,36 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         if let invalidTriggerKeyInput {
             let trimmed = invalidTriggerKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
+                if looksLikeShortcutCombo(trimmed) {
+                    return "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘\(trimmed)’. Set modifiers with the toggles above."
+                }
                 return "Hotkey disabled: unsupported trigger key ‘\(trimmed)’. Use one key like space, f6, or /."
             }
         }
         return "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
+    }
+
+    private func looksLikeShortcutCombo(_ raw: String) -> Bool {
+        let normalized = raw.lowercased()
+        if normalized.contains("+") {
+            return true
+        }
+
+        let tokens = normalized
+            .replacingOccurrences(of: "-", with: " ")
+            .split(whereSeparator: { $0.isWhitespace })
+            .map(String.init)
+
+        let modifierWords: Set<String> = [
+            "cmd", "command", "⌘",
+            "shift", "⇧",
+            "ctrl", "control", "⌃",
+            "opt", "option", "alt", "⌥",
+            "fn", "function", "globe"
+        ]
+
+        let modifierCount = tokens.filter { modifierWords.contains($0) }.count
+        return modifierCount >= 1 && tokens.count >= 2
     }
 
     private func requestAccessibilityIfNeeded() {
