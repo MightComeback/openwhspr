@@ -1049,6 +1049,27 @@ struct SettingsView: View {
             }
         }
 
+        // Robust fallback for mixed separators copied from chats/docs,
+        // e.g. "cmd + shift-space", "command_shift+page down", or
+        // "ctrl- alt + delete".
+        if normalized.contains(where: { $0 == "+" || $0 == "-" || $0 == "_" || $0.isWhitespace }) {
+            let tokens = normalized
+                .components(separatedBy: CharacterSet(charactersIn: "+-_ "))
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+
+            if tokens.contains(where: { parseModifierToken($0) != nil }) {
+                if let parsed = parseHotkeyTokens(tokens) {
+                    return parsed
+                }
+
+                let mergedTokens = mergeSpaceSeparatedKeyTokens(tokens)
+                if mergedTokens != tokens {
+                    return parseHotkeyTokens(mergedTokens)
+                }
+            }
+        }
+
         // Accept compact symbol-prefix combos without separators,
         // e.g. "⌘⇧space", "@~f6", or "⌃⌥return".
         let expandedCompactTokens = expandCompactModifierToken(normalized)
