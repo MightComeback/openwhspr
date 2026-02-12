@@ -274,9 +274,21 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func toggleRecording() {
         if isRecording {
             stopRecording()
-        } else {
-            startRecording()
+            return
         }
+
+        if isFinalizingSession {
+            if startRecordingAfterFinalizeRequested {
+                startRecordingAfterFinalizeRequested = false
+                statusMessage = "Finalizing previous recording… queued start canceled"
+            } else {
+                startRecordingAfterFinalizeRequested = true
+                statusMessage = "Finalizing previous recording… next recording queued"
+            }
+            return
+        }
+
+        startRecording()
     }
 
     @MainActor
@@ -289,6 +301,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func stopRecordingFromHotkey() {
         guard isRecording else { return }
         stopRecording()
+    }
+
+    @MainActor
+    private var isFinalizingSession: Bool {
+        (!isRecording && recordingStartedAt != nil) || pendingChunkCount > 0
     }
 
     @MainActor

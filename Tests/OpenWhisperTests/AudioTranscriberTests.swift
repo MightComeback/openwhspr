@@ -380,6 +380,11 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertFalse(transcriber.isRecording)
             XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… next recording queued")
             XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+
+            transcriber.toggleRecording()
+
+            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… queued start canceled")
+            XCTAssertFalse(transcriber.startRecordingAfterFinalizeRequestedForTesting)
         }
     }
 
