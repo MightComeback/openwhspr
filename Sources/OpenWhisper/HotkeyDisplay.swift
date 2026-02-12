@@ -184,7 +184,7 @@ enum HotkeyDisplay {
             .filter { !$0.isEmpty }
 
         let modifierTokens: Set<String> = [
-            "cmd", "command", "shift", "option", "opt", "alt", "control", "ctrl", "caps", "capslock", "fn", "function"
+            "cmd", "command", "shift", "option", "opt", "alt", "control", "ctrl", "caps", "capslock", "fn", "function", "fnkey", "globe", "globekey", "🌐"
         ]
 
         if shortcutTokens.contains(where: { modifierTokens.contains($0) }) {
