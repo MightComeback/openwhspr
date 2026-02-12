@@ -1259,6 +1259,10 @@ struct SettingsView: View {
             // UX: as soon as both permissions are granted, recover hotkey capture
             // automatically instead of forcing the user to click "Restart monitor".
             hotkeyMonitor.start()
+        } else if !previouslyMissingHotkeyPermissions && missingHotkeyPermissions {
+            // Keep status truthful if permissions are revoked while Settings is open.
+            // Without this, the UI may still look active until a manual restart.
+            hotkeyMonitor.stop()
         }
     }
 
