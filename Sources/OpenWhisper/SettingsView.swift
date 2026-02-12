@@ -1009,11 +1009,14 @@ struct SettingsView: View {
     }
 
     private var canCaptureAndRunInsertionTest: Bool {
-        canCaptureFrontmostProfile && !transcriber.isRecording && !transcriber.isRunningInsertionProbe && hasInsertionProbeSampleText
+        canCaptureFrontmostProfile && !transcriber.isRecording && transcriber.pendingChunkCount == 0 && !transcriber.isRunningInsertionProbe && hasInsertionProbeSampleText
     }
 
     private var canRunInsertionTest: Bool {
         guard !transcriber.isRecording else {
+            return false
+        }
+        guard transcriber.pendingChunkCount == 0 else {
             return false
         }
         guard !transcriber.isRunningInsertionProbe else {
@@ -1028,6 +1031,9 @@ struct SettingsView: View {
     private var insertionTestDisabledReason: String {
         if transcriber.isRecording {
             return "Stop recording before running an insertion test."
+        }
+        if transcriber.pendingChunkCount > 0 {
+            return "Wait for live transcription to finish finalizing before running an insertion test."
         }
         if transcriber.isRunningInsertionProbe {
             return "Insertion test is already running."
