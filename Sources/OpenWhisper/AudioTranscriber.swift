@@ -310,6 +310,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    @discardableResult
+    func cancelQueuedStartAfterFinalizeFromHotkey() -> Bool {
+        guard isFinalizingSession else { return false }
+        guard startRecordingAfterFinalizeRequested else { return false }
+
+        startRecordingAfterFinalizeRequested = false
+        statusMessage = "Finalizing previous recording… queued start canceled"
+        return true
+    }
+
+    @MainActor
     private var isFinalizingSession: Bool {
         (!isRecording && recordingStartedAt != nil) || pendingChunkCount > 0
     }

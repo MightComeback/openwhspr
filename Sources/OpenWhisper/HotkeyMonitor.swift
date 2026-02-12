@@ -308,6 +308,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 holdSessionArmed = false
                 setStatus(active: true, message: standbyStatusMessage())
                 Task { @MainActor [weak transcriber] in
+                    if transcriber?.cancelQueuedStartAfterFinalizeFromHotkey() == true {
+                        return
+                    }
                     transcriber?.stopRecordingFromHotkey()
                 }
                 return true

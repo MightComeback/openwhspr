@@ -429,6 +429,37 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testCancelQueuedStartAfterFinalizeFromHotkeyClearsQueuedStart() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStartedAt = transcriber.recordingStartedAt
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalStatusMessage = transcriber.statusMessage
+            let originalIsRecording = transcriber.isRecording
+
+            defer {
+                transcriber.recordingStartedAt = originalStartedAt
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.isRecording = originalIsRecording
+            }
+
+            transcriber.isRecording = false
+            transcriber.recordingStartedAt = Date()
+            transcriber.pendingChunkCount = 1
+            transcriber.toggleRecording()
+
+            XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+
+            let canceled = transcriber.cancelQueuedStartAfterFinalizeFromHotkey()
+
+            XCTAssertTrue(canceled)
+            XCTAssertFalse(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… queued start canceled")
+        }
+    }
+
     func testRunInsertionProbeBlockedWhileRecording() async {
         let transcriber = AudioTranscriber.shared
 
