@@ -219,13 +219,15 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command])
                         .disabled(!canInsertNow)
 
-                        Button("Retarget") {
+                        Button(retargetButtonTitle()) {
                             Task { @MainActor in
                                 insertTargetAppName = transcriber.manualInsertTargetAppName()
                             }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .keyboardShortcut("r", modifiers: [.command, .shift])
+                        .help("Refresh insertion target from your current front app")
 
                         Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
                             Task { @MainActor in
@@ -493,6 +495,13 @@ struct ContentView: View {
         }
 
         return "Insert into \(target)"
+    }
+
+    private func retargetButtonTitle() -> String {
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Retarget"
+        }
+        return "Retarget → \(abbreviatedAppName(target))"
     }
 
     private func abbreviatedAppName(_ name: String, maxCharacters: Int = 18) -> String {
