@@ -257,8 +257,8 @@ struct SettingsView: View {
                             }
                         }
 
-                        if !isHotkeyKeyDraftSupported {
-                            Text("Unsupported key. Use a single character, named key, arrow, or F1-F24.")
+                        if let hotkeyDraftValidationMessage {
+                            Text(hotkeyDraftValidationMessage)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         } else if let preview = canonicalHotkeyDraftPreview,
@@ -895,6 +895,24 @@ struct SettingsView: View {
             return false
         }
         return HotkeyDisplay.isSupportedKey(key)
+    }
+
+    private var hotkeyDraftValidationMessage: String? {
+        let trimmedDraft = hotkeyKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if trimmedDraft.isEmpty {
+            return "Enter one trigger key like space, f6, or /."
+        }
+
+        if !isHotkeyKeyDraftSupported {
+            if looksLikeModifierComboInput(trimmedDraft),
+               parseHotkeyDraft(trimmedDraft)?.requiredModifiers == nil {
+                return "Trigger key expects one key (like space or f6), not modifiers only."
+            }
+            return "Unsupported key. Use a single character, named key, arrow, or F1-F24."
+        }
+
+        return nil
     }
 
     private var hasHotkeyDraftChangesToApply: Bool {
