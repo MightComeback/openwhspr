@@ -1335,8 +1335,12 @@ struct SettingsView: View {
             return
         }
 
+        guard let key = hotkeyKeyName(from: event) else {
+            return
+        }
+
         let includesFunctionModifier = event.modifierFlags.contains(.function)
-        if includesFunctionModifier {
+        if includesFunctionModifier && key != "fn" {
             hotkeyCaptureError = "Fn/Globe can't be recorded as a required modifier yet. Use Command/Shift/Option/Control + key."
             return
         }
@@ -1347,10 +1351,6 @@ struct SettingsView: View {
         // NSEvent reports `.capsLock` for every key press, which would
         // accidentally force Caps Lock as a required modifier.
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
-
-        guard let key = hotkeyKeyName(from: event) else {
-            return
-        }
 
         // UX: plain Escape cancels capture. If modifiers are held, treat Escape
         // as a valid trigger key so users can record combos like ⌘+Esc.
@@ -1388,8 +1388,10 @@ struct SettingsView: View {
 
     private func hotkeyKeyName(from event: NSEvent) -> String? {
         switch Int(event.keyCode) {
-        case kVK_Command, kVK_Shift, kVK_RightShift, kVK_Option, kVK_RightOption, kVK_Control, kVK_RightControl, kVK_CapsLock, kVK_Function:
+        case kVK_Command, kVK_Shift, kVK_RightShift, kVK_Option, kVK_RightOption, kVK_Control, kVK_RightControl, kVK_CapsLock:
             return nil
+        case kVK_Function:
+            return "fn"
         case kVK_Space: return "space"
         case kVK_Tab: return "tab"
         case kVK_Return: return "return"
