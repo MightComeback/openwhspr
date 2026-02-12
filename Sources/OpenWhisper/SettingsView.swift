@@ -75,6 +75,15 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                             Text(hotkeySummary())
                                 .font(.headline)
+
+                            Button {
+                                copyHotkeySummaryToClipboard()
+                            } label: {
+                                Label("Copy", systemImage: "doc.on.doc")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .help("Copy hotkey combo to clipboard")
                         }
 
                         if showsHighRiskHotkeyWarning {
@@ -1350,6 +1359,12 @@ struct SettingsView: View {
         if normalized.isEmpty { return "space" }
         if normalized == " " { return "space" }
         return HotkeyDisplay.canonicalKey(normalized)
+    }
+
+    private func copyHotkeySummaryToClipboard() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        _ = pasteboard.setString(hotkeySummary(), forType: .string)
     }
 
     private func hotkeySummary() -> String {
