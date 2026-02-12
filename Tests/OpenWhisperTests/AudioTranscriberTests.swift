@@ -302,6 +302,35 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testInsertTranscriptionBlockedWhileFinalizingPendingChunks() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalTranscription = transcriber.transcription
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.transcription = originalTranscription
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 1
+            transcriber.transcription = "hello world"
+
+            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+            XCTAssertFalse(inserted)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text.")
+        }
+    }
+
     func testToggleRecordingDefersNewSessionWhileFinalizing() async {
         let transcriber = AudioTranscriber.shared
 

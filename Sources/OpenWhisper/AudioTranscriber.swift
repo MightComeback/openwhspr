@@ -346,6 +346,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
+        guard !isRecording else {
+            statusMessage = "Stop recording before inserting text"
+            return false
+        }
+
+        guard pendingChunkCount == 0 else {
+            let message = "Wait for live transcription to finish finalizing before inserting text."
+            statusMessage = message
+            lastError = message
+            return false
+        }
+
         let settings = effectiveOutputSettingsForCurrentApp()
         let normalized = normalizeOutputText(transcription, settings: settings)
         guard !normalized.isEmpty else {
