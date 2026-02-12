@@ -1106,6 +1106,18 @@ struct SettingsView: View {
             return "⌘+⇧+Tab is reserved for reverse app switching on macOS."
         }
 
+        if key == "backtick" && modifiers == Set([.command]) {
+            return "⌘+` is reserved for cycling windows in the front app on macOS."
+        }
+
+        if key == "h" && modifiers == Set([.command]) {
+            return "⌘+H hides the current app on macOS and makes a poor dictation hotkey."
+        }
+
+        if key == "m" && modifiers == Set([.command]) {
+            return "⌘+M minimizes the front window on macOS and can interrupt your flow."
+        }
+
         return nil
     }
 
