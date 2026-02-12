@@ -188,31 +188,32 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
-        let currentDefaults = defaultOutputSettings()
-        let profile = AppProfile(
-            bundleIdentifier: candidate.bundleIdentifier,
-            appName: candidate.appName,
-            autoCopy: currentDefaults.autoCopy,
-            autoPaste: currentDefaults.autoPaste,
-            clearAfterInsert: currentDefaults.clearAfterInsert,
-            commandReplacements: currentDefaults.commandReplacements,
-            smartCapitalization: currentDefaults.smartCapitalization,
-            terminalPunctuation: currentDefaults.terminalPunctuation,
-            customCommands: ""
-        )
-
-        if let index = appProfiles.firstIndex(where: { $0.bundleIdentifier == profile.bundleIdentifier }) {
-            appProfiles[index] = profile
+        if let index = appProfiles.firstIndex(where: { $0.bundleIdentifier == candidate.bundleIdentifier }) {
+            // Re-capturing an existing app should refresh identity only, not
+            // wipe user-tuned profile behavior (auto-paste, commands, etc.).
+            appProfiles[index].appName = candidate.appName
         } else {
+            let currentDefaults = defaultOutputSettings()
+            let profile = AppProfile(
+                bundleIdentifier: candidate.bundleIdentifier,
+                appName: candidate.appName,
+                autoCopy: currentDefaults.autoCopy,
+                autoPaste: currentDefaults.autoPaste,
+                clearAfterInsert: currentDefaults.clearAfterInsert,
+                commandReplacements: currentDefaults.commandReplacements,
+                smartCapitalization: currentDefaults.smartCapitalization,
+                terminalPunctuation: currentDefaults.terminalPunctuation,
+                customCommands: ""
+            )
             appProfiles.append(profile)
         }
 
         appProfiles.sort { $0.appName.localizedCaseInsensitiveCompare($1.appName) == .orderedAscending }
         persistProfiles()
         if candidate.isFallback {
-            statusMessage = "Saved profile for \(profile.appName) from recent app context"
+            statusMessage = "Saved profile for \(candidate.appName) from recent app context"
         } else {
-            statusMessage = "Saved profile for \(profile.appName)"
+            statusMessage = "Saved profile for \(candidate.appName)"
         }
         lastError = nil
         return true
