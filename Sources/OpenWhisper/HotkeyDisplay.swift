@@ -36,7 +36,7 @@ enum HotkeyDisplay {
         let normalized = normalizeKey(raw)
         switch normalized {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
-        case "tabkey": return "tab"
+        case "tabkey", "⇥", "⇤": return "tab"
         case "enter", "enterkey", "returnkey", "↩", "↵", "⏎": return "return"
         case "esc", "escapekey", "⎋": return "escape"
         case "del", "deletekey", "backspace", "backspacekey", "bksp", "⌫": return "delete"
