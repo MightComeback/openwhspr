@@ -160,8 +160,17 @@ enum HotkeyDisplay {
             return trimmed
         }
 
+        // UX guardrail: users often paste a full shortcut like "cmd+shift+space"
+        // into the trigger-key field. We only store one trigger key, so extract the
+        // final segment instead of marking the whole value unsupported.
+        let comboTail = trimmed
+            .split(separator: "+", omittingEmptySubsequences: true)
+            .last
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+        let candidate = (comboTail?.isEmpty == false) ? comboTail! : trimmed
+
         let separators = CharacterSet(charactersIn: " -_")
-        let collapsed = trimmed.components(separatedBy: separators).joined()
-        return collapsed.isEmpty ? trimmed : collapsed
+        let collapsed = candidate.components(separatedBy: separators).joined()
+        return collapsed.isEmpty ? candidate : collapsed
     }
 }

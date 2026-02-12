@@ -30,6 +30,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("home key"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd+shift+space"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("⌘ + ⇧ + f6"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey("foo"))
@@ -65,6 +67,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("page down"), "pagedown")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad0"), "keypad0")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad enter"), "keypadenter")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd+shift+space"), "space")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("⌘ + ⇧ + f6"), "f6")
     }
 
     func testHotkeyDisplayForKeypadKeys() throws {
