@@ -199,6 +199,30 @@ enum HotkeyDisplay {
         default: break
         }
 
+        // Some apps/docs collapse shortcuts without separators, e.g.
+        // "commandshiftspace" or "ctrlaltdelete". Strip known modifier
+        // prefixes greedily and keep the trailing key token.
+        if compact.range(of: "^[a-z0-9]+$", options: .regularExpression) != nil {
+            let compactModifierPrefixes = [
+                "command", "cmd", "control", "ctrl", "option", "opt", "alt",
+                "shift", "capslock", "caps", "meta", "super", "win", "windows"
+            ]
+            var compactRemainder = compact
+            var strippedCompactModifier = false
+
+            while !compactRemainder.isEmpty {
+                guard let prefix = compactModifierPrefixes.first(where: { compactRemainder.hasPrefix($0) }) else {
+                    break
+                }
+                compactRemainder.removeFirst(prefix.count)
+                strippedCompactModifier = true
+            }
+
+            if strippedCompactModifier, !compactRemainder.isEmpty {
+                return compactRemainder
+            }
+        }
+
         // Users also paste symbol-only shortcuts like "⌘⇧space".
         // Expand common modifier glyphs into tokenizable words first.
         let expanded = trimmed
