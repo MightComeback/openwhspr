@@ -104,6 +104,21 @@ struct SettingsView: View {
                             }
                         }
 
+                        if showsHoldModeAccidentalTriggerWarning {
+                            HStack(alignment: .center, spacing: 10) {
+                                Label("Hold-to-talk without modifiers is especially risky: pressing this key in normal typing can start live recording.", systemImage: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+
+                                Button("Use safer hold combo") {
+                                    applySafeRequiredModifiers()
+                                    hotkeyModeRaw = HotkeyMode.hold.rawValue
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                        }
+
                         if let conflictWarning = hotkeySystemConflictWarning {
                             HStack(alignment: .center, spacing: 10) {
                                 Label(conflictWarning, systemImage: "bolt.horizontal.circle.fill")
@@ -1157,6 +1172,13 @@ struct SettingsView: View {
         default:
             return false
         }
+    }
+
+    private var showsHoldModeAccidentalTriggerWarning: Bool {
+        guard hotkeyModeRaw == HotkeyMode.hold.rawValue else {
+            return false
+        }
+        return showsHighRiskHotkeyWarning
     }
 
     private var hotkeySystemConflictWarning: String? {
