@@ -626,24 +626,34 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     private func refreshStreamingStatusIfNeeded() {
         let inFlightChunks = pendingChunkCount + (isTranscribing ? 1 : 0)
+        let latencySuffix = streamingLatencyStatusSuffix()
 
         if isRecording {
             if inFlightChunks > 0 {
-                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight"
+                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight\(latencySuffix)"
             } else {
-                statusMessage = "Listening…"
+                statusMessage = "Listening…\(latencySuffix)"
             }
             return
         }
 
         if inFlightChunks > 0 {
-            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left"
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(latencySuffix)"
             return
         }
 
         if pendingSessionFinalize {
-            statusMessage = "Finalizing…"
+            statusMessage = "Finalizing…\(latencySuffix)"
         }
+    }
+
+    @MainActor
+    private func streamingLatencyStatusSuffix() -> String {
+        guard processedChunkCount > 0 else { return "" }
+
+        let latestMs = Int((lastChunkLatencySeconds * 1000).rounded())
+        let averageMs = Int((averageChunkLatencySeconds * 1000).rounded())
+        return " • last \(latestMs)ms avg \(averageMs)ms"
     }
 
     @MainActor
