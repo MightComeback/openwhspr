@@ -20,11 +20,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var invalidTriggerKeyInput: String? = nil
     private var holdSessionArmed: Bool = false
     private var toggleKeyDownConsumed: Bool = false
-    private var lastToggleTriggerAt: Date? = nil
     private var isListening: Bool = false
-
-    private let toggleDebounceInterval: TimeInterval = 0.2
-    private var now: () -> Date = Date.init
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -171,7 +167,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         eventTap = nil
         holdSessionArmed = false
         toggleKeyDownConsumed = false
-        lastToggleTriggerAt = nil
 
         setStatus(active: false, message: "Hotkey stopped")
     }
@@ -189,7 +184,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         holdSessionArmed = false
         toggleKeyDownConsumed = false
-        lastToggleTriggerAt = nil
 
         if !normalized.isValid {
             if isListening {
@@ -213,7 +207,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             monitor.holdSessionArmed = false
             monitor.toggleKeyDownConsumed = false
-            monitor.lastToggleTriggerAt = nil
             Task { @MainActor [weak transcriber = monitor.transcriber] in
                 transcriber?.stopRecordingFromHotkey()
             }
@@ -276,13 +269,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 return true
             }
 
-            let currentTime = now()
-            if let lastToggleTriggerAt,
-               currentTime.timeIntervalSince(lastToggleTriggerAt) < toggleDebounceInterval {
-                return true
-            }
-
-            lastToggleTriggerAt = currentTime
             toggleKeyDownConsumed = true
             Task { @MainActor [weak self, weak transcriber] in
                 transcriber?.toggleRecording()
@@ -337,10 +323,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     var holdSessionArmedForTesting: Bool {
         holdSessionArmed
-    }
-
-    func setNowProviderForTesting(_ provider: @escaping () -> Date) {
-        now = provider
     }
 
     private func setStatus(active: Bool, message: String) {
