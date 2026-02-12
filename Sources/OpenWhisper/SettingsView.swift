@@ -245,7 +245,7 @@ struct SettingsView: View {
                         }
 
                         if isCapturingHotkey {
-                            Text("Listening for the next key press. Hold modifiers and press your trigger key once.")
+                            Text("Listening for the next key press. Hold modifiers and press your trigger key once. Press Esc to cancel.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1270,7 +1270,14 @@ struct SettingsView: View {
             return
         }
 
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control, .capsLock])
+
         guard let key = hotkeyKeyName(from: event) else {
+            return
+        }
+
+        if key == "escape" && modifiers.isEmpty {
+            stopHotkeyCapture()
             return
         }
 
@@ -1282,7 +1289,6 @@ struct SettingsView: View {
         hotkeyKeyDraft = sanitized
         hotkeyKey = sanitized
 
-        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control, .capsLock])
         requiredCommand = modifiers.contains(.command)
         requiredShift = modifiers.contains(.shift)
         requiredOption = modifiers.contains(.option)
