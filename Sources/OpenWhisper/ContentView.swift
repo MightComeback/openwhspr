@@ -237,6 +237,23 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command])
                         .disabled(!canInsertNow)
 
+                        Button(retargetAndInsertButtonTitle()) {
+                            Task { @MainActor in
+                                refreshInsertTargetSnapshot()
+                                if canInsertDirectly {
+                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                } else {
+                                    _ = transcriber.copyTranscriptionToClipboard()
+                                }
+                                refreshInsertTargetSnapshot()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .help(retargetAndInsertHelpText())
+                        .controlSize(.small)
+                        .keyboardShortcut(.return, modifiers: [.command, .shift])
+                        .disabled(!canInsertNow)
+
                         Button(retargetButtonTitle()) {
                             Task { @MainActor in
                                 refreshInsertTargetSnapshot()
@@ -566,6 +583,36 @@ struct ContentView: View {
             return "Retarget"
         }
         return "Retarget → \(abbreviatedAppName(target))"
+    }
+
+    private func retargetAndInsertButtonTitle() -> String {
+        if canInsertDirectly {
+            guard let target = insertTargetAppName, !target.isEmpty else {
+                return "Retarget + Insert"
+            }
+            return "Retarget + Insert → \(abbreviatedAppName(target))"
+        }
+
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Retarget + Copy"
+        }
+        return "Retarget + Copy → \(abbreviatedAppName(target))"
+    }
+
+    private func retargetAndInsertHelpText() -> String {
+        guard hasTranscriptionText else {
+            return "No transcription to insert yet"
+        }
+
+        guard canInsertNow else {
+            return "Stop recording and wait for pending chunks to finish before inserting"
+        }
+
+        guard canInsertDirectly else {
+            return "Refresh target app, then copy transcription to clipboard"
+        }
+
+        return "Refresh target app from the current front app, then insert"
     }
 
     private var shouldSuggestRetarget: Bool {
