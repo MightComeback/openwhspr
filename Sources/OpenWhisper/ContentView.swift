@@ -267,6 +267,13 @@ struct ContentView: View {
                         Text("Insert target: \(insertTargetAppName)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+
+                        if shouldSuggestRetarget,
+                           let currentFrontAppName = currentExternalFrontAppName() {
+                            Text("Current front app is \(currentFrontAppName). Click Retarget if you want Insert to follow it.")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
                     } else {
                         Text("If target is unknown, Insert will use your last active app. Target stays fixed once text is ready; click Retarget to refresh.")
                             .font(.caption2)
@@ -502,6 +509,30 @@ struct ContentView: View {
             return "Retarget"
         }
         return "Retarget → \(abbreviatedAppName(target))"
+    }
+
+    private var shouldSuggestRetarget: Bool {
+        guard hasTranscriptionText, canInsertNow else {
+            return false
+        }
+
+        guard let target = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines), !target.isEmpty else {
+            return false
+        }
+
+        guard let front = currentExternalFrontAppName() else {
+            return false
+        }
+
+        return target.caseInsensitiveCompare(front) != .orderedSame
+    }
+
+    private func currentExternalFrontAppName() -> String? {
+        let candidate = transcriber.frontmostAppName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !candidate.isEmpty else { return nil }
+        guard candidate.caseInsensitiveCompare("Unknown App") != .orderedSame else { return nil }
+        guard candidate.caseInsensitiveCompare("OpenWhisper") != .orderedSame else { return nil }
+        return candidate
     }
 
     private func abbreviatedAppName(_ name: String, maxCharacters: Int = 18) -> String {
