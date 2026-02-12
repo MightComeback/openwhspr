@@ -997,6 +997,11 @@ struct SettingsView: View {
             return nil
         }
 
+        let normalizedAsWholeKey = HotkeyDisplay.canonicalKey(normalized)
+        if HotkeyDisplay.isSupportedKey(normalizedAsWholeKey) {
+            return ParsedHotkeyDraft(key: normalizedAsWholeKey, requiredModifiers: nil)
+        }
+
         if normalized.contains("+") {
             let tokens = normalized
                 .split(separator: "+")
