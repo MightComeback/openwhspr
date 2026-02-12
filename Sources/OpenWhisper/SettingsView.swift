@@ -1118,6 +1118,14 @@ struct SettingsView: View {
             return "⌘+M minimizes the front window on macOS and can interrupt your flow."
         }
 
+        if key == "q" && modifiers == Set([.command]) {
+            return "⌘+Q quits the current app on macOS and is a brutal hotkey choice for dictation."
+        }
+
+        if key == "w" && modifiers == Set([.command]) {
+            return "⌘+W closes the current window/tab on macOS and can kill focus mid-dictation."
+        }
+
         return nil
     }
 
