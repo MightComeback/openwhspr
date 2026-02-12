@@ -100,6 +100,22 @@ struct SettingsView: View {
                             }
                         }
 
+                        if let conflictWarning = hotkeySystemConflictWarning {
+                            HStack(alignment: .center, spacing: 10) {
+                                Label(conflictWarning, systemImage: "bolt.horizontal.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+
+                                Button("Use safer default") {
+                                    applySafeRequiredModifiers()
+                                    hotkeyKey = "space"
+                                    hotkeyKeyDraft = "space"
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                        }
+
                         HStack(spacing: 10) {
                             Button("Preset: Toggle") {
                                 applyHotkeyPreset(.toggle)
@@ -1061,6 +1077,30 @@ struct SettingsView: View {
         default:
             return false
         }
+    }
+
+    private var hotkeySystemConflictWarning: String? {
+        let context = effectiveHotkeyRiskContext
+        let key = context.key
+        let modifiers = context.requiredModifiers
+
+        if key == "space" && modifiers == Set([.command]) {
+            return "⌘+Space usually opens Spotlight and can block your hotkey."
+        }
+
+        if key == "space" && modifiers == Set([.control]) {
+            return "⌃+Space is often used for input source switching on macOS."
+        }
+
+        if key == "tab" && modifiers == Set([.command]) {
+            return "⌘+Tab is reserved for app switching and won't behave as a reliable dictation hotkey."
+        }
+
+        if key == "tab" && modifiers == Set([.command, .shift]) {
+            return "⌘+⇧+Tab is reserved for reverse app switching on macOS."
+        }
+
+        return nil
     }
 
     private func refreshPermissionState() {
