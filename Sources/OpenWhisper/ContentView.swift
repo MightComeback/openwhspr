@@ -265,7 +265,7 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("If target is unknown, Insert will use your last active app. Click Retarget to refresh.")
+                        Text("If target is unknown, Insert will use your last active app. Target stays fixed once text is ready; click Retarget to refresh.")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -394,6 +394,12 @@ struct ContentView: View {
     }
 
     private func refreshInsertTargetAppName() {
+        // Keep the insertion target stable once text is ready to insert.
+        // Without this guard, passive app-switch events can retarget insertion
+        // away from the intended destination right before Command+Return.
+        let shouldFreezeTarget = hasTranscriptionText && canInsertNow && insertTargetAppName != nil
+        guard !shouldFreezeTarget else { return }
+
         Task { @MainActor in
             insertTargetAppName = transcriber.manualInsertTargetAppName()
         }
