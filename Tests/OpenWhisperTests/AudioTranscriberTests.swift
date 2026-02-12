@@ -361,6 +361,41 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testInsertTranscriptionReturnsSuccessWhenAccessibilityFallbackCopiesText() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalTranscription = transcriber.transcription
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+            let originalHistory = transcriber.recentEntries
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.transcription = originalTranscription
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+                transcriber.recentEntries = originalHistory
+                transcriber.setAccessibilityPermissionCheckerForTesting { true }
+            }
+
+            transcriber.setAccessibilityPermissionCheckerForTesting { false }
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 0
+            transcriber.transcription = "hello world"
+
+            let previousHistoryCount = transcriber.recentEntries.count
+            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+
+            XCTAssertTrue(inserted)
+            XCTAssertEqual(transcriber.recentEntries.count, previousHistoryCount + 1)
+            XCTAssertTrue(transcriber.statusMessage.hasPrefix("Copied to clipboard"))
+        }
+    }
+
     func testToggleRecordingDefersNewSessionWhileFinalizing() async {
         let transcriber = AudioTranscriber.shared
 

@@ -387,13 +387,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         transcription = normalized
 
         let result = performManualInsert(text: normalized)
-        guard result.success else { return false }
 
-        appendHistoryEntry(normalized)
-        if settings.clearAfterInsert {
-            transcription = ""
+        switch result.outcome {
+        case .inserted, .copiedFallbackAccessibilityMissing:
+            appendHistoryEntry(normalized)
+            if settings.clearAfterInsert {
+                transcription = ""
+            }
+            return true
+        case .failed:
+            return false
         }
-        return true
     }
 
     /// Sends a short sample phrase to the currently focused app to verify the
