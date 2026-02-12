@@ -366,7 +366,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             .map(String.init)
 
         let modifierWords: Set<String> = [
-            "cmd", "command", "⌘",
+            "cmd", "command", "meta", "super", "win", "windows", "⌘",
             "shift", "⇧",
             "ctrl", "control", "⌃",
             "opt", "option", "alt", "⌥",
