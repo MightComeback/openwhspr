@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
     @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
     @State private var insertTargetAppName: String? = nil
+    @State private var insertTargetDisplay: String? = nil
     @State private var showingOnboarding = false
     @State private var uiNow = Date()
 
@@ -227,7 +228,7 @@ struct ContentView: View {
                                 } else {
                                     _ = transcriber.copyTranscriptionToClipboard()
                                 }
-                                insertTargetAppName = transcriber.manualInsertTargetAppName()
+                                refreshInsertTargetSnapshot()
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -238,7 +239,7 @@ struct ContentView: View {
 
                         Button(retargetButtonTitle()) {
                             Task { @MainActor in
-                                insertTargetAppName = transcriber.manualInsertTargetAppName()
+                                refreshInsertTargetSnapshot()
                             }
                         }
                         .buttonStyle(.bordered)
@@ -249,7 +250,7 @@ struct ContentView: View {
                         Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
                             Task { @MainActor in
                                 _ = transcriber.runInsertionProbe()
-                                insertTargetAppName = transcriber.manualInsertTargetAppName()
+                                refreshInsertTargetSnapshot()
                             }
                         }
                         .buttonStyle(.bordered)
@@ -281,9 +282,15 @@ struct ContentView: View {
                     }
 
                     if let insertTargetAppName, !insertTargetAppName.isEmpty {
-                        Text("Insert target: \(insertTargetAppName)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                        if let insertTargetDisplay, !insertTargetDisplay.isEmpty {
+                            Text("Insert target: \(insertTargetDisplay)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Insert target: \(insertTargetAppName)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
 
                         if shouldSuggestRetarget,
                            let currentFrontAppName = currentExternalFrontAppName() {
@@ -428,8 +435,14 @@ struct ContentView: View {
         guard !shouldFreezeTarget else { return }
 
         Task { @MainActor in
-            insertTargetAppName = transcriber.manualInsertTargetAppName()
+            refreshInsertTargetSnapshot()
         }
+    }
+
+    @MainActor
+    private func refreshInsertTargetSnapshot() {
+        insertTargetAppName = transcriber.manualInsertTargetAppName()
+        insertTargetDisplay = transcriber.manualInsertTargetDisplay()
     }
 
     private func statusTitle() -> String {
