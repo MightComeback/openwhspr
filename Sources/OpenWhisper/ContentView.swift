@@ -215,6 +215,7 @@ struct ContentView: View {
                         .help(insertButtonHelpText())
                         .controlSize(.small)
                         .keyboardShortcut(.return, modifiers: [.command])
+                        .disabled(!canInsertNow)
 
                         Button("Retarget") {
                             Task { @MainActor in
@@ -412,6 +413,10 @@ struct ContentView: View {
         accessibilityAuthorized
     }
 
+    private var canInsertNow: Bool {
+        !transcriber.isRecording && transcriber.pendingChunkCount == 0
+    }
+
     private func insertButtonTitle() -> String {
         guard canInsertDirectly else {
             return "Copy"
@@ -424,6 +429,10 @@ struct ContentView: View {
     }
 
     private func insertButtonHelpText() -> String {
+        guard canInsertNow else {
+            return "Stop recording and wait for pending chunks to finish before inserting"
+        }
+
         guard canInsertDirectly else {
             return "Copy transcription to clipboard"
         }
