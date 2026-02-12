@@ -536,7 +536,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRecording = false
-        recordingStartedAt = nil
+        // Keep recordingStartedAt until finalization completes so the UI can
+        // continue showing a stable session duration while pending chunks drain.
         statusMessage = "Finalizing…"
         flushRemainingAudio()
     }
@@ -924,6 +925,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         pendingSessionFinalize = false
         inputLevel = 0
         pendingChunkCount = 0
+        recordingStartedAt = nil
 
         let settings = recordingOutputSettings ?? effectiveOutputSettingsForCurrentApp()
         let finalText = normalizeOutputText(transcription, settings: settings)
