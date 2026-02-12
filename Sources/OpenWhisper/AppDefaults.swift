@@ -33,6 +33,7 @@ enum AppDefaults {
         static let modelCustomPath = "model.customPath"
 
         static let onboardingCompleted = "onboarding.completed"
+        static let insertionProbeSampleText = "insertion.probeSampleText"
     }
 
     static func register() {
@@ -71,7 +72,8 @@ enum AppDefaults {
             Keys.modelSource: ModelSource.bundledTiny.rawValue,
             Keys.modelCustomPath: "",
 
-            Keys.onboardingCompleted: false
+            Keys.onboardingCompleted: false,
+            Keys.insertionProbeSampleText: "OpenWhisper insertion test"
         ]
         defaults.register(defaults: values)
     }

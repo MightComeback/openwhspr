@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var isCapturingHotkey: Bool = false
     @State private var hotkeyCaptureMonitor: Any?
     @State private var hotkeyCaptureError: String?
-    @State private var insertionProbeSampleText: String = "OpenWhisper insertion test"
+    @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true
