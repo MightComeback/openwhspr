@@ -482,6 +482,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func startRecording() {
+        if (!isRecording && recordingStartedAt != nil) || pendingChunkCount > 0 {
+            statusMessage = "Finalizing previous recording…"
+            return
+        }
+
         guard whisper != nil else {
             statusMessage = "Model unavailable"
             return

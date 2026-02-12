@@ -289,4 +289,31 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertEqual(transcriber.statusMessage, "Nothing to insert")
         }
     }
+
+    func testToggleRecordingDefersNewSessionWhileFinalizing() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStartedAt = transcriber.recordingStartedAt
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalStatusMessage = transcriber.statusMessage
+            let originalIsRecording = transcriber.isRecording
+
+            defer {
+                transcriber.recordingStartedAt = originalStartedAt
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.isRecording = originalIsRecording
+            }
+
+            transcriber.isRecording = false
+            transcriber.recordingStartedAt = Date()
+            transcriber.pendingChunkCount = 1
+
+            transcriber.toggleRecording()
+
+            XCTAssertFalse(transcriber.isRecording)
+            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording…")
+        }
+    }
 }
