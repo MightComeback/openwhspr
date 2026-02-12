@@ -360,16 +360,23 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return true
         }
 
-        let tokens = normalized
+        let expanded = normalized
+            .replacingOccurrences(of: "⌘", with: " command ")
+            .replacingOccurrences(of: "⇧", with: " shift ")
+            .replacingOccurrences(of: "⌃", with: " control ")
+            .replacingOccurrences(of: "⌥", with: " option ")
+            .replacingOccurrences(of: "🌐", with: " globe ")
+
+        let tokens = expanded
             .replacingOccurrences(of: "-", with: " ")
-            .split(whereSeparator: { $0.isWhitespace })
+            .split(whereSeparator: { $0.isWhitespace || $0 == "+" || $0 == "," })
             .map(String.init)
 
         let modifierWords: Set<String> = [
-            "cmd", "command", "meta", "super", "win", "windows", "⌘",
-            "shift", "⇧",
-            "ctrl", "control", "⌃",
-            "opt", "option", "alt", "⌥",
+            "cmd", "command", "meta", "super", "win", "windows",
+            "shift",
+            "ctrl", "control",
+            "opt", "option", "alt",
             "fn", "function", "globe"
         ]
 
