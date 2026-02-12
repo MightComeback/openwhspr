@@ -402,10 +402,11 @@ struct SettingsView: View {
                             Text(insertionTestDisabledReason)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
-                        } else if let target = insertionTestTargetAppName {
+                        } else if let target = insertionTestTargetDisplay {
                             Text("Insertion test target: \(target)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
 
                             if !accessibilityAuthorized {
                                 Text("Accessibility permission is missing, so this test will validate target capture and copy the sample text to clipboard instead of auto-pasting.")
@@ -998,6 +999,10 @@ struct SettingsView: View {
 
     private var insertionTestTargetAppName: String? {
         transcriber.manualInsertTargetAppName()
+    }
+
+    private var insertionTestTargetDisplay: String? {
+        transcriber.manualInsertTargetDisplay()
     }
 
     private var insertionProbeSampleTextTrimmed: String {

@@ -314,6 +314,31 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func manualInsertTargetDisplay() -> String? {
+        captureInsertionTargetApp()
+        guard let app = resolveInsertionTargetApp() else {
+            return nil
+        }
+
+        let trimmedName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let bundleID = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if !trimmedName.isEmpty && !bundleID.isEmpty {
+            return "\(trimmedName) (\(bundleID))"
+        }
+
+        if !trimmedName.isEmpty {
+            return trimmedName
+        }
+
+        if !bundleID.isEmpty {
+            return bundleID
+        }
+
+        return nil
+    }
+
+    @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
         let settings = effectiveOutputSettingsForCurrentApp()
