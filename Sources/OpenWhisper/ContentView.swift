@@ -128,6 +128,12 @@ struct ContentView: View {
                                 .font(.caption2)
                         }
                     }
+
+                    if transcriber.isStartAfterFinalizeQueued {
+                        Text("Next recording is queued. Press hotkey again to cancel.")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
                 }
                 .padding(8)
                 .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))

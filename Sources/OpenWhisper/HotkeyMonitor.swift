@@ -346,6 +346,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+            if transcriber.isStartAfterFinalizeQueued {
+                return "Hotkey active (\(currentComboSummary())) — next recording queued"
+            }
             return "Hotkey active (\(currentComboSummary())) — finalizing previous recording"
         }
 

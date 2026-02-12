@@ -1029,6 +1029,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         mergeChunk(chunk, into: existing)
     }
 
+    var isStartAfterFinalizeQueued: Bool {
+        startRecordingAfterFinalizeRequested
+    }
+
     @MainActor
     var startRecordingAfterFinalizeRequestedForTesting: Bool {
         startRecordingAfterFinalizeRequested
