@@ -37,9 +37,9 @@ enum HotkeyDisplay {
         switch normalized {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
         case "tabkey", "⇥", "⇤": return "tab"
-        case "enter", "enterkey", "returnkey", "↩", "↵", "⏎": return "return"
-        case "esc", "escapekey", "⎋": return "escape"
-        case "del", "deletekey", "backspace", "backspacekey", "bksp", "⌫": return "delete"
+        case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "↩", "↵", "⏎": return "return"
+        case "esc", "escapekey", "escape/esc", "esc/escape", "⎋": return "escape"
+        case "del", "deletekey", "backspace", "backspacekey", "delete/backspace", "backspace/delete", "bksp", "⌫": return "delete"
         case "⌦", "␡", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
         case "insertkey", "ins": return "insert"
         case "help", "helpkey": return "help"
