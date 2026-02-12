@@ -587,10 +587,7 @@ struct ContentView: View {
             return "Insert → \(abbreviatedAppName(target))"
         }
 
-        guard let target = insertTargetAppName, !target.isEmpty else {
-            return "Copy → Clipboard"
-        }
-        return "Copy → \(abbreviatedAppName(target))"
+        return "Copy → Clipboard"
     }
 
     private func insertButtonHelpText() -> String {
@@ -634,10 +631,7 @@ struct ContentView: View {
             return "Retarget + Insert → \(abbreviatedAppName(target))"
         }
 
-        guard let target = insertTargetAppName, !target.isEmpty else {
-            return "Retarget + Copy"
-        }
-        return "Retarget + Copy → \(abbreviatedAppName(target))"
+        return "Retarget + Copy → Clipboard"
     }
 
     private func retargetAndInsertHelpText() -> String {
