@@ -64,6 +64,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("enter"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("return key"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("↩"), "return")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("↵"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⏎"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("esc"), "escape")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⎋"), "escape")
