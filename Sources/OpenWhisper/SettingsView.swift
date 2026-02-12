@@ -1339,6 +1339,11 @@ struct SettingsView: View {
         requiredShift = modifiers.contains(.shift)
         requiredOption = modifiers.contains(.option)
         requiredControl = modifiers.contains(.control)
+        // Capture currently ignores Caps Lock state to avoid accidentally
+        // recording it when the lock is simply active on the keyboard.
+        // Reset required Caps Lock here so recording a new shortcut never
+        // keeps a stale Caps Lock requirement from an older configuration.
+        requiredCapsLock = false
 
         forbiddenCommand = !requiredCommand && forbiddenCommand
         forbiddenShift = !requiredShift && forbiddenShift
