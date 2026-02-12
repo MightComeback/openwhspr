@@ -32,6 +32,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
+    private var insertionTargetUsesFallbackApp: Bool = false
     private var lastKnownExternalApp: NSRunningApplication?
     private var workspaceActivationObserver: NSObjectProtocol?
     private var accessibilityPermissionChecker: () -> Bool = { AXIsProcessTrusted() }
@@ -148,6 +149,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if let app = NSWorkspace.shared.frontmostApplication,
            app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             insertionTargetApp = app
+            insertionTargetUsesFallbackApp = false
             lastKnownExternalApp = app
             return
         }
@@ -155,10 +157,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if let fallback = lastKnownExternalApp,
            fallback.isTerminated == false {
             insertionTargetApp = fallback
+            insertionTargetUsesFallbackApp = true
             return
         }
 
         insertionTargetApp = nil
+        insertionTargetUsesFallbackApp = false
     }
 
     @MainActor
@@ -348,19 +352,22 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let trimmedName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let bundleID = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
+        let baseDisplay: String
         if !trimmedName.isEmpty && !bundleID.isEmpty {
-            return "\(trimmedName) (\(bundleID))"
+            baseDisplay = "\(trimmedName) (\(bundleID))"
+        } else if !trimmedName.isEmpty {
+            baseDisplay = trimmedName
+        } else if !bundleID.isEmpty {
+            baseDisplay = bundleID
+        } else {
+            return nil
         }
 
-        if !trimmedName.isEmpty {
-            return trimmedName
+        if insertionTargetUsesFallbackApp {
+            return "\(baseDisplay) • recent app"
         }
 
-        if !bundleID.isEmpty {
-            return bundleID
-        }
-
-        return nil
+        return baseDisplay
     }
 
     @MainActor
@@ -1497,17 +1504,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
            let fallback = lastKnownExternalApp,
            fallback.isTerminated == false {
             insertionTargetApp = fallback
+            insertionTargetUsesFallbackApp = true
         }
 
         if insertionTargetApp?.isTerminated != false,
            let frontmost = NSWorkspace.shared.frontmostApplication,
            frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             insertionTargetApp = frontmost
+            insertionTargetUsesFallbackApp = false
             lastKnownExternalApp = frontmost
         }
 
         guard let targetApp = insertionTargetApp,
               targetApp.isTerminated == false else {
+            insertionTargetUsesFallbackApp = false
             return nil
         }
 
