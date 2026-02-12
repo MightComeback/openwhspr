@@ -310,6 +310,15 @@ struct SettingsView: View {
                             .buttonStyle(.borderedProminent)
                             .disabled(!canCaptureFrontmostProfile)
 
+                            Button("Capture + insertion test") {
+                                Task { @MainActor in
+                                    transcriber.captureProfileForFrontmostApp()
+                                    _ = transcriber.runInsertionProbe()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!canCaptureAndRunInsertionTest)
+
                             Button("Run insertion test") {
                                 Task { @MainActor in
                                     _ = transcriber.runInsertionProbe()
@@ -893,6 +902,10 @@ struct SettingsView: View {
 
     private var insertionTestTargetAppName: String? {
         transcriber.manualInsertTargetAppName()
+    }
+
+    private var canCaptureAndRunInsertionTest: Bool {
+        canCaptureFrontmostProfile && !transcriber.isRecording
     }
 
     private var canRunInsertionTest: Bool {
