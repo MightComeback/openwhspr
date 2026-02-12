@@ -858,11 +858,17 @@ struct SettingsView: View {
     }
 
     private var canRunInsertionTest: Bool {
-        insertionTestTargetAppName != nil
+        guard !transcriber.isRecording else {
+            return false
+        }
+        return insertionTestTargetAppName != nil
     }
 
     private var insertionTestDisabledReason: String {
-        "No destination app is available for insertion yet. Switch to your target app, then refresh."
+        if transcriber.isRecording {
+            return "Stop recording before running an insertion test."
+        }
+        return "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
 
     private var insertionProbeStatusColor: Color {
