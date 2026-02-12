@@ -43,7 +43,7 @@ enum HotkeyDisplay {
         case "⌦", "␡", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
         case "insertkey", "ins", "helpkey": return "insert"
         case "caps", "capskey": return "capslock"
-        case "function", "fnkey", "globe", "globekey", "🌐": return "fn"
+        case "function", "fnkey", "globe", "globekey", "fn/globe", "globe/fn", "🌐": return "fn"
         case "←", "leftarrow", "leftkey": return "left"
         case "→", "rightarrow", "rightkey": return "right"
         case "↑", "uparrow", "upkey": return "up"
