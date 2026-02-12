@@ -1133,6 +1133,10 @@ struct SettingsView: View {
             return "⌃+Space is often used for input source switching on macOS."
         }
 
+        if key == "space" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+Space usually opens the emoji/symbol picker on macOS and can block dictation trigger behavior."
+        }
+
         if key == "tab" && modifiers == Set([.command]) {
             return "⌘+Tab is reserved for app switching and won't behave as a reliable dictation hotkey."
         }
@@ -1155,6 +1159,10 @@ struct SettingsView: View {
 
         if key == "q" && modifiers == Set([.command]) {
             return "⌘+Q quits the current app on macOS and is a brutal hotkey choice for dictation."
+        }
+
+        if key == "q" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+Q locks your Mac on macOS and is an awful choice for a dictation hotkey."
         }
 
         if key == "w" && modifiers == Set([.command]) {
