@@ -327,9 +327,20 @@ struct ContentView: View {
 
                         if shouldSuggestRetarget,
                            let currentFrontAppName = currentExternalFrontAppName() {
-                            Text("Current front app is \(currentFrontAppName). Click Retarget if you want Insert to follow it.")
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Current front app is \(currentFrontAppName).")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+
+                                Button("Retarget now") {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.borderless)
                                 .font(.caption2)
-                                .foregroundStyle(.orange)
+                                .help("Update Insert target to the current front app")
+                            }
                         }
                     } else {
                         Text("If target is unknown, Insert will use your last active app. Target stays fixed once text is ready; click Retarget to refresh.")
