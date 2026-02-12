@@ -1182,7 +1182,7 @@ struct SettingsView: View {
         }
 
         switch context.key {
-        case "space", "tab", "return", "delete", "forwarddelete", "escape", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
+        case "space", "tab", "return", "delete", "forwarddelete", "escape", "fn", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
             return true
         default:
             return false
@@ -1219,6 +1219,10 @@ struct SettingsView: View {
 
         if key == "tab" && modifiers == Set([.command]) {
             return "⌘+Tab is reserved for app switching and won't behave as a reliable dictation hotkey."
+        }
+
+        if key == "fn" && modifiers.isEmpty {
+            return "Fn/Globe alone is usually reserved by macOS (emoji picker, dictation, or input switching) and is unreliable as a trigger key."
         }
 
         if key == "tab" && modifiers == Set([.command, .shift]) {
