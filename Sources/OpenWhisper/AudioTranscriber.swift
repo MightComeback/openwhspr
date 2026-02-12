@@ -353,8 +353,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         case .copiedFallbackAccessibilityMissing:
             // Clipboard fallback means target detection worked, but we did not
-            // complete a real app insertion. Treat it as a warning state so the
-            // UI can surface it as non-green until Accessibility is granted.
+            // complete a real app insertion. Treat this as a non-successful
+            // probe so call sites can clearly distinguish "copied" from
+            // "inserted" behavior.
             lastInsertionProbeSucceeded = false
             if let targetName = result.targetName, !targetName.isEmpty {
                 let message = "Insertion test used clipboard fallback for \(targetName) (Accessibility permission missing)"
@@ -365,7 +366,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 statusMessage = message
                 lastInsertionProbeMessage = message
             }
-            return true
+            return false
 
         case .failed:
             lastInsertionProbeSucceeded = false
