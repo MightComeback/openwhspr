@@ -133,6 +133,36 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(secondDown, type: .keyDown))
     }
 
+    func testToggleModeIgnoresRepeatedKeyDownUntilKeyUpEvenAfterDebounce() {
+        let defaults = makeDefaults()
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        var now = Date(timeIntervalSince1970: 30)
+        monitor.setNowProviderForTesting { now }
+
+        let firstDown = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(firstDown, type: .keyDown))
+
+        now = now.addingTimeInterval(0.5)
+        let repeatedDownWithoutKeyUp = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(repeatedDownWithoutKeyUp, type: .keyDown))
+
+        let upEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
+        XCTAssertTrue(monitor.handleForTesting(upEvent, type: .keyUp))
+
+        now = now.addingTimeInterval(0.1)
+        let nextDownAfterKeyUp = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(nextDownAfterKeyUp, type: .keyDown))
+    }
+
     func testSpacebarAliasMatchesSpaceKeyCode() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

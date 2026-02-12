@@ -260,6 +260,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 return false
             }
 
+            // Edge-trigger behavior: once we handle a key down, ignore further
+            // key-down events for that trigger until key up arrives. This keeps
+            // recording stable on hardware/layouts that may emit repeated key
+            // down events without a reliable auto-repeat flag.
+            if toggleKeyDownConsumed {
+                return true
+            }
+
             guard comboMatches else { return false }
 
             // Prevent key repeat from rapidly toggling recording while the hotkey is held.
