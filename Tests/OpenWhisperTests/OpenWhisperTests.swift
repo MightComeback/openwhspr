@@ -30,6 +30,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("home key"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("globe"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("🌐"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd+shift+space"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("cmd shift space"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("command-shift-page-down"))
@@ -57,6 +59,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌫"), "delete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("⌦"), "forwarddelete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("caps"), "capslock")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("globe"), "fn")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("🌐"), "fn")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("←"), "left")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("left arrow"), "left")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("→"), "right")
@@ -83,5 +87,6 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.displayKey("keypad0"), "Num0")
         XCTAssertEqual(HotkeyDisplay.displayKey("numpadplus"), "Num+")
         XCTAssertEqual(HotkeyDisplay.displayKey("keypadenter"), "NumEnter")
+        XCTAssertEqual(HotkeyDisplay.displayKey("fn"), "Fn/Globe")
     }
 }

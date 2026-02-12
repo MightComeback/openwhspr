@@ -437,7 +437,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case "delete", "del", "backspace", "bksp": return CGKeyCode(kVK_Delete)
         case "forwarddelete", "fwddelete", "fwddel": return CGKeyCode(kVK_ForwardDelete)
         case "caps", "capslock": return CGKeyCode(kVK_CapsLock)
-        case "fn", "function": return CGKeyCode(kVK_Function)
+        case "fn", "function", "globe", "globekey": return CGKeyCode(kVK_Function)
         case "-", "minus", "hyphen": return CGKeyCode(kVK_ANSI_Minus)
         case "=", "equals", "equal", "plus": return CGKeyCode(kVK_ANSI_Equal)
         case "[", "openbracket", "leftbracket": return CGKeyCode(kVK_ANSI_LeftBracket)
