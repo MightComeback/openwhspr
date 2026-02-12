@@ -408,7 +408,7 @@ struct SettingsView: View {
                                 Task { @MainActor in
                                     let captured = transcriber.captureProfileForFrontmostApp()
                                     guard captured else { return }
-                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleText)
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextTrimmed)
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -416,7 +416,7 @@ struct SettingsView: View {
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
                                 Task { @MainActor in
-                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleText)
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextTrimmed)
                                 }
                             }
                             .buttonStyle(.bordered)
