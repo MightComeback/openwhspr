@@ -1208,6 +1208,26 @@ struct SettingsView: View {
             return "⌘+H hides the current app on macOS and makes a poor dictation hotkey."
         }
 
+        if key == "c" && modifiers == Set([.command]) {
+            return "⌘+C copies selected text in most apps, so it collides with normal editing constantly."
+        }
+
+        if key == "v" && modifiers == Set([.command]) {
+            return "⌘+V pastes in most apps and will fight your normal editing flow."
+        }
+
+        if key == "x" && modifiers == Set([.command]) {
+            return "⌘+X cuts selected text in most apps and is a risky dictation trigger."
+        }
+
+        if key == "a" && modifiers == Set([.command]) {
+            return "⌘+A selects all text in most apps and is too disruptive for dictation."
+        }
+
+        if key == "z" && modifiers == Set([.command]) {
+            return "⌘+Z is undo in most apps and will cause accidental reversions while typing."
+        }
+
         if key == "m" && modifiers == Set([.command]) {
             return "⌘+M minimizes the front window on macOS and can interrupt your flow."
         }
