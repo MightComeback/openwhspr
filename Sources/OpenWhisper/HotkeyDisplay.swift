@@ -196,6 +196,7 @@ enum HotkeyDisplay {
         case "num.", "kp.": return "numpaddecimal"
         case "num=", "kp=": return "numpadequals"
         case "capslock", "capslockkey": return "capslock"
+        case "fnglobe", "globefn", "functionglobe", "globefunction": return "fn"
         default: break
         }
 
