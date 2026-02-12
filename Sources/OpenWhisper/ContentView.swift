@@ -241,6 +241,13 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
+                                // If the target was never captured (e.g. app switch right before
+                                // insertion), take one fresh snapshot so Command+Return still hits
+                                // the expected front app without requiring a manual retarget first.
+                                if insertTargetAppName == nil {
+                                    refreshInsertTargetSnapshot()
+                                }
+
                                 if canInsertDirectly {
                                     _ = transcriber.insertTranscriptionIntoFocusedApp()
                                 } else {
