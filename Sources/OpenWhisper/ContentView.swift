@@ -499,7 +499,7 @@ struct ContentView: View {
     }
 
     private var canToggleRecording: Bool {
-        transcriber.isRecording || transcriber.pendingChunkCount == 0
+        true
     }
 
     private func startStopButtonTitle() -> String {
@@ -507,7 +507,7 @@ struct ContentView: View {
             return "Stop"
         }
         if transcriber.pendingChunkCount > 0 {
-            return "Finalizing…"
+            return transcriber.isStartAfterFinalizeQueued ? "Cancel queued start" : "Queue start"
         }
         return "Start"
     }
