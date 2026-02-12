@@ -201,6 +201,12 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
+                        if let modifierPreview = hotkeyDraftModifierOverrideSummary {
+                            Text("Applying this input will set required modifiers to: \(modifierPreview).")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
                         Divider()
 
                         Text("Required modifiers")
@@ -838,6 +844,31 @@ struct SettingsView: View {
         if previewModifiers.contains(.capsLock) { parts.append("⇪") }
         parts.append(HotkeyDisplay.displayKey(sanitized))
         return parts.joined(separator: "+")
+    }
+
+    private var hotkeyDraftModifierOverrideSummary: String? {
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft),
+              let modifiers = parsed.requiredModifiers,
+              modifiers != currentRequiredModifierSet else {
+            return nil
+        }
+
+        let ordered: [(ParsedModifier, String)] = [
+            (.command, "⌘ Command"),
+            (.shift, "⇧ Shift"),
+            (.option, "⌥ Option"),
+            (.control, "⌃ Control"),
+            (.capsLock, "⇪ Caps Lock")
+        ]
+
+        let active = ordered
+            .filter { modifiers.contains($0.0) }
+            .map(\.1)
+
+        if active.isEmpty {
+            return "none"
+        }
+        return active.joined(separator: " + ")
     }
 
     private var commonHotkeyKeySections: [(title: String, keys: [String])] {
