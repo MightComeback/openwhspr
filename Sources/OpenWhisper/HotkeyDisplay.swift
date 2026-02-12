@@ -72,14 +72,14 @@ enum HotkeyDisplay {
         case "numpad7": return "keypad7"
         case "numpad8": return "keypad8"
         case "numpad9": return "keypad9"
-        case "numpaddecimal": return "keypaddecimal"
-        case "numpadmultiply": return "keypadmultiply"
-        case "numpadplus": return "keypadplus"
-        case "numpadclear": return "keypadclear"
-        case "numpaddivide": return "keypaddivide"
-        case "numpadenter": return "keypadenter"
-        case "numpadminus": return "keypadminus"
-        case "numpadequals": return "keypadequals"
+        case "numpaddecimal", "numdecimal", "numdot", "numperiod", "kpdecimal", "kpdot": return "keypaddecimal"
+        case "numpadmultiply", "nummultiply", "numtimes", "kpmultiply", "kptimes": return "keypadmultiply"
+        case "numpadplus", "numplus", "kpplus": return "keypadplus"
+        case "numpadclear", "numclear", "kpclear": return "keypadclear"
+        case "numpaddivide", "numdivide", "kpdivide": return "keypaddivide"
+        case "numpadenter", "numenter", "kpenter": return "keypadenter"
+        case "numpadminus", "numminus", "kpminus": return "keypadminus"
+        case "numpadequals", "numequals", "kpequals": return "keypadequals"
         default: return normalized
         }
     }
@@ -166,6 +166,19 @@ enum HotkeyDisplay {
 
         guard trimmed.count > 1 else {
             return trimmed
+        }
+
+        // Common keypad shorthand like "num+" / "kp*" should map to
+        // supported keypad trigger keys instead of being split apart.
+        let compact = trimmed.replacingOccurrences(of: " ", with: "")
+        switch compact {
+        case "num+", "kp+": return "numpadplus"
+        case "num-", "kp-": return "numpadminus"
+        case "num*", "kp*", "numx", "kpx": return "numpadmultiply"
+        case "num/", "kp/": return "numpaddivide"
+        case "num.", "kp.": return "numpaddecimal"
+        case "num=", "kp=": return "numpadequals"
+        default: break
         }
 
         // Users also paste symbol-only shortcuts like "⌘⇧space".
