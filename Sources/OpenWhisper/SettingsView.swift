@@ -1441,7 +1441,8 @@ struct SettingsView: View {
             ("~", "opt"),
             ("⌃", "ctrl"),
             ("^", "ctrl"),
-            ("⇪", "caps")
+            ("⇪", "caps"),
+            ("🌐", "globe")
         ]
 
         while remainder.count > 1 {

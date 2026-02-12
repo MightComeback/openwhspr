@@ -207,6 +207,7 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "⌥", with: " option ")
             .replacingOccurrences(of: "⌃", with: " control ")
             .replacingOccurrences(of: "⇪", with: " capslock ")
+            .replacingOccurrences(of: "🌐", with: " globe ")
 
         // UX guardrail: users often paste full shortcuts like "cmd+shift+space"
         // or "command-shift-page-down" into the trigger-key field. We only store
