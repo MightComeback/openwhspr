@@ -181,6 +181,13 @@ struct SettingsView: View {
                             .controlSize(.small)
                             .disabled(!isHotkeyKeyDraftSupported || !hasHotkeyDraftChangesToApply)
 
+                            Button("Paste combo") {
+                                pasteHotkeyComboFromClipboard()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .help("Paste a shortcut like ⌘⇧Space or cmd+shift+space")
+
                             Menu("Common keys") {
                                 ForEach(commonHotkeyKeySections, id: \.title) { section in
                                     Section(section.title) {
@@ -1097,6 +1104,20 @@ struct SettingsView: View {
         }
 
         hotkeyKey = sanitized
+    }
+
+    private func pasteHotkeyComboFromClipboard() {
+        guard let raw = NSPasteboard.general.string(forType: .string) else {
+            return
+        }
+
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return
+        }
+
+        hotkeyKeyDraft = sanitizeHotkeyDraftValue(trimmed)
+        applyHotkeyKeyDraft()
     }
 
     private func resetHotkeyDefaults() {
