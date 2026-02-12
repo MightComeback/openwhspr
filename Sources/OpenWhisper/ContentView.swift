@@ -247,9 +247,17 @@ struct ContentView: View {
                     }
 
                     if !accessibilityAuthorized {
-                        Text("Insert needs Accessibility permission. Command+Return will copy to clipboard until enabled.")
+                        HStack(spacing: 6) {
+                            Text("Insert needs Accessibility permission. Command+Return copies to clipboard until enabled.")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+
+                            Button("Enable Insert") {
+                                openSystemSettingsPane("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+                            }
+                            .buttonStyle(.borderless)
                             .font(.caption2)
-                            .foregroundStyle(.orange)
+                        }
                     }
 
                     if let insertTargetAppName, !insertTargetAppName.isEmpty {
@@ -430,14 +438,17 @@ struct ContentView: View {
     }
 
     private func insertButtonTitle() -> String {
-        guard canInsertDirectly else {
-            return "Copy"
+        if canInsertDirectly {
+            guard let target = insertTargetAppName, !target.isEmpty else {
+                return "Insert → Last App"
+            }
+            return "Insert → \(abbreviatedAppName(target))"
         }
 
         guard let target = insertTargetAppName, !target.isEmpty else {
-            return "Insert → Last App"
+            return "Copy"
         }
-        return "Insert → \(abbreviatedAppName(target))"
+        return "Copy → \(abbreviatedAppName(target))"
     }
 
     private func insertButtonHelpText() -> String {
@@ -450,7 +461,10 @@ struct ContentView: View {
         }
 
         guard canInsertDirectly else {
-            return "Copy transcription to clipboard"
+            if let target = insertTargetAppName, !target.isEmpty {
+                return "Accessibility permission is missing, so this will copy text for \(target)"
+            }
+            return "Accessibility permission is missing, so this will copy transcription to clipboard"
         }
 
         guard let target = insertTargetAppName, !target.isEmpty else {
