@@ -437,10 +437,20 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         } else if let target = insertionTestTargetDisplay {
-                            Text("Insertion test target: \(target)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Insertion test target: \(target)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+
+                                Button("Copy target") {
+                                    let pasteboard = NSPasteboard.general
+                                    pasteboard.clearContents()
+                                    _ = pasteboard.setString(target, forType: .string)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
 
                             if !accessibilityAuthorized {
                                 Text("Accessibility permission is missing, so this test will validate target capture and copy the sample text to clipboard instead of auto-pasting.")
