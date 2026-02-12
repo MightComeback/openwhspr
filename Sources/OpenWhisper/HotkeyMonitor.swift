@@ -356,12 +356,13 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private func unsupportedTriggerKeyMessage() -> String {
         if let invalidTriggerKeyInput {
             let trimmed = invalidTriggerKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                if looksLikeShortcutCombo(trimmed) {
-                    return "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘\(trimmed)’. Set modifiers with the toggles above."
-                }
-                return "Hotkey disabled: unsupported trigger key ‘\(trimmed)’. Use one key like space, f6, or /."
+            if trimmed.isEmpty {
+                return "Hotkey disabled: trigger key is empty. Enter one key like space, f6, or /."
             }
+            if looksLikeShortcutCombo(trimmed) {
+                return "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘\(trimmed)’. Set modifiers with the toggles above."
+            }
+            return "Hotkey disabled: unsupported trigger key ‘\(trimmed)’. Use one key like space, f6, or /."
         }
         return "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
     }

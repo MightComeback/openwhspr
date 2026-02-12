@@ -629,6 +629,20 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
+    func testEmptyTriggerKeyShowsSpecificGuidance() {
+        let defaults = makeDefaults()
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.updateConfig(required: [], forbidden: [], key: "   ", mode: .toggle)
+
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey disabled: trigger key is empty. Enter one key like space, f6, or /."
+        )
+    }
+
     func testModifierGlyphOnlyInputShowsKeyFieldGuidance() {
         let defaults = makeDefaults()
         defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
