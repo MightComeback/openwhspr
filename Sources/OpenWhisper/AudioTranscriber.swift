@@ -173,12 +173,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    func captureProfileForFrontmostApp() {
+    @discardableResult
+    func captureProfileForFrontmostApp() -> Bool {
         refreshFrontmostAppContext()
 
         guard let candidate = profileCaptureCandidate() else {
             lastError = "Cannot capture profile: no external app is available yet. Switch to the target app and click Refresh frontmost app once."
-            return
+            return false
         }
 
         let currentDefaults = defaultOutputSettings()
@@ -208,6 +209,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             statusMessage = "Saved profile for \(profile.appName)"
         }
         lastError = nil
+        return true
     }
 
     @MainActor
