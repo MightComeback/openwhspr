@@ -1055,7 +1055,8 @@ struct SettingsView: View {
         }
 
         let normalizedAsWholeKey = HotkeyDisplay.canonicalKey(normalized)
-        if HotkeyDisplay.isSupportedKey(normalizedAsWholeKey) {
+        if !looksLikeModifierComboInput(normalized),
+           HotkeyDisplay.isSupportedKey(normalizedAsWholeKey) {
             return ParsedHotkeyDraft(key: normalizedAsWholeKey, requiredModifiers: nil)
         }
 
@@ -1130,6 +1131,19 @@ struct SettingsView: View {
         }
 
         return ParsedHotkeyDraft(key: normalized, requiredModifiers: nil)
+    }
+
+    private func looksLikeModifierComboInput(_ raw: String) -> Bool {
+        if raw.contains("⌘") || raw.contains("⇧") || raw.contains("⌥") || raw.contains("⌃") || raw.contains("⇪") {
+            return true
+        }
+
+        let tokens = raw
+            .components(separatedBy: CharacterSet(charactersIn: "+-_ "))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        return tokens.contains { parseModifierToken($0) != nil }
     }
 
     private func mergeSpaceSeparatedKeyTokens(_ tokens: [String]) -> [String] {
