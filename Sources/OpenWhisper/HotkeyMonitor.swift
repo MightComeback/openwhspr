@@ -324,6 +324,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func standbyStatusMessage() -> String {
         if mode == .toggle {
+            if let transcriber, !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+                return "Hotkey active (\(currentComboSummary())) — finalizing previous recording"
+            }
             return toggleStatusMessage(isRecording: transcriber?.isRecording ?? false)
         }
         return "Hotkey active (\(currentComboSummary())) — hold to record"
