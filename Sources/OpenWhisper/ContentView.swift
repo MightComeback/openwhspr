@@ -538,7 +538,10 @@ struct ContentView: View {
     }
 
     private var canInsertNow: Bool {
-        hasTranscriptionText && !transcriber.isRecording && transcriber.pendingChunkCount == 0
+        hasTranscriptionText
+            && !transcriber.isRecording
+            && transcriber.pendingChunkCount == 0
+            && !transcriber.isRunningInsertionProbe
     }
 
     private func insertButtonTitle() -> String {
@@ -561,6 +564,9 @@ struct ContentView: View {
         }
 
         guard canInsertNow else {
+            if transcriber.isRunningInsertionProbe {
+                return "Wait for the insertion probe to finish before inserting"
+            }
             return "Stop recording and wait for pending chunks to finish before inserting"
         }
 
@@ -605,6 +611,9 @@ struct ContentView: View {
         }
 
         guard canInsertNow else {
+            if transcriber.isRunningInsertionProbe {
+                return "Wait for the insertion probe to finish before retargeting and inserting"
+            }
             return "Stop recording and wait for pending chunks to finish before inserting"
         }
 
