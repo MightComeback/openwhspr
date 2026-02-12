@@ -469,7 +469,7 @@ struct ContentView: View {
         }
 
         guard let target = insertTargetAppName, !target.isEmpty else {
-            return "Copy"
+            return "Copy → Clipboard"
         }
         return "Copy → \(abbreviatedAppName(target))"
     }
