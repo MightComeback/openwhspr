@@ -200,6 +200,7 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .keyboardShortcut("c", modifiers: [.command])
+                        .disabled(!hasTranscriptionText)
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
@@ -242,6 +243,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .disabled(!hasTranscriptionText)
                     }
 
                     if !accessibilityAuthorized {
@@ -419,8 +421,12 @@ struct ContentView: View {
         accessibilityAuthorized
     }
 
+    private var hasTranscriptionText: Bool {
+        !transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private var canInsertNow: Bool {
-        !transcriber.isRecording && transcriber.pendingChunkCount == 0
+        hasTranscriptionText && !transcriber.isRecording && transcriber.pendingChunkCount == 0
     }
 
     private func insertButtonTitle() -> String {
@@ -435,6 +441,10 @@ struct ContentView: View {
     }
 
     private func insertButtonHelpText() -> String {
+        guard hasTranscriptionText else {
+            return "No transcription to insert yet"
+        }
+
         guard canInsertNow else {
             return "Stop recording and wait for pending chunks to finish before inserting"
         }
