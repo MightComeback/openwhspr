@@ -1238,6 +1238,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .success
         }
 
+        // Final retry: keep focus stable and try once more with a slightly longer
+        // settle gap. This improves insertion reliability in apps that need an
+        // extra beat after activation before accepting synthetic key events.
+        Thread.sleep(forTimeInterval: 0.06)
+        if postPasteKeystroke() {
+            return .success
+        }
+
         return .pasteKeystrokeFailed
     }
 
