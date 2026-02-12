@@ -1300,10 +1300,9 @@ struct SettingsView: View {
             return
         }
 
-        // UX: Escape always cancels capture, even when modifier keys are held.
-        // Users often press Esc while still holding Command/Shift from a failed
-        // attempt and expect cancellation rather than assigning Escape as hotkey.
-        if key == "escape" {
+        // UX: plain Escape cancels capture. If modifiers are held, treat Escape
+        // as a valid trigger key so users can record combos like ⌘+Esc.
+        if key == "escape" && modifiers.isEmpty {
             stopHotkeyCapture()
             return
         }
