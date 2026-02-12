@@ -657,34 +657,53 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     private func refreshStreamingStatusIfNeeded() {
         let inFlightChunks = pendingChunkCount + (isTranscribing ? 1 : 0)
-        let latencySuffix = streamingLatencyStatusSuffix()
+        let statusSuffix = streamingStatusSuffix()
 
         if isRecording {
             if inFlightChunks > 0 {
-                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight\(latencySuffix)"
+                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight\(statusSuffix)"
             } else {
-                statusMessage = "Listening…\(latencySuffix)"
+                statusMessage = "Listening…\(statusSuffix)"
             }
             return
         }
 
         if inFlightChunks > 0 {
-            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(latencySuffix)"
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)"
             return
         }
 
         if pendingSessionFinalize {
-            statusMessage = "Finalizing…\(latencySuffix)"
+            statusMessage = "Finalizing…\(statusSuffix)"
         }
     }
 
     @MainActor
-    private func streamingLatencyStatusSuffix() -> String {
-        guard processedChunkCount > 0 else { return "" }
+    private func streamingStatusSuffix() -> String {
+        var segments: [String] = []
 
-        let latestMs = Int((lastChunkLatencySeconds * 1000).rounded())
-        let averageMs = Int((averageChunkLatencySeconds * 1000).rounded())
-        return " • last \(latestMs)ms avg \(averageMs)ms"
+        if let elapsed = streamingElapsedStatusSegment() {
+            segments.append(elapsed)
+        }
+
+        if processedChunkCount > 0 {
+            let latestMs = Int((lastChunkLatencySeconds * 1000).rounded())
+            let averageMs = Int((averageChunkLatencySeconds * 1000).rounded())
+            segments.append("last \(latestMs)ms avg \(averageMs)ms")
+        }
+
+        guard !segments.isEmpty else { return "" }
+        return " • " + segments.joined(separator: " • ")
+    }
+
+    @MainActor
+    private func streamingElapsedStatusSegment() -> String? {
+        guard let startedAt = recordingStartedAt else { return nil }
+
+        let elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
+        let minutes = elapsedSeconds / 60
+        let seconds = elapsedSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 
     @MainActor
