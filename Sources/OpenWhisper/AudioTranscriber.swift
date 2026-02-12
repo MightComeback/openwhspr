@@ -1372,7 +1372,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         keyDown.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
         keyUp.post(tap: .cghidEventTap)
-        return true
+
+        // One more focus check catches rapid app switches right after posting
+        // so caller can retry instead of reporting a false-positive insertion.
+        Thread.sleep(forTimeInterval: 0.005)
+        return NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedPID
     }
 
     @MainActor
