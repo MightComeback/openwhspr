@@ -437,6 +437,7 @@ final class HotkeyMonitorTests: XCTestCase {
         let upEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: false)
         XCTAssertTrue(monitor.handleForTesting(upEvent, type: .keyUp))
         XCTAssertTrue(monitor.statusMessage.hasPrefix("Hotkey active"))
+        XCTAssertTrue(monitor.statusMessage.contains("hold to record"))
     }
 
     func testInvalidTriggerKeyDisablesHotkeyWithStatusMessage() {
