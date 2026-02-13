@@ -321,7 +321,8 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .keyboardShortcut("r", modifiers: [.command, .shift])
-                        .help("Refresh insertion target from your current front app")
+                        .help(retargetButtonHelpText())
+                        .disabled(!canRetargetInsertTarget)
 
                         Button(focusTargetButtonTitle()) {
                             Task { @MainActor in
@@ -855,6 +856,22 @@ struct ContentView: View {
         }
 
         return "Retarget → \(abbreviatedAppName(target))"
+    }
+
+    private var canRetargetInsertTarget: Bool {
+        !transcriber.isRecording && transcriber.pendingChunkCount == 0
+    }
+
+    private func retargetButtonHelpText() -> String {
+        if transcriber.isRecording {
+            return "Finish recording before retargeting insertion"
+        }
+
+        if transcriber.pendingChunkCount > 0 {
+            return "Wait for finalization before retargeting insertion"
+        }
+
+        return "Refresh insertion target from your current front app"
     }
 
     private func useCurrentAppButtonTitle() -> String {
