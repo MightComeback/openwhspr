@@ -30,6 +30,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var lastInsertionProbeMessage: String = "No insertion test run yet"
     @Published var lastInsertionProbeSucceeded: Bool? = nil
     @Published var isRunningInsertionProbe: Bool = false
+    @Published var lastSuccessfulInsertionAt: Date? = nil
 
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
@@ -711,6 +712,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         lastError = nil
+        lastSuccessfulInsertionAt = Date()
         if let resolvedTargetName, !resolvedTargetName.isEmpty {
             statusMessage = "Inserted into \(resolvedTargetName)"
         } else {
@@ -1362,6 +1364,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
             if pasteResult == .success {
                 lastError = nil
+                lastSuccessfulInsertionAt = Date()
                 AudioFeedback.playInsertedSound()
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     statusMessage = "Inserted into \(resolvedTargetName)"

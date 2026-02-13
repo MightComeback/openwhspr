@@ -14,7 +14,19 @@ private struct MenuBarLabel: View {
     @State private var tick = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    /// How long the "✓ Inserted" flash stays visible in the menu bar.
+    private let insertionFlashDuration: TimeInterval = 3
+
+    private var isShowingInsertionFlash: Bool {
+        _ = tick
+        guard let insertedAt = transcriber.lastSuccessfulInsertionAt else { return false }
+        return Date().timeIntervalSince(insertedAt) < insertionFlashDuration
+    }
+
     private var iconName: String {
+        if isShowingInsertionFlash {
+            return "checkmark.circle.fill"
+        }
         if transcriber.isRecording {
             return "waveform.circle.fill"
         }
@@ -29,6 +41,10 @@ private struct MenuBarLabel: View {
 
     private var durationLabel: String? {
         _ = tick
+
+        if isShowingInsertionFlash {
+            return "Inserted"
+        }
 
         if transcriber.isRecording,
            let startedAt = transcriber.recordingStartedAt {
@@ -74,7 +90,7 @@ private struct MenuBarLabel: View {
             }
         }
         .onReceive(timer) { now in
-            guard transcriber.isRecording || transcriber.pendingChunkCount > 0 else { return }
+            guard transcriber.isRecording || transcriber.pendingChunkCount > 0 || isShowingInsertionFlash else { return }
             tick = now
         }
     }
