@@ -351,7 +351,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard !comboMatches else { return false }
 
         holdSessionArmed = false
-        setStatus(active: true, message: standbyStatusMessage())
+        setStatus(active: true, message: holdReleasedStatusMessage())
         Task { @MainActor [weak transcriber] in
             if transcriber?.cancelQueuedStartAfterFinalizeFromHotkey() == true {
                 return
@@ -501,6 +501,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return "Hold active: finalizing previous recording (\(currentComboSummary()))"
         }
         return "Hold active: recording while pressed (\(currentComboSummary()))"
+    }
+
+    private func holdReleasedStatusMessage() -> String {
+        "Hold released: modifier combo changed — hold to record (\(currentComboSummary()))"
     }
 
     private func unsupportedTriggerKeyMessage() -> String {
