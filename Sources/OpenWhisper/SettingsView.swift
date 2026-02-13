@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var isCapturingHotkey: Bool = false
     @State private var hotkeyCaptureMonitor: Any?
     @State private var hotkeyCaptureTimeoutTask: Task<Void, Never>?
+    @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
@@ -262,7 +263,7 @@ struct SettingsView: View {
                         }
 
                         if isCapturingHotkey {
-                            Text("Listening for the next key press. Hold modifiers and press your trigger key once. Press Esc to cancel.")
+                            Text("Listening for the next key press. Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -1400,6 +1401,7 @@ struct SettingsView: View {
         stopHotkeyCapture()
         hotkeyCaptureError = nil
         isCapturingHotkey = true
+        hotkeyCaptureSecondsRemaining = 8
 
         hotkeyCaptureMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             captureHotkey(from: event)
@@ -1408,18 +1410,24 @@ struct SettingsView: View {
 
         hotkeyCaptureTimeoutTask?.cancel()
         hotkeyCaptureTimeoutTask = Task {
-            try? await Task.sleep(nanoseconds: 8_000_000_000)
-            guard !Task.isCancelled else {
-                return
-            }
-
-            await MainActor.run {
-                guard isCapturingHotkey else {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else {
                     return
                 }
 
-                hotkeyCaptureError = "Hotkey capture timed out. Click Record shortcut and try again."
-                stopHotkeyCapture(clearError: false)
+                await MainActor.run {
+                    guard isCapturingHotkey else {
+                        return
+                    }
+
+                    hotkeyCaptureSecondsRemaining -= 1
+
+                    if hotkeyCaptureSecondsRemaining <= 0 {
+                        hotkeyCaptureError = "Hotkey capture timed out. Click Record shortcut and try again."
+                        stopHotkeyCapture(clearError: false)
+                    }
+                }
             }
         }
     }
@@ -1436,6 +1444,7 @@ struct SettingsView: View {
         if clearError {
             hotkeyCaptureError = nil
         }
+        hotkeyCaptureSecondsRemaining = 0
         isCapturingHotkey = false
     }
 
