@@ -351,7 +351,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard !comboMatches else { return false }
 
         holdSessionArmed = false
-        setStatus(active: true, message: holdReleasedStatusMessage(flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden))
+        let releasedMessage = holdReleasedStatusMessage(flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
+        setStatus(active: true, message: releasedMessage)
+        scheduleTemporaryStatusResetIfNeeded(for: releasedMessage)
         Task { @MainActor [weak transcriber] in
             if transcriber?.cancelQueuedStartAfterFinalizeFromHotkey() == true {
                 return
@@ -475,13 +477,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         setStatus(active: isHotkeyActive, message: mismatchMessage)
 
+        scheduleTemporaryStatusResetIfNeeded(for: mismatchMessage)
+    }
+
+    private func scheduleTemporaryStatusResetIfNeeded(for message: String) {
         guard isListening else { return }
 
+        comboMismatchResetTask?.cancel()
         comboMismatchResetTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 1_200_000_000)
             guard let self, !Task.isCancelled else { return }
 
-            if self.statusMessage == mismatchMessage {
+            if self.statusMessage == message {
                 self.refreshStatusFromRuntimeState()
             }
         }
