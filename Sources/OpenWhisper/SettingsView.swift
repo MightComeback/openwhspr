@@ -89,7 +89,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
-                            .help("Copy hotkey combo to clipboard")
+                            .help("Copy hotkey mode and combo to clipboard")
                         }
 
                         if showsHighRiskHotkeyWarning {
@@ -1895,7 +1895,8 @@ struct SettingsView: View {
     private func copyHotkeySummaryToClipboard() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        _ = pasteboard.setString(hotkeySummary(), forType: .string)
+        let mode = HotkeyMode(rawValue: hotkeyModeRaw) ?? .toggle
+        _ = pasteboard.setString("\(mode.title) • \(hotkeySummary())", forType: .string)
     }
 
     private func hotkeySummary() -> String {
