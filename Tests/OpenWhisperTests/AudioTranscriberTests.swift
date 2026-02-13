@@ -412,7 +412,7 @@ final class AudioTranscriberTests: XCTestCase {
             transcriber.setAccessibilityPermissionCheckerForTesting { false }
             transcriber.isRecording = false
             transcriber.pendingChunkCount = 0
-            transcriber.transcription = "hello world"
+            transcriber.transcription = "accessibility fallback unique text"
 
             let previousHistoryCount = transcriber.recentEntries.count
             let inserted = transcriber.insertTranscriptionIntoFocusedApp()
