@@ -80,6 +80,12 @@ struct ContentView: View {
                         .labelsHidden()
                         .frame(width: 110)
                         .controlSize(.mini)
+                        .onChange(of: hotkeyModeRaw) { _, _ in
+                            // Make the hotkey UX feel immediate even if AppStorage writes
+                            // propagate asynchronously to UserDefaults observers.
+                            hotkeyMonitor.reloadConfig()
+                            hotkeyMonitor.refreshStatusFromRuntimeState()
+                        }
                     }
 
                     Text(hotkeyMonitor.statusMessage)
