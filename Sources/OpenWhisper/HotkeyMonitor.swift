@@ -484,7 +484,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         switch normalized {
-        case "escape", "tab", "return", "space", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
+        case "escape", "tab", "return", "space", "left", "right", "up", "down", "home", "end", "pageup", "pagedown", "fn", "function", "globe", "globekey":
             return true
         default:
             return false

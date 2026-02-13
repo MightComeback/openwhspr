@@ -899,6 +899,16 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testFnKeyTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "fn", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Function), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
         let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
 
