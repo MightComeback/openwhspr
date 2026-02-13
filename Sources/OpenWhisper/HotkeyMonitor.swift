@@ -22,6 +22,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var holdSessionArmed: Bool = false
     private var toggleKeyDownConsumed: Bool = false
     private var isListening: Bool = false
+    private var comboMismatchResetTask: Task<Void, Never>? = nil
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -163,6 +164,8 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     func stop() {
         isListening = false
+        comboMismatchResetTask?.cancel()
+        comboMismatchResetTask = nil
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             CFMachPortInvalidate(tap)
@@ -192,6 +195,8 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         holdSessionArmed = false
         toggleKeyDownConsumed = false
+        comboMismatchResetTask?.cancel()
+        comboMismatchResetTask = nil
 
         if !normalized.isValid {
             if isListening {
@@ -277,7 +282,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 return true
             }
 
-            guard comboMatches else { return false }
+            guard comboMatches else {
+                showComboMismatchHintIfNeeded(type: type)
+                return false
+            }
 
             // Prevent key repeat from rapidly toggling recording while the hotkey is held.
             let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
@@ -295,7 +303,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         case .hold:
             if type == .keyDown {
-                guard comboMatches else { return false }
+                guard comboMatches else {
+                    showComboMismatchHintIfNeeded(type: type)
+                    return false
+                }
                 if !holdSessionArmed {
                     holdSessionArmed = true
                     setStatus(active: true, message: holdActiveStatusMessage())
@@ -393,6 +404,26 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         return toggleStatusMessage(isRecording: transcriber.isRecording)
+    }
+
+    private func showComboMismatchHintIfNeeded(type: CGEventType) {
+        guard type == .keyDown else { return }
+
+        comboMismatchResetTask?.cancel()
+        let priorStatus = statusMessage
+
+        setStatus(active: isHotkeyActive, message: "Hotkey not triggered: use \(currentComboSummary())")
+
+        guard isListening else { return }
+
+        comboMismatchResetTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            guard let self, !Task.isCancelled else { return }
+
+            if self.statusMessage == "Hotkey not triggered: use \(self.currentComboSummary())" {
+                self.setStatus(active: self.isHotkeyActive, message: priorStatus)
+            }
+        }
     }
 
     private func holdActiveStatusMessage() -> String {
