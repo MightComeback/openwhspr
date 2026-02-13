@@ -512,16 +512,22 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let forbiddenHeld = modifierGlyphSummary(from: flags.intersection(forbiddenModifiers))
 
         if hasForbidden, !forbiddenHeld.isEmpty {
-            return "Hold released: forbidden modifier \(forbiddenHeld) was held; hold to record with \(expectedCombo)"
+            let forbiddenTokenCount = forbiddenHeld.split(separator: "+").count
+            let modifierLabel = forbiddenTokenCount > 1 ? "modifiers" : "modifier"
+            let verb = forbiddenTokenCount > 1 ? "were" : "was"
+            return "Hold released: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held; hold to record with \(expectedCombo)"
         }
 
         if !hasRequired {
             let required = modifierGlyphSummary(from: requiredModifiers)
+            let requiredTokenCount = required.split(separator: "+").count
+            let requiredLabel = requiredTokenCount > 1 ? "modifiers" : "modifier"
             let held = modifierGlyphSummary(from: flags)
+
             if held.isEmpty {
-                return "Hold released: missing required modifier \(required); hold to record with \(expectedCombo)"
+                return "Hold released: missing required \(requiredLabel) \(required); hold to record with \(expectedCombo)"
             }
-            return "Hold released: missing required modifier \(required); held \(held). hold to record with \(expectedCombo)"
+            return "Hold released: missing required \(requiredLabel) \(required); held \(held). Hold to record with \(expectedCombo)"
         }
 
         return "Hold released: modifier combo changed — hold to record (\(expectedCombo))"
