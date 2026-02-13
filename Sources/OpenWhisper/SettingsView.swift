@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
+    private let insertionProbeMaxCharacters: Int = 120
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true
@@ -410,7 +411,7 @@ struct SettingsView: View {
                                 Task { @MainActor in
                                     let captured = transcriber.captureProfileForFrontmostApp()
                                     guard captured else { return }
-                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextTrimmed)
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -418,7 +419,7 @@ struct SettingsView: View {
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
                                 Task { @MainActor in
-                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextTrimmed)
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -440,9 +441,23 @@ struct SettingsView: View {
                             .disabled(insertionProbeSampleText == "OpenWhisper insertion test")
                         }
 
-                        Text("Used by both insertion test buttons. Leave it short so you can quickly confirm the right destination app received it.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("Used by both insertion test buttons. Leave it short so you can quickly confirm the right destination app received it.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Spacer()
+
+                            Text("\(insertionProbeSampleTextForRun.count)/\(insertionProbeMaxCharacters)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if insertionProbeSampleTextWillTruncate {
+                            Text("Insertion test text will be trimmed to the first \(insertionProbeMaxCharacters) characters to avoid accidental long pastes.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
 
                         if !canCaptureFrontmostProfile {
                             Text(captureProfileDisabledReason)
@@ -1112,8 +1127,16 @@ struct SettingsView: View {
         insertionProbeSampleText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var insertionProbeSampleTextForRun: String {
+        String(insertionProbeSampleTextTrimmed.prefix(insertionProbeMaxCharacters))
+    }
+
+    private var insertionProbeSampleTextWillTruncate: Bool {
+        insertionProbeSampleTextTrimmed.count > insertionProbeMaxCharacters
+    }
+
     private var hasInsertionProbeSampleText: Bool {
-        !insertionProbeSampleTextTrimmed.isEmpty
+        !insertionProbeSampleTextForRun.isEmpty
     }
 
     private var isTranscriptionFinalizingForInsertion: Bool {
