@@ -1286,6 +1286,26 @@ struct SettingsView: View {
             return "⌘+W closes the current window/tab on macOS and can kill focus mid-dictation."
         }
 
+        if key == "s" && modifiers == Set([.command]) {
+            return "⌘+S saves in most apps and will trigger constantly during normal editing."
+        }
+
+        if key == "f" && modifiers == Set([.command]) {
+            return "⌘+F opens Find in most apps and is a noisy dictation trigger."
+        }
+
+        if key == "n" && modifiers == Set([.command]) {
+            return "⌘+N creates a new document/window in many apps and is too disruptive for dictation."
+        }
+
+        if key == "t" && modifiers == Set([.command]) {
+            return "⌘+T opens a new tab in many apps and browsers, so it collides with normal workflow."
+        }
+
+        if key == "p" && modifiers == Set([.command]) {
+            return "⌘+P opens Print in most apps and is a brutal accidental trigger."
+        }
+
         return nil
     }
 
