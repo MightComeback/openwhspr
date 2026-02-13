@@ -333,7 +333,7 @@ enum HotkeyDisplay {
         // the trigger key, so strip known modifier tokens first and keep the
         // remaining key tokens joined.
         let shortcutTokens = expanded
-            .components(separatedBy: CharacterSet(charactersIn: "+ -_,/"))
+            .components(separatedBy: CharacterSet(charactersIn: "+ -_,"))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
