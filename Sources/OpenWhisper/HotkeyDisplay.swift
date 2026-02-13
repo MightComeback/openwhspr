@@ -203,7 +203,12 @@ enum HotkeyDisplay {
         if raw == "\t" { return "tab" }
         if raw == "\r" || raw == "\n" { return "return" }
 
-        let trimmed = raw
+        let normalizedWhitespace = raw
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+            .replacingOccurrences(of: "\u{2007}", with: " ")
+            .replacingOccurrences(of: "\u{202F}", with: " ")
+
+        let trimmed = normalizedWhitespace
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
             .replacingOccurrences(of: "\u{FE0E}", with: "")
