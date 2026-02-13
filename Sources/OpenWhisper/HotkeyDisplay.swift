@@ -283,7 +283,7 @@ enum HotkeyDisplay {
         // prefixes greedily and keep the trailing key token.
         if compact.range(of: "^[a-z0-9]+$", options: .regularExpression) != nil {
             let compactModifierPrefixes = [
-                "command", "cmd", "control", "ctrl", "option", "opt", "alt",
+                "command", "cmd", "control", "ctrl", "ctl", "option", "opt", "alt",
                 "shift", "capslock", "caps", "meta", "super", "win", "windows"
             ]
             var compactRemainder = compact
@@ -336,7 +336,7 @@ enum HotkeyDisplay {
 
         let modifierTokens: Set<String> = [
             "cmd", "command", "meta", "super", "win", "windows",
-            "shift", "option", "opt", "alt", "control", "ctrl",
+            "shift", "option", "opt", "alt", "control", "ctrl", "ctl",
             "caps", "capslock", "fn", "function", "fnkey", "globe", "globekey", "🌐"
         ]
 
