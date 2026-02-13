@@ -946,6 +946,16 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testCapsLockTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "caps lock", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_CapsLock), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
         let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
 
