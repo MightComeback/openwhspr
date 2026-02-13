@@ -1024,11 +1024,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 // when restating the full sentence ("hello world ."). Keep
                 // the transcript compact by attaching punctuation directly.
                 if isStandalonePunctuationFragment(remainder) {
-                    guard let lhsLast = lhs.last else { return lhs }
-                    if Self.isSentencePunctuation(lhsLast) {
-                        return lhs
+                    let base = lhs.trimmingCharacters(in: .whitespaces)
+                    guard let baseLast = base.last else { return base }
+                    if Self.isSentencePunctuation(baseLast) {
+                        return base
                     }
-                    return lhs + remainder
+                    return base + remainder
                 }
             }
             return rhs
@@ -1045,14 +1046,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // attach them directly to the existing text instead of introducing an
         // extra space token ("hello world .").
         if isStandalonePunctuationFragment(rhs) {
-            guard let lhsLast = lhs.last else { return lhs }
-            if Self.isSentencePunctuation(lhsLast) {
-                return lhs
+            let base = lhs.trimmingCharacters(in: .whitespaces)
+            guard let baseLast = base.last else { return base }
+            if Self.isSentencePunctuation(baseLast) {
+                return base
             }
-            if lhsLast.isWhitespace {
-                return lhs + rhs
-            }
-            return lhs + rhs
+            return base + rhs
         }
 
         let maxOverlap = min(lowerLHS.count, lowerRHS.count)
