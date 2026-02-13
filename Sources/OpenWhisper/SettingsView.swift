@@ -26,6 +26,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureTimeoutTask: Task<Void, Never>?
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
+    @State private var hotkeyCaptureSuccessMessage: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
     private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
     private let hotkeyCaptureTimeoutSeconds: Int = 8
@@ -291,6 +292,12 @@ struct SettingsView: View {
                                 Text(hotkeyCaptureError)
                                     .font(.caption)
                                     .foregroundStyle(.orange)
+                            }
+
+                            if let hotkeyCaptureSuccessMessage {
+                                Text(hotkeyCaptureSuccessMessage)
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
                             }
                         }
 
@@ -1522,6 +1529,8 @@ struct SettingsView: View {
     }
 
     private func applyHotkeyKeyDraft() {
+        hotkeyCaptureSuccessMessage = nil
+
         guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
             return
         }
@@ -1592,6 +1601,7 @@ struct SettingsView: View {
     private func startHotkeyCapture() {
         stopHotkeyCapture()
         hotkeyCaptureError = nil
+        hotkeyCaptureSuccessMessage = nil
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = hotkeyCaptureTimeoutSeconds
 
@@ -1711,6 +1721,7 @@ struct SettingsView: View {
         forbiddenControl = !requiredControl && forbiddenControl
         forbiddenCapsLock = !requiredCapsLock && forbiddenCapsLock
 
+        hotkeyCaptureSuccessMessage = "Captured: \(hotkeySummary())"
         stopHotkeyCapture()
     }
 
