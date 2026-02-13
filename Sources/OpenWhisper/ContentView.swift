@@ -323,7 +323,7 @@ struct ContentView: View {
                         .controlSize(.small)
                         .keyboardShortcut("f", modifiers: [.command, .shift])
                         .help(focusTargetButtonHelpText())
-                        .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
+                        .disabled(!hasResolvableInsertTarget || transcriber.isRecording || transcriber.pendingChunkCount > 0)
 
                         Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
                             Task { @MainActor in
@@ -829,6 +829,13 @@ struct ContentView: View {
         return "Focus → \(abbreviatedAppName(target))"
     }
 
+    private var hasResolvableInsertTarget: Bool {
+        guard let target = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
+        }
+        return !target.isEmpty
+    }
+
     private func focusTargetButtonHelpText() -> String {
         if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
             return "Wait for recording/finalization to finish before focusing the target app"
@@ -838,7 +845,7 @@ struct ContentView: View {
             return "Bring \(target) to the front before inserting"
         }
 
-        return "Bring the current insertion target app to the front"
+        return "No insertion target yet. Switch to your destination app, then click Retarget."
     }
 
     private var shouldSuggestRetarget: Bool {
