@@ -52,6 +52,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var pendingChunkEnqueueTimes: [Date] = []
     private var isTranscribing: Bool = false
     private var pendingSessionFinalize: Bool = false
+    private var lastRecordingDurationSeconds: TimeInterval?
     private var startRecordingAfterFinalizeRequested: Bool = false
     private var lastAcceptedChunkText: String = ""
     private var lastAcceptedChunkCanonical: String = ""
@@ -795,6 +796,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     private func stopRecording() {
         guard isRecording else { return }
+        if let startedAt = recordingStartedAt {
+            lastRecordingDurationSeconds = max(0, Date().timeIntervalSince(startedAt))
+        }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRecording = false
@@ -1303,7 +1307,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
-        appendHistoryEntry(finalText)
+        appendHistoryEntry(finalText, durationSeconds: lastRecordingDurationSeconds)
+        lastRecordingDurationSeconds = nil
 
         let shouldAutoCopy = settings.autoCopy
         let shouldAutoPaste = settings.autoPaste
@@ -1604,12 +1609,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func appendHistoryEntry(_ text: String) {
+    private func appendHistoryEntry(_ text: String, durationSeconds: TimeInterval? = nil) {
         if recentEntries.first?.text == text {
             return
         }
 
-        recentEntries.insert(TranscriptionEntry(text: text), at: 0)
+        recentEntries.insert(TranscriptionEntry(text: text, durationSeconds: durationSeconds), at: 0)
         let configuredLimit = UserDefaults.standard.integer(forKey: AppDefaults.Keys.transcriptionHistoryLimit)
         let maxEntries = max(1, configuredLimit)
         if recentEntries.count > maxEntries {

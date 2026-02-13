@@ -1185,7 +1185,18 @@ struct ContentView: View {
     private func historyEntryStats(_ entry: TranscriptionEntry) -> String {
         let text = entry.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
-        return "\(words)w"
+        var parts = ["\(words)w"]
+        if let duration = entry.durationSeconds, duration > 0 {
+            let total = Int(duration.rounded())
+            if total < 60 {
+                parts.append("\(total)s")
+            } else {
+                let minutes = total / 60
+                let seconds = total % 60
+                parts.append(String(format: "%d:%02d", minutes, seconds))
+            }
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func openSystemSettingsPane(_ paneURL: String) {
