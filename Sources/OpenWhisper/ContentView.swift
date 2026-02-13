@@ -14,6 +14,7 @@ struct ContentView: View {
     @ObservedObject var hotkeyMonitor: HotkeyMonitor
 
     @AppStorage(AppDefaults.Keys.onboardingCompleted) private var onboardingCompleted: Bool = false
+    @AppStorage(AppDefaults.Keys.hotkeyMode) private var hotkeyModeRaw: String = HotkeyMode.toggle.rawValue
 
     @State private var microphoneAuthorized = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     @State private var accessibilityAuthorized = HotkeyMonitor.hasAccessibilityPermission()
@@ -49,9 +50,20 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(statusTitle())
                         .font(.headline)
-                    Text("Hotkey: \(hotkeySummary())")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("Hotkey: \(hotkeySummary())")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Picker("", selection: $hotkeyModeRaw) {
+                            Text("Toggle").tag(HotkeyMode.toggle.rawValue)
+                            Text("Hold").tag(HotkeyMode.hold.rawValue)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(width: 110)
+                        .controlSize(.mini)
+                    }
 
                     Text(hotkeyMonitor.statusMessage)
                         .font(.caption2)
