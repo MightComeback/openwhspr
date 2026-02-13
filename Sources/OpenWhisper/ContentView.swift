@@ -383,6 +383,12 @@ struct ContentView: View {
                                 .foregroundStyle(isInsertTargetStale ? .orange : .secondary)
                         }
 
+                        if isInsertTargetLocked {
+                            Text("Target is locked to avoid accidental app switches. Use Retarget if you changed destination.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
                         if shouldSuggestRetarget,
                            let currentFrontAppName = currentExternalFrontAppName() {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -872,8 +878,12 @@ struct ContentView: View {
         return "No insertion target yet. Switch to your destination app, then click Retarget."
     }
 
+    private var isInsertTargetLocked: Bool {
+        hasTranscriptionText && canInsertNow && hasResolvableInsertTarget
+    }
+
     private var shouldSuggestRetarget: Bool {
-        guard hasTranscriptionText, canInsertNow else {
+        guard isInsertTargetLocked else {
             return false
         }
 
