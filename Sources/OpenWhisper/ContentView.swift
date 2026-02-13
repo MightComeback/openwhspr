@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
     @State private var insertTargetAppName: String? = nil
     @State private var insertTargetDisplay: String? = nil
+    @State private var insertTargetUsesFallback = false
     @State private var showingOnboarding = false
     @State private var uiNow = Date()
     @State private var finalizationInitialPendingChunks: Int? = nil
@@ -534,6 +535,7 @@ struct ContentView: View {
     private func refreshInsertTargetSnapshot() {
         insertTargetAppName = transcriber.manualInsertTargetAppName()
         insertTargetDisplay = transcriber.manualInsertTargetDisplay()
+        insertTargetUsesFallback = transcriber.manualInsertTargetUsesFallbackApp()
     }
 
     private func statusTitle() -> String {
@@ -685,11 +687,15 @@ struct ContentView: View {
                 return "Insert → Last App"
             }
 
+            let targetLabel = insertTargetUsesFallback
+                ? "\(abbreviatedAppName(target)) (recent)"
+                : abbreviatedAppName(target)
+
             if shouldSuggestRetarget {
-                return "Insert → \(abbreviatedAppName(target)) ⚠︎"
+                return "Insert → \(targetLabel) ⚠︎"
             }
 
-            return "Insert → \(abbreviatedAppName(target))"
+            return "Insert → \(targetLabel)"
         }
 
         return "Copy → Clipboard"
@@ -718,6 +724,10 @@ struct ContentView: View {
             return "Insert into the last active app"
         }
 
+        if insertTargetUsesFallback {
+            return "Insert into \(target) captured from recent app context"
+        }
+
         return "Insert into \(target)"
     }
 
@@ -725,6 +735,11 @@ struct ContentView: View {
         guard let target = insertTargetAppName, !target.isEmpty else {
             return "Retarget"
         }
+
+        if insertTargetUsesFallback {
+            return "Retarget → \(abbreviatedAppName(target)) (recent)"
+        }
+
         return "Retarget → \(abbreviatedAppName(target))"
     }
 

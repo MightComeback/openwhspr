@@ -383,6 +383,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func manualInsertTargetUsesFallbackApp() -> Bool {
+        captureInsertionTargetApp()
+        guard resolveInsertionTargetApp() != nil else {
+            return false
+        }
+        return insertionTargetUsesFallbackApp
+    }
+
+    @MainActor
     @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
         guard !isRecording else {
