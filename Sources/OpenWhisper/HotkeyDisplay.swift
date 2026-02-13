@@ -42,7 +42,7 @@ enum HotkeyDisplay {
         switch normalized {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
         case "tabkey", "⇥", "⇤": return "tab"
-        case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "returnorenter", "enterorreturn", "↩", "↵", "⏎": return "return"
+        case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "returnorenter", "enterorreturn", "↩", "↵", "⏎", "⌅": return "return"
         case "esc", "escapekey", "escape/esc", "esc/escape", "⎋": return "escape"
         case "del", "deletekey", "backspace", "backspacekey", "delete/backspace", "backspace/delete", "bksp", "⌫": return "delete"
         case "⌦", "␡", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
@@ -302,6 +302,7 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "↩", with: " return ")
             .replacingOccurrences(of: "↵", with: " return ")
             .replacingOccurrences(of: "⏎", with: " return ")
+            .replacingOccurrences(of: "⌅", with: " return ")
             .replacingOccurrences(of: "⎋", with: " escape ")
             .replacingOccurrences(of: "⇥", with: " tab ")
             .replacingOccurrences(of: "⇤", with: " tab ")
