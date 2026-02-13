@@ -475,6 +475,12 @@ struct SettingsView: View {
                                 .controlSize(.small)
                             }
 
+                            if transcriber.manualInsertTargetUsesFallbackApp() {
+                                Text("Using recent app fallback target. Before running the insertion test, switch to your real destination app and click Refresh frontmost app for precise targeting.")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+
                             if !accessibilityAuthorized {
                                 Text("Accessibility permission is missing, so this test will validate target capture and copy the sample text to clipboard instead of auto-pasting.")
                                     .font(.caption)
