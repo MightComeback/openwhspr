@@ -321,6 +321,46 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         stopRecording()
     }
 
+    /// Discard the current recording session without finalizing or appending
+    /// any transcription. Useful when the user wants to abandon a bad take.
+    @MainActor
+    func cancelRecording() {
+        guard isRecording || pendingChunkCount > 0 || pendingSessionFinalize else {
+            statusMessage = "Nothing to cancel"
+            return
+        }
+
+        let wasRecording = isRecording
+        if wasRecording {
+            engine.inputNode.removeTap(onBus: 0)
+            engine.stop()
+            isRecording = false
+        }
+
+        // Drain all pending state without processing
+        pendingChunks.removeAll()
+        pendingChunkEnqueueTimes.removeAll()
+        pendingChunkCount = 0
+        pendingSessionFinalize = false
+        startRecordingAfterFinalizeRequested = false
+        isTranscribing = false
+        inputLevel = 0
+        recordingStartedAt = nil
+        recordingOutputSettings = nil
+        lastAcceptedChunkText = ""
+        lastAcceptedChunkCanonical = ""
+        stopStatusRefreshTimer()
+
+        bufferQueue.async { [weak self] in
+            self?.audioBuffer.removeAll(keepingCapacity: true)
+            self?.audioBufferHead = 0
+        }
+
+        AudioFeedback.playStopSound()
+        statusMessage = "Recording discarded"
+        lastError = nil
+    }
+
     @MainActor
     @discardableResult
     func cancelQueuedStartAfterFinalizeFromHotkey() -> Bool {

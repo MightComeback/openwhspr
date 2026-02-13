@@ -60,6 +60,17 @@ struct ContentView: View {
 
                 Spacer()
 
+                if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
+                    Button("Discard") {
+                        Task { @MainActor in
+                            transcriber.cancelRecording()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .help("Discard this recording without saving the transcription")
+                }
+
                 Button(startStopButtonTitle()) {
                     Task { @MainActor in
                         transcriber.toggleRecording()
