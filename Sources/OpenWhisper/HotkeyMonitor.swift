@@ -351,7 +351,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard !comboMatches else { return false }
 
         holdSessionArmed = false
-        setStatus(active: true, message: holdReleasedStatusMessage())
+        setStatus(active: true, message: holdReleasedStatusMessage(flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden))
         Task { @MainActor [weak transcriber] in
             if transcriber?.cancelQueuedStartAfterFinalizeFromHotkey() == true {
                 return
@@ -507,8 +507,24 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return "Hold active: recording while pressed (\(currentComboSummary()))"
     }
 
-    private func holdReleasedStatusMessage() -> String {
-        "Hold released: modifier combo changed — hold to record (\(currentComboSummary()))"
+    private func holdReleasedStatusMessage(flags: CGEventFlags, hasRequired: Bool, hasForbidden: Bool) -> String {
+        let expectedCombo = currentComboSummary()
+        let forbiddenHeld = modifierGlyphSummary(from: flags.intersection(forbiddenModifiers))
+
+        if hasForbidden, !forbiddenHeld.isEmpty {
+            return "Hold released: forbidden modifier \(forbiddenHeld) was held; hold to record with \(expectedCombo)"
+        }
+
+        if !hasRequired {
+            let required = modifierGlyphSummary(from: requiredModifiers)
+            let held = modifierGlyphSummary(from: flags)
+            if held.isEmpty {
+                return "Hold released: missing required modifier \(required); hold to record with \(expectedCombo)"
+            }
+            return "Hold released: missing required modifier \(required); held \(held). hold to record with \(expectedCombo)"
+        }
+
+        return "Hold released: modifier combo changed — hold to record (\(expectedCombo))"
     }
 
     private func unsupportedTriggerKeyMessage() -> String {
