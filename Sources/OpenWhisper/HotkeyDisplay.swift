@@ -89,6 +89,12 @@ enum HotkeyDisplay {
         case "numpad7": return "keypad7"
         case "numpad8": return "keypad8"
         case "numpad9": return "keypad9"
+        case "numpad.", "keypad.": return "keypaddecimal"
+        case "numpad+", "keypad+": return "keypadplus"
+        case "numpad-", "keypad-": return "keypadminus"
+        case "numpad*", "keypad*", "numpadx", "keypadx": return "keypadmultiply"
+        case "numpad/", "keypad/": return "keypaddivide"
+        case "numpad=", "keypad=": return "keypadequals"
         case "numpaddecimal", "numdecimal", "numdot", "numperiod", "kpdecimal", "kpdot": return "keypaddecimal"
         case "numpadmultiply", "nummultiply", "numtimes", "kpmultiply", "kptimes": return "keypadmultiply"
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
@@ -214,6 +220,16 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "\u{FE0E}", with: "")
             .replacingOccurrences(of: "\u{FE0F}", with: "")
 
+        switch trimmed {
+        case "numpad +", "keypad +": return "numpad+"
+        case "numpad -", "keypad -": return "numpad-"
+        case "numpad *", "keypad *", "numpad x", "keypad x": return "numpad*"
+        case "numpad /", "keypad /": return "numpad/"
+        case "numpad .", "keypad .": return "numpad."
+        case "numpad =", "keypad =": return "numpad="
+        default: break
+        }
+
         guard trimmed.count > 1 else {
             return trimmed
         }
@@ -225,12 +241,12 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: "_", with: "")
         switch compact {
-        case "num+", "kp+": return "numpadplus"
-        case "num-", "kp-": return "numpadminus"
-        case "num*", "kp*", "numx", "kpx": return "numpadmultiply"
-        case "num/", "kp/": return "numpaddivide"
-        case "num.", "kp.": return "numpaddecimal"
-        case "num=", "kp=": return "numpadequals"
+        case "num+", "kp+", "numpad+", "keypad+": return "numpadplus"
+        case "num-", "kp-", "numpad-", "keypad-": return "numpadminus"
+        case "num*", "kp*", "numx", "kpx", "numpad*", "keypad*": return "numpadmultiply"
+        case "num/", "kp/", "numpad/", "keypad/": return "numpaddivide"
+        case "num.", "kp.", "numpad.", "keypad.": return "numpaddecimal"
+        case "num=", "kp=", "numpad=", "keypad=": return "numpadequals"
         case "capslock", "capslockkey": return "capslock"
         case "fnglobe", "globefn", "functionglobe", "globefunction": return "fn"
         default: break
