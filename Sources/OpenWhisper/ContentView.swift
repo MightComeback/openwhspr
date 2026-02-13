@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var inputMonitoringAuthorized = HotkeyMonitor.hasInputMonitoringPermission()
     @State private var lastHotkeyPermissionsReady: Bool = HotkeyMonitor.hasAccessibilityPermission() && HotkeyMonitor.hasInputMonitoringPermission()
     @State private var insertTargetAppName: String? = nil
+    @State private var insertTargetBundleIdentifier: String? = nil
     @State private var insertTargetDisplay: String? = nil
     @State private var insertTargetUsesFallback = false
     @State private var insertTargetCapturedAt: Date? = nil
@@ -577,6 +578,7 @@ struct ContentView: View {
     @MainActor
     private func refreshInsertTargetSnapshot() {
         insertTargetAppName = transcriber.manualInsertTargetAppName()
+        insertTargetBundleIdentifier = transcriber.manualInsertTargetBundleIdentifier()
         insertTargetDisplay = transcriber.manualInsertTargetDisplay()
         insertTargetUsesFallback = transcriber.manualInsertTargetUsesFallbackApp()
 
@@ -857,6 +859,11 @@ struct ContentView: View {
             return false
         }
 
+        if let targetBundle = insertTargetBundleIdentifier,
+           let frontBundle = currentExternalFrontBundleIdentifier() {
+            return targetBundle.caseInsensitiveCompare(frontBundle) != .orderedSame
+        }
+
         if let front = currentExternalFrontAppName() {
             return target.caseInsensitiveCompare(front) != .orderedSame
         }
@@ -870,6 +877,13 @@ struct ContentView: View {
         }
 
         return uiNow.timeIntervalSince(capturedAt) >= insertTargetStaleAfterSeconds
+    }
+
+    private func currentExternalFrontBundleIdentifier() -> String? {
+        let candidate = transcriber.frontmostBundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !candidate.isEmpty else { return nil }
+        guard candidate.caseInsensitiveCompare(Bundle.main.bundleIdentifier ?? "") != .orderedSame else { return nil }
+        return candidate
     }
 
     private func currentExternalFrontAppName() -> String? {

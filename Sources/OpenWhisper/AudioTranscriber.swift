@@ -355,6 +355,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func manualInsertTargetBundleIdentifier() -> String? {
+        captureInsertionTargetApp()
+        guard let app = resolveInsertionTargetApp(),
+              let bundleIdentifier = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !bundleIdentifier.isEmpty else {
+            return nil
+        }
+        return bundleIdentifier
+    }
+
+    @MainActor
     func manualInsertTargetDisplay() -> String? {
         captureInsertionTargetApp()
         guard let app = resolveInsertionTargetApp() else {
