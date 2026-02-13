@@ -35,6 +35,7 @@ enum AppDefaults {
         static let onboardingCompleted = "onboarding.completed"
         static let insertionProbeSampleText = "insertion.probeSampleText"
         static let audioFeedbackEnabled = "audio.feedbackEnabled"
+        static let launchAtLogin = "app.launchAtLogin"
     }
 
     static func register() {
@@ -75,7 +76,8 @@ enum AppDefaults {
 
             Keys.onboardingCompleted: false,
             Keys.insertionProbeSampleText: "OpenWhisper insertion test",
-            Keys.audioFeedbackEnabled: true
+            Keys.audioFeedbackEnabled: true,
+            Keys.launchAtLogin: false
         ]
         defaults.register(defaults: values)
     }

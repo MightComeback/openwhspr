@@ -49,6 +49,7 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.outputCustomCommands) private var outputCustomCommands: String = ""
 
     @AppStorage(AppDefaults.Keys.audioFeedbackEnabled) private var audioFeedbackEnabled: Bool = true
+    @State private var launchAtLogin: Bool = LaunchAtLogin.isEnabled
     @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
     @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
 
@@ -360,6 +361,12 @@ struct SettingsView: View {
                         Toggle("Clear transcript after insert", isOn: $clearAfterInsert)
                             .disabled(!autoPaste)
                         Toggle("Audio feedback on record start/stop", isOn: $audioFeedbackEnabled)
+                        Toggle("Launch at login", isOn: $launchAtLogin)
+                            .onChange(of: launchAtLogin) { _, newValue in
+                                if !LaunchAtLogin.setEnabled(newValue) {
+                                    launchAtLogin = LaunchAtLogin.isEnabled
+                                }
+                            }
 
                         if showsAutoPastePermissionWarning {
                             VStack(alignment: .leading, spacing: 6) {
@@ -838,6 +845,7 @@ struct SettingsView: View {
         .frame(minWidth: 700, minHeight: 700)
         .onAppear {
             hotkeyKeyDraft = hotkeyKey
+            launchAtLogin = LaunchAtLogin.isEnabled
             refreshPermissionState()
             Task { @MainActor in
                 transcriber.refreshFrontmostAppContext()
