@@ -1691,13 +1691,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             ([.activateAllWindows], 0.18),
             ([.activateAllWindows], 0.35),
             ([.activateAllWindows], 0.5),
-            // Final escalation: keep trying with a longer settle window for apps
+            // Final escalation: keep trying with longer settle windows for apps
             // that are slow to surface across Spaces/Mission Control transitions.
             ([.activateAllWindows], 0.75),
-            ([.activateAllWindows], 0.95),
-            // Last in-plan escalation: longer settle window for stubborn
-            // apps/spaces before we fall back to unhide recovery.
-            ([.activateAllWindows], 1.2)
+            ([.activateAllWindows], 1.0),
+            ([.activateAllWindows], 1.3)
         ]
 
         for step in activationPlan {
@@ -1710,16 +1708,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Final recovery pass: if the app is hidden/minimized in another space,
         // unhide before activating to improve front-app insertion reliability.
         app.unhide()
+        // Some apps need a brief settle beat after unhide before activation
+        // can reliably claim focus across Spaces.
+        Thread.sleep(forTimeInterval: 0.05)
         _ = app.activate(options: [.activateAllWindows])
-        if waitForFrontmostApp(pid: targetPID, timeout: 0.65) {
+        if waitForFrontmostApp(pid: targetPID, timeout: 0.75) {
             return true
         }
 
         // Last chance: some apps need an extra unhide/activate cycle after
         // space changes with a longer settle timeout.
         app.unhide()
+        Thread.sleep(forTimeInterval: 0.08)
         _ = app.activate(options: [.activateAllWindows])
-        if waitForFrontmostApp(pid: targetPID, timeout: 1.1) {
+        if waitForFrontmostApp(pid: targetPID, timeout: 1.2) {
             return true
         }
 
