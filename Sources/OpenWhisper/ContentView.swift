@@ -336,6 +336,28 @@ struct ContentView: View {
                         .help(focusTargetButtonHelpText())
                         .disabled(!hasResolvableInsertTarget || transcriber.isRecording || transcriber.pendingChunkCount > 0)
 
+                        Button(focusAndInsertButtonTitle()) {
+                            Task { @MainActor in
+                                let focused = transcriber.focusManualInsertTargetApp()
+                                guard focused || !canInsertDirectly else {
+                                    refreshInsertTargetSnapshot()
+                                    return
+                                }
+
+                                if canInsertDirectly {
+                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                } else {
+                                    _ = transcriber.copyTranscriptionToClipboard()
+                                }
+                                refreshInsertTargetSnapshot()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .keyboardShortcut("f", modifiers: [.command, .option])
+                        .help(focusAndInsertButtonHelpText())
+                        .disabled(!canInsertNow || !hasResolvableInsertTarget)
+
                         Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
                             Task { @MainActor in
                                 _ = transcriber.runInsertionProbe()
@@ -947,6 +969,33 @@ struct ContentView: View {
         }
 
         return "No insertion target yet. Switch to your destination app, then click Retarget."
+    }
+
+    private func focusAndInsertButtonTitle() -> String {
+        if canInsertDirectly {
+            if let target = insertTargetAppName, !target.isEmpty {
+                return "Focus + Insert → \(abbreviatedAppName(target))"
+            }
+            return "Focus + Insert"
+        }
+
+        return "Focus + Copy"
+    }
+
+    private func focusAndInsertButtonHelpText() -> String {
+        if let insertActionDisabledReason {
+            return "\(insertActionDisabledReason) before focusing and inserting"
+        }
+
+        guard hasResolvableInsertTarget else {
+            return "No insertion target yet. Switch to your destination app, then click Retarget."
+        }
+
+        if canInsertDirectly {
+            return "Focus the saved insert target and insert immediately"
+        }
+
+        return "Focus the saved insert target and copy to clipboard"
     }
 
     private var isInsertTargetLocked: Bool {
