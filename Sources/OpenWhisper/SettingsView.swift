@@ -1323,6 +1323,10 @@ struct SettingsView: View {
             return "⌘+M minimizes the front window on macOS and can interrupt your flow."
         }
 
+        if key == "return" && modifiers == Set([.command]) {
+            return "⌘+Return often sends messages/submits forms in chat and email apps, so it’s risky for dictation."
+        }
+
         if key == "q" && modifiers == Set([.command]) {
             return "⌘+Q quits the current app on macOS and is a brutal hotkey choice for dictation."
         }
