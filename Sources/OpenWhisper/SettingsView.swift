@@ -464,6 +464,12 @@ struct SettingsView: View {
 
                             TextField("OpenWhisper insertion test", text: $insertionProbeSampleText)
                                 .textFieldStyle(.roundedBorder)
+                                .onSubmit {
+                                    guard canRunInsertionTest else { return }
+                                    Task { @MainActor in
+                                        _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
+                                    }
+                                }
 
                             Button("Reset") {
                                 insertionProbeSampleText = "OpenWhisper insertion test"
@@ -474,7 +480,7 @@ struct SettingsView: View {
                         }
 
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("Used by both insertion test buttons. Leave it short so you can quickly confirm the right destination app received it.")
+                            Text("Used by both insertion test buttons. Press Return in the field to run the insertion test instantly when available. Leave it short so you can quickly confirm the right destination app received it.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
