@@ -48,6 +48,7 @@ struct SettingsView: View {
     @AppStorage(AppDefaults.Keys.outputTerminalPunctuation) private var outputTerminalPunctuation: Bool = true
     @AppStorage(AppDefaults.Keys.outputCustomCommands) private var outputCustomCommands: String = ""
 
+    @AppStorage(AppDefaults.Keys.audioFeedbackEnabled) private var audioFeedbackEnabled: Bool = true
     @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
     @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
 
@@ -358,6 +359,7 @@ struct SettingsView: View {
                         Toggle("Auto-paste into focused app", isOn: $autoPaste)
                         Toggle("Clear transcript after insert", isOn: $clearAfterInsert)
                             .disabled(!autoPaste)
+                        Toggle("Audio feedback on record start/stop", isOn: $audioFeedbackEnabled)
 
                         if showsAutoPastePermissionWarning {
                             VStack(alignment: .leading, spacing: 6) {

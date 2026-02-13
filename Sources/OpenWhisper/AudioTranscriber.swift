@@ -731,6 +731,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             try engine.start()
             isRecording = true
             startStatusRefreshTimerIfNeeded()
+            AudioFeedback.playStartSound()
             statusMessage = "Listening…"
         } catch {
             recordingStartedAt = nil
@@ -745,6 +746,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRecording = false
+        AudioFeedback.playStopSound()
         // Keep recordingStartedAt until finalization completes so the UI can
         // continue showing a stable session duration while pending chunks drain.
         statusMessage = "Finalizing…"
