@@ -716,6 +716,13 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return (eventKeyCode == CGKeyCode(kVK_Return) || eventKeyCode == CGKeyCode(kVK_ANSI_KeypadEnter))
         }
 
+        // Keep symmetric behavior for keypad-enter-centric setups: when users
+        // choose NumEnter, still accept the main Return key so laptop and
+        // external keyboard muscle memory both work.
+        if triggerKeyToken == "keypadenter" || triggerKeyToken == "numpadenter" {
+            return (eventKeyCode == CGKeyCode(kVK_ANSI_KeypadEnter) || eventKeyCode == CGKeyCode(kVK_Return))
+        }
+
         return false
     }
 
