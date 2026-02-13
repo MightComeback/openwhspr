@@ -231,9 +231,15 @@ struct ContentView: View {
 
             if !transcriber.transcription.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Current transcription")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        Text("Current transcription")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(transcriptionStats)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
 
                     ScrollView {
                         Text(transcriber.transcription)
@@ -788,6 +794,13 @@ struct ContentView: View {
 
     private var canInsertDirectly: Bool {
         accessibilityAuthorized
+    }
+
+    private var transcriptionStats: String {
+        let text = transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
+        let chars = text.count
+        return "\(words)w · \(chars)c"
     }
 
     private var hasTranscriptionText: Bool {
