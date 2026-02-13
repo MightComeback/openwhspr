@@ -1648,7 +1648,8 @@ struct SettingsView: View {
         // UX: plain Escape cancels capture. If modifiers are held, treat Escape
         // as a valid trigger key so users can record combos like ⌘+Esc.
         if key == "escape" && modifiers.isEmpty {
-            stopHotkeyCapture()
+            hotkeyCaptureError = "Hotkey capture canceled."
+            stopHotkeyCapture(clearError: false)
             return
         }
 
