@@ -1313,6 +1313,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
             if pasteResult == .success {
                 lastError = nil
+                AudioFeedback.playInsertedSound()
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     statusMessage = "Inserted into \(resolvedTargetName)"
                 } else {
@@ -1322,6 +1323,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                     transcription = ""
                 }
             } else {
+                AudioFeedback.playErrorSound()
                 let copiedFallback = shouldAutoCopy || copyToPasteboard(finalText)
 
                 switch pasteResult {

@@ -21,6 +21,24 @@ enum AudioFeedback {
         playSystemSound(named: "Pop")
     }
 
+    /// Play a short "text inserted successfully" sound.
+    ///
+    /// Users triggering dictation via global hotkey from another app cannot see
+    /// the menu bar popover, so an audible cue confirms that auto-paste into the
+    /// target app completed successfully.
+    static func playInsertedSound() {
+        guard isEnabled else { return }
+        // "Purr" is a subtle, satisfying confirmation — signals text landed.
+        playSystemSound(named: "Purr")
+    }
+
+    /// Play a short "action failed / needs attention" sound.
+    static func playErrorSound() {
+        guard isEnabled else { return }
+        // "Basso" is macOS's standard error tone — signals something went wrong.
+        playSystemSound(named: "Basso")
+    }
+
     static var isEnabled: Bool {
         UserDefaults.standard.bool(forKey: AppDefaults.Keys.audioFeedbackEnabled)
     }
