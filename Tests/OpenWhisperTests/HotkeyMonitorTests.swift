@@ -766,7 +766,24 @@ final class HotkeyMonitorTests: XCTestCase {
 
         let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
         XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
-        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: use Toggle • ⌘+Space")
+        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: no modifiers held. Use Toggle • ⌘+Space")
+    }
+
+    func testModifierMismatchShowsHeldModifiersInGuidance() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [.maskShift], keyDown: true)
+        XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
+        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: held ⇧. Use Toggle • ⌘+Space")
     }
 
     func testHoldModeUpdatesStatusMessageWhilePressed() {

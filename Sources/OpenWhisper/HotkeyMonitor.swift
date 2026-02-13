@@ -283,7 +283,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             }
 
             guard comboMatches else {
-                showComboMismatchHintIfNeeded(type: type)
+                showComboMismatchHintIfNeeded(type: type, flags: flags)
                 return false
             }
 
@@ -304,7 +304,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case .hold:
             if type == .keyDown {
                 guard comboMatches else {
-                    showComboMismatchHintIfNeeded(type: type)
+                    showComboMismatchHintIfNeeded(type: type, flags: flags)
                     return false
                 }
                 if !holdSessionArmed {
@@ -406,13 +406,22 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return toggleStatusMessage(isRecording: transcriber.isRecording)
     }
 
-    private func showComboMismatchHintIfNeeded(type: CGEventType) {
+    private func showComboMismatchHintIfNeeded(type: CGEventType, flags: CGEventFlags) {
         guard type == .keyDown else { return }
 
         comboMismatchResetTask?.cancel()
         let priorStatus = statusMessage
 
-        setStatus(active: isHotkeyActive, message: "Hotkey not triggered: use \(currentComboSummary())")
+        let expectedCombo = currentComboSummary()
+        let pressedModifiers = modifierGlyphSummary(from: flags)
+        let mismatchMessage: String
+        if pressedModifiers.isEmpty {
+            mismatchMessage = "Hotkey not triggered: no modifiers held. Use \(expectedCombo)"
+        } else {
+            mismatchMessage = "Hotkey not triggered: held \(pressedModifiers). Use \(expectedCombo)"
+        }
+
+        setStatus(active: isHotkeyActive, message: mismatchMessage)
 
         guard isListening else { return }
 
@@ -420,10 +429,20 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             try? await Task.sleep(nanoseconds: 1_200_000_000)
             guard let self, !Task.isCancelled else { return }
 
-            if self.statusMessage == "Hotkey not triggered: use \(self.currentComboSummary())" {
+            if self.statusMessage == mismatchMessage {
                 self.setStatus(active: self.isHotkeyActive, message: priorStatus)
             }
         }
+    }
+
+    private func modifierGlyphSummary(from flags: CGEventFlags) -> String {
+        var glyphs: [String] = []
+        if flags.contains(.maskCommand) { glyphs.append("⌘") }
+        if flags.contains(.maskShift) { glyphs.append("⇧") }
+        if flags.contains(.maskAlternate) { glyphs.append("⌥") }
+        if flags.contains(.maskControl) { glyphs.append("⌃") }
+        if flags.contains(.maskAlphaShift) { glyphs.append("⇪") }
+        return glyphs.joined(separator: "+")
     }
 
     private func holdActiveStatusMessage() -> String {
