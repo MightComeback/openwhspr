@@ -750,10 +750,15 @@ struct ContentView: View {
 
     private func statusTitle() -> String {
         if transcriber.isRecording {
+            let duration = recordingDuration()
+            if duration >= 1 {
+                return "Recording • \(formatDuration(duration))"
+            }
             return "Recording"
         }
         if transcriber.pendingChunkCount > 0 {
-            return "Finalizing"
+            let chunks = transcriber.pendingChunkCount
+            return "Finalizing • \(chunks) chunk\(chunks == 1 ? "" : "s")"
         }
         return "Ready"
     }
