@@ -946,6 +946,16 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testInsertTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "insert", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Help), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testCapsLockTriggerWithoutModifiersRemainsUsable() {
         let defaults = makeDefaults()
         let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
