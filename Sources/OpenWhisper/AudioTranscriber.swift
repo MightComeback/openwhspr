@@ -435,7 +435,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     func runInsertionProbe(sampleText: String = "OpenWhisper insertion test") -> Bool {
         let probe = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !probe.isEmpty else { return false }
-        guard !isRunningInsertionProbe else { return false }
+
+        guard !isRunningInsertionProbe else {
+            let message = "Insertion test already running."
+            statusMessage = message
+            lastError = message
+            return false
+        }
 
         guard !isRecording else {
             let message = "Stop recording before running an insertion test."

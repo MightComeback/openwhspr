@@ -509,6 +509,29 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testRunInsertionProbeBlockedWhenAnotherProbeIsRunning() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRunningInsertionProbe = transcriber.isRunningInsertionProbe
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRunningInsertionProbe = originalIsRunningInsertionProbe
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRunningInsertionProbe = true
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Insertion test already running.")
+            XCTAssertEqual(transcriber.lastError, "Insertion test already running.")
+        }
+    }
+
     func testRunInsertionProbeBlockedWhileRecording() async {
         let transcriber = AudioTranscriber.shared
 
