@@ -594,7 +594,9 @@ struct ContentView: View {
         // Keep the insertion target stable once text is ready to insert.
         // Without this guard, passive app-switch events can retarget insertion
         // away from the intended destination right before Command+Return.
-        let shouldFreezeTarget = hasTranscriptionText && canInsertNow && insertTargetAppName != nil
+        // In clipboard-only mode (Accessibility missing), keep tracking the
+        // front app live because no direct insertion target is locked.
+        let shouldFreezeTarget = hasTranscriptionText && canInsertNow && canInsertDirectly && insertTargetAppName != nil
         guard !shouldFreezeTarget else { return }
 
         Task { @MainActor in
@@ -879,7 +881,7 @@ struct ContentView: View {
     }
 
     private var isInsertTargetLocked: Bool {
-        hasTranscriptionText && canInsertNow && hasResolvableInsertTarget
+        hasTranscriptionText && canInsertNow && canInsertDirectly && hasResolvableInsertTarget
     }
 
     private var shouldSuggestRetarget: Bool {
