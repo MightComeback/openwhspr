@@ -47,7 +47,26 @@ enum BuiltInCommandRules {
         CommandRule(phrase: "equals sign", replacement: "="),
         CommandRule(phrase: "asterisk", replacement: "*"),
         CommandRule(phrase: "pipe", replacement: "|"),
-        CommandRule(phrase: "tilde", replacement: "~")
+        CommandRule(phrase: "tilde", replacement: "~"),
+        CommandRule(phrase: "open angle bracket", replacement: "<"),
+        CommandRule(phrase: "close angle bracket", replacement: ">"),
+        CommandRule(phrase: "less than", replacement: "<"),
+        CommandRule(phrase: "greater than", replacement: ">"),
+        CommandRule(phrase: "left arrow", replacement: "<-"),
+        CommandRule(phrase: "right arrow", replacement: "->"),
+        CommandRule(phrase: "fat arrow", replacement: "=>"),
+        CommandRule(phrase: "double equals", replacement: "=="),
+        CommandRule(phrase: "not equals", replacement: "!="),
+        CommandRule(phrase: "triple equals", replacement: "==="),
+        CommandRule(phrase: "caret", replacement: "^"),
+        CommandRule(phrase: "backtick", replacement: "`"),
+        CommandRule(phrase: "double colon", replacement: "::"),
+        CommandRule(phrase: "arrow operator", replacement: "->"),
+        CommandRule(phrase: "null coalescing", replacement: "??"),
+        CommandRule(phrase: "optional chaining", replacement: "?."),
+        CommandRule(phrase: "force unwrap", replacement: "!"),
+        CommandRule(phrase: "degree sign", replacement: "°"),
+        CommandRule(phrase: "copyright sign", replacement: "©")
     ]
 }
 
