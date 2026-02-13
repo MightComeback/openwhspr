@@ -566,6 +566,12 @@ struct SettingsView: View {
                             }
                         }
 
+                        if let lastSuccessfulInsertionAt = transcriber.lastSuccessfulInsertionAt {
+                            Text("Last successful insert: \(lastSuccessfulInsertionAt.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
                         if transcriber.isRunningInsertionProbe {
                             HStack(spacing: 6) {
                                 ProgressView()
