@@ -514,7 +514,8 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func unsafeModifierConfigurationMessage() -> String {
-        "Hotkey disabled: add at least one required modifier for this trigger key to avoid accidental activation while typing."
+        let triggerKeyLabel = HotkeyDisplay.displayKey(triggerKeyToken)
+        return "Hotkey disabled: trigger key \(triggerKeyLabel) without required modifiers is too easy to trigger while typing. Add at least one required modifier."
     }
 
     private func allowsNoModifierTrigger(_ key: String) -> Bool {
