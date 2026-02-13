@@ -37,6 +37,13 @@ private struct MenuBarLabel: View {
 
         if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
             let pending = transcriber.pendingChunkCount
+            let latency = transcriber.averageChunkLatencySeconds > 0
+                ? transcriber.averageChunkLatencySeconds
+                : transcriber.lastChunkLatencySeconds
+            if latency > 0 {
+                let remaining = Int((Double(pending) * latency).rounded())
+                return "\(pending)⏳\(remaining)s"
+            }
             return "\(pending) left"
         }
 
