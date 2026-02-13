@@ -542,6 +542,17 @@ struct ContentView: View {
             hotkeyMonitor.refreshStatusFromRuntimeState()
             refreshFinalizationProgressBaseline(pendingChunks: pending)
         }
+        .onReceive(transcriber.$transcription.removeDuplicates()) { transcription in
+            let hasText = !transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            guard hasText else { return }
+
+            let currentTarget = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard currentTarget.isEmpty else { return }
+
+            Task { @MainActor in
+                refreshInsertTargetSnapshot()
+            }
+        }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
         }
