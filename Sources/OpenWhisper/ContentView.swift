@@ -68,6 +68,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .keyboardShortcut("d", modifiers: [.command])
                     .help("Discard this recording without saving the transcription")
                 }
 

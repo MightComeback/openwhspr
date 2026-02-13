@@ -25,15 +25,22 @@ private struct MenuBarLabel: View {
     }
 
     private var durationLabel: String? {
-        guard transcriber.isRecording,
-              let startedAt = transcriber.recordingStartedAt else {
-            return nil
-        }
         _ = tick
-        let elapsed = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
-        let minutes = elapsed / 60
-        let seconds = elapsed % 60
-        return String(format: "%d:%02d", minutes, seconds)
+
+        if transcriber.isRecording,
+           let startedAt = transcriber.recordingStartedAt {
+            let elapsed = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
+            let minutes = elapsed / 60
+            let seconds = elapsed % 60
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+
+        if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+            let pending = transcriber.pendingChunkCount
+            return "\(pending) left"
+        }
+
+        return nil
     }
 
     var body: some View {
@@ -49,7 +56,7 @@ private struct MenuBarLabel: View {
             }
         }
         .onReceive(timer) { now in
-            guard transcriber.isRecording else { return }
+            guard transcriber.isRecording || transcriber.pendingChunkCount > 0 else { return }
             tick = now
         }
     }
