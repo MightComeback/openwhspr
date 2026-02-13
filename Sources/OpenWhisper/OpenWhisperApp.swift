@@ -18,7 +18,17 @@ struct OpenWhisperApp: App {
         _transcriber = StateObject(wrappedValue: sharedTranscriber)
         _hotkeyMonitor = StateObject(wrappedValue: HotkeyMonitor())
     }
-    
+
+    private var menuBarIconName: String {
+        if transcriber.isRecording {
+            return "waveform.circle.fill"
+        }
+        if transcriber.pendingChunkCount > 0 {
+            return "ellipsis.circle"
+        }
+        return "mic"
+    }
+
     var body: some Scene {
         MenuBarExtra {
             ContentView(transcriber: transcriber, hotkeyMonitor: hotkeyMonitor)
@@ -30,7 +40,7 @@ struct OpenWhisperApp: App {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
-            Label("OpenWhisper", systemImage: transcriber.isRecording ? "waveform.circle.fill" : "mic")
+            Label("OpenWhisper", systemImage: menuBarIconName)
         }
         .menuBarExtraStyle(.window)
 
