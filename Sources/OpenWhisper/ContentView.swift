@@ -29,6 +29,7 @@ struct ContentView: View {
     @State private var uiNow = Date()
     @State private var finalizationInitialPendingChunks: Int? = nil
     @State private var lastClearedTranscription: String? = nil
+    @State private var recordingPulse: Bool = false
 
     private let insertTargetStaleAfterSeconds: TimeInterval = 90
 
@@ -46,6 +47,13 @@ struct ContentView: View {
                 Image(systemName: transcriber.isRecording ? "waveform.circle.fill" : "mic.circle")
                     .font(.title2)
                     .foregroundStyle(transcriber.isRecording ? .red : .primary)
+                    .opacity(transcriber.isRecording ? (recordingPulse ? 0.4 : 1.0) : 1.0)
+                    .animation(
+                        transcriber.isRecording
+                            ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true)
+                            : .default,
+                        value: recordingPulse
+                    )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(statusTitle())
@@ -660,6 +668,9 @@ struct ContentView: View {
         .onReceive(transcriber.$isRecording.removeDuplicates()) { isRecording in
             hotkeyMonitor.refreshStatusFromRuntimeState()
             refreshFinalizationProgressBaseline(pendingChunks: transcriber.pendingChunkCount)
+
+            // Drive the pulsing recording indicator animation.
+            recordingPulse = isRecording
 
             // Front-app insertion UX: lock/refresh the manual insert target
             // as soon as recording starts, before any transcript text appears.
