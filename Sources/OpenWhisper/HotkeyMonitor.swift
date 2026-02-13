@@ -249,6 +249,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return Unmanaged.passUnretained(event)
         }
 
+        // Escape-to-cancel: when recording is active, bare Escape discards
+        // the current session so users can bail without opening the popover.
+        if type == .keyDown,
+           CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == CGKeyCode(kVK_Escape),
+           event.flags.intersection([.maskCommand, .maskShift, .maskAlternate, .maskControl]).isEmpty,
+           event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+            let shouldCancel = monitor.handleEscapeToCancel()
+            if shouldCancel {
+                return nil
+            }
+        }
+
         let handled = monitor.handle(event, type: type)
         return handled ? nil : Unmanaged.passUnretained(event)
     }
@@ -367,6 +379,34 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     func handleForTesting(_ event: CGEvent, type: CGEventType) -> Bool {
         handle(event, type: type)
+    }
+
+    /// Returns `true` if Escape was consumed to cancel an active recording.
+    private func handleEscapeToCancel() -> Bool {
+        // Only consume Escape when a recording or finalization is in progress.
+        // If the trigger key itself is Escape, skip this path and let the
+        // normal hotkey handler deal with it.
+        guard triggerKeyToken != "escape" else { return false }
+
+        guard let transcriber else { return false }
+
+        let isActive = transcriber.isRecording || transcriber.pendingChunkCount > 0
+
+        guard isActive else { return false }
+
+        // In hold mode, also disarm the hold session.
+        if mode == .hold {
+            holdSessionArmed = false
+        }
+        toggleKeyDownConsumed = false
+
+        setStatus(active: true, message: "Recording discarded via Escape")
+        scheduleTemporaryStatusResetIfNeeded(for: "Recording discarded via Escape")
+
+        Task { @MainActor [weak transcriber] in
+            transcriber?.cancelRecording()
+        }
+        return true
     }
 
     func refreshStatusFromRuntimeState() {
