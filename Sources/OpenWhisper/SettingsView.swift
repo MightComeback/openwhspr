@@ -488,6 +488,15 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
+
+                                Button("Focus target app") {
+                                    Task { @MainActor in
+                                        _ = transcriber.focusManualInsertTargetApp()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(!canFocusInsertionTarget)
                             }
 
                             if transcriber.manualInsertTargetUsesFallbackApp() {
@@ -1158,6 +1167,16 @@ struct SettingsView: View {
             return false
         }
         guard hasInsertionProbeSampleText else {
+            return false
+        }
+        return insertionTestTargetAppName != nil
+    }
+
+    private var canFocusInsertionTarget: Bool {
+        guard !transcriber.isRecording else {
+            return false
+        }
+        guard !isTranscriptionFinalizingForInsertion else {
             return false
         }
         return insertionTestTargetAppName != nil

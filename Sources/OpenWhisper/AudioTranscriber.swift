@@ -393,6 +393,32 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     @discardableResult
+    func focusManualInsertTargetApp() -> Bool {
+        captureInsertionTargetApp()
+
+        guard let targetApp = resolveInsertionTargetApp() else {
+            let message = "No destination app is available yet. Switch to your target app, then refresh."
+            statusMessage = message
+            lastError = message
+            return false
+        }
+
+        guard bringAppToFrontForInsertion(targetApp) else {
+            let targetName = insertionTargetDisplayName(targetApp) ?? "destination app"
+            let message = "Couldn’t focus \(targetName)."
+            statusMessage = message
+            lastError = message
+            return false
+        }
+
+        let targetName = insertionTargetDisplayName(targetApp) ?? "destination app"
+        statusMessage = "Focused \(targetName)"
+        lastError = nil
+        return true
+    }
+
+    @MainActor
+    @discardableResult
     func insertTranscriptionIntoFocusedApp() -> Bool {
         guard !isRecording else {
             statusMessage = "Stop recording before inserting text"
