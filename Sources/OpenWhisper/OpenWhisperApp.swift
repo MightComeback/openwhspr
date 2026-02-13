@@ -7,6 +7,54 @@
 
 import SwiftUI
 
+/// Tiny helper view so we can use `.onReceive` inside the menu bar label
+/// (Scene doesn't support view modifiers like onReceive, but a View does).
+private struct MenuBarLabel: View {
+    @ObservedObject var transcriber: AudioTranscriber
+    @State private var tick = Date()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var iconName: String {
+        if transcriber.isRecording {
+            return "waveform.circle.fill"
+        }
+        if transcriber.pendingChunkCount > 0 {
+            return "ellipsis.circle"
+        }
+        return "mic"
+    }
+
+    private var durationLabel: String? {
+        guard transcriber.isRecording,
+              let startedAt = transcriber.recordingStartedAt else {
+            return nil
+        }
+        _ = tick
+        let elapsed = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
+        let minutes = elapsed / 60
+        let seconds = elapsed % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    var body: some View {
+        Group {
+            if let duration = durationLabel {
+                Label {
+                    Text(duration)
+                } icon: {
+                    Image(systemName: iconName)
+                }
+            } else {
+                Label("OpenWhisper", systemImage: iconName)
+            }
+        }
+        .onReceive(timer) { now in
+            guard transcriber.isRecording else { return }
+            tick = now
+        }
+    }
+}
+
 @main
 struct OpenWhisperApp: App {
     @StateObject private var transcriber: AudioTranscriber
@@ -17,16 +65,6 @@ struct OpenWhisperApp: App {
         let sharedTranscriber = AudioTranscriber.shared
         _transcriber = StateObject(wrappedValue: sharedTranscriber)
         _hotkeyMonitor = StateObject(wrappedValue: HotkeyMonitor())
-    }
-
-    private var menuBarIconName: String {
-        if transcriber.isRecording {
-            return "waveform.circle.fill"
-        }
-        if transcriber.pendingChunkCount > 0 {
-            return "ellipsis.circle"
-        }
-        return "mic"
     }
 
     var body: some Scene {
@@ -40,7 +78,7 @@ struct OpenWhisperApp: App {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
-            Label("OpenWhisper", systemImage: menuBarIconName)
+            MenuBarLabel(transcriber: transcriber)
         }
         .menuBarExtraStyle(.window)
 
