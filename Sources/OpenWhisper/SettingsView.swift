@@ -1172,7 +1172,10 @@ struct SettingsView: View {
         guard !transcriber.isRunningInsertionProbe else {
             return false
         }
-        return hasInsertionProbeSampleText
+        guard hasInsertionProbeSampleText else {
+            return false
+        }
+        return insertionTestTargetAppName != nil
     }
 
     private var canFocusInsertionTarget: Bool {
