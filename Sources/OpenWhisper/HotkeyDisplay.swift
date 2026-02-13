@@ -121,7 +121,7 @@ enum HotkeyDisplay {
         switch normalized {
         case "space", "spacebar": return "Space"
         case "tab": return "Tab"
-        case "return", "enter": return "Return"
+        case "return", "enter": return "Return/Enter"
         case "escape", "esc": return "Esc"
         case "delete", "backspace": return "Delete"
         case "forwarddelete": return "FwdDelete"

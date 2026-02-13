@@ -118,6 +118,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.displayKey("keypad0"), "Num0")
         XCTAssertEqual(HotkeyDisplay.displayKey("numpadplus"), "Num+")
         XCTAssertEqual(HotkeyDisplay.displayKey("keypadenter"), "NumEnter")
+        XCTAssertEqual(HotkeyDisplay.displayKey("return"), "Return/Enter")
         XCTAssertEqual(HotkeyDisplay.displayKey("insert"), "Insert")
         XCTAssertEqual(HotkeyDisplay.displayKey("help"), "Help")
         XCTAssertEqual(HotkeyDisplay.displayKey("fn"), "Fn/Globe")
