@@ -1151,10 +1151,6 @@ struct SettingsView: View {
         return candidate.appName
     }
 
-    private var insertionTestTargetAppName: String? {
-        transcriber.manualInsertTargetAppName()
-    }
-
     private var insertionTestTargetDisplay: String? {
         transcriber.manualInsertTargetDisplay()
     }
@@ -1196,7 +1192,7 @@ struct SettingsView: View {
         guard hasInsertionProbeSampleText else {
             return false
         }
-        return insertionTestTargetAppName != nil
+        return insertionTestTargetDisplay != nil
     }
 
     private var canFocusInsertionTarget: Bool {
@@ -1206,7 +1202,7 @@ struct SettingsView: View {
         guard !isTranscriptionFinalizingForInsertion else {
             return false
         }
-        return insertionTestTargetAppName != nil
+        return insertionTestTargetDisplay != nil
     }
 
     private var insertionTestDisabledReason: String {
