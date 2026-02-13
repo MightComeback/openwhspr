@@ -218,6 +218,9 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "\u{00A0}", with: " ")
             .replacingOccurrences(of: "\u{2007}", with: " ")
             .replacingOccurrences(of: "\u{202F}", with: " ")
+            .replacingOccurrences(of: "＋", with: "+")
+            .replacingOccurrences(of: "﹢", with: "+")
+            .replacingOccurrences(of: "∔", with: "+")
 
         let trimmed = normalizedWhitespace
             .trimmingCharacters(in: .whitespacesAndNewlines)
