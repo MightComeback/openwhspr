@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var insertTargetAppName: String? = nil
     @State private var insertTargetDisplay: String? = nil
     @State private var insertTargetUsesFallback = false
+    @State private var insertTargetCapturedAt: Date? = nil
     @State private var showingOnboarding = false
     @State private var uiNow = Date()
     @State private var finalizationInitialPendingChunks: Int? = nil
@@ -360,6 +361,12 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                         }
 
+                        if let targetAge = insertTargetAgeDescription() {
+                            Text("Target captured \(targetAge)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
                         if shouldSuggestRetarget,
                            let currentFrontAppName = currentExternalFrontAppName() {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -536,6 +543,12 @@ struct ContentView: View {
         insertTargetAppName = transcriber.manualInsertTargetAppName()
         insertTargetDisplay = transcriber.manualInsertTargetDisplay()
         insertTargetUsesFallback = transcriber.manualInsertTargetUsesFallbackApp()
+
+        if let appName = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines), !appName.isEmpty {
+            insertTargetCapturedAt = Date()
+        } else {
+            insertTargetCapturedAt = nil
+        }
     }
 
     private func statusTitle() -> String {
@@ -797,6 +810,20 @@ struct ContentView: View {
         let prefixLength = max(1, maxCharacters - 1)
         let endIndex = trimmed.index(trimmed.startIndex, offsetBy: prefixLength)
         return String(trimmed[..<endIndex]) + "…"
+    }
+
+    private func insertTargetAgeDescription() -> String? {
+        guard let capturedAt = insertTargetCapturedAt else {
+            return nil
+        }
+
+        let elapsed = max(0, Date().timeIntervalSince(capturedAt))
+
+        if elapsed < 1 {
+            return "just now"
+        }
+
+        return "\(formatShortDuration(elapsed)) ago"
     }
 
     @ViewBuilder
