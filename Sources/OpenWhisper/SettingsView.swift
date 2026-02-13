@@ -1054,7 +1054,17 @@ struct SettingsView: View {
     }
 
     private var hasHotkeyDraftEdits: Bool {
-        sanitizeHotkeyDraftValue(hotkeyKeyDraft) != sanitizeKeyValue(hotkeyKey)
+        let sanitizedDraft = sanitizeHotkeyDraftValue(hotkeyKeyDraft)
+        if sanitizedDraft != sanitizeKeyValue(hotkeyKey) {
+            return true
+        }
+
+        guard let parsed = parseHotkeyDraft(hotkeyKeyDraft),
+              let modifiers = parsed.requiredModifiers else {
+            return false
+        }
+
+        return modifiers != currentRequiredModifierSet
     }
 
     private var currentRequiredModifierSet: Set<ParsedModifier> {
