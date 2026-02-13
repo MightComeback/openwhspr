@@ -260,7 +260,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         if let keyCode {
             let eventKeyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
-            guard eventKeyCode == keyCode else { return false }
+            guard keyCodeMatchesConfiguredTrigger(eventKeyCode: eventKeyCode, configuredKeyCode: keyCode) else { return false }
         } else {
             guard let nsEvent = NSEvent(cgEvent: event),
                   let chars = nsEvent.charactersIgnoringModifiers?.lowercased(),
@@ -655,6 +655,20 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func normalizeNamedKey(_ raw: String) -> String {
         HotkeyDisplay.canonicalKey(raw)
+    }
+
+    private func keyCodeMatchesConfiguredTrigger(eventKeyCode: CGKeyCode, configuredKeyCode: CGKeyCode) -> Bool {
+        if eventKeyCode == configuredKeyCode {
+            return true
+        }
+
+        // UX: users expect a configured Return/Enter trigger to work from both
+        // the main Return key and keypad Enter on full-size keyboards.
+        if triggerKeyToken == "return" || triggerKeyToken == "enter" {
+            return (eventKeyCode == CGKeyCode(kVK_Return) || eventKeyCode == CGKeyCode(kVK_ANSI_KeypadEnter))
+        }
+
+        return false
     }
 
     private func keyCodeForKeyString(_ key: String) -> CGKeyCode? {
