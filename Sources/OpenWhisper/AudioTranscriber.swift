@@ -391,7 +391,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         guard pendingChunkCount == 0 else {
-            let message = "Wait for live transcription to finish finalizing before inserting text."
+            let message = finalizingWaitMessage(for: "inserting text")
             statusMessage = message
             lastError = message
             return false
@@ -437,7 +437,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         let isFinalizing = pendingChunkCount > 0 || (!isRecording && recordingStartedAt != nil)
         guard !isFinalizing else {
-            let message = "Wait for live transcription to finish finalizing before running an insertion test."
+            let message = finalizingWaitMessage(for: "running an insertion test")
             statusMessage = message
             lastError = message
             return false
@@ -502,6 +502,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             }
             return false
         }
+    }
+
+    @MainActor
+    private func finalizingWaitMessage(for action: String) -> String {
+        let base = "Wait for live transcription to finish finalizing before \(action)."
+        guard pendingChunkCount > 0 else {
+            return base
+        }
+
+        let noun = pendingChunkCount == 1 ? "chunk" : "chunks"
+        return "\(base) (\(pendingChunkCount) \(noun) pending.)"
     }
 
     private enum ManualInsertOutcome {
