@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var showingOnboarding = false
     @State private var uiNow = Date()
     @State private var finalizationInitialPendingChunks: Int? = nil
+    @State private var lastClearedTranscription: String? = nil
 
     private let insertTargetStaleAfterSeconds: TimeInterval = 90
 
@@ -376,6 +377,7 @@ struct ContentView: View {
 
                         Button("Clear") {
                             Task { @MainActor in
+                                lastClearedTranscription = transcriber.transcription
                                 transcriber.clearTranscription()
                             }
                         }
@@ -383,6 +385,21 @@ struct ContentView: View {
                         .controlSize(.small)
                         .keyboardShortcut(.delete, modifiers: [.command])
                         .disabled(!hasTranscriptionText)
+
+                        if lastClearedTranscription != nil {
+                            Button("Undo Clear") {
+                                Task { @MainActor in
+                                    if let restored = lastClearedTranscription {
+                                        transcriber.transcription = restored
+                                        lastClearedTranscription = nil
+                                    }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .keyboardShortcut("z", modifiers: [.command])
+                            .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
+                        }
                     }
 
                     if let insertActionDisabledReason {
@@ -598,6 +615,7 @@ struct ContentView: View {
             // This preserves the user's intended destination app even if they
             // switch windows while speaking.
             if isRecording {
+                lastClearedTranscription = nil
                 Task { @MainActor in
                     refreshInsertTargetSnapshot()
                 }
