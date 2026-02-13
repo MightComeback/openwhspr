@@ -43,7 +43,7 @@ enum HotkeyDisplay {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
         case "tabkey", "⇥", "⇤": return "tab"
         case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "returnorenter", "enterorreturn", "↩", "↵", "⏎", "⌅": return "return"
-        case "esc", "escapekey", "escape/esc", "esc/escape", "⎋": return "escape"
+        case "esc", "esckey", "escapekey", "escape/esc", "esc/escape", "⎋": return "escape"
         case "del", "deletekey", "backspace", "backspacekey", "delete/backspace", "backspace/delete", "bksp", "⌫": return "delete"
         case "⌦", "␡", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
         case "insertkey", "ins": return "insert"
