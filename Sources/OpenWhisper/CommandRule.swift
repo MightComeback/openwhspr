@@ -26,7 +26,28 @@ enum BuiltInCommandRules {
         CommandRule(phrase: "open brace", replacement: "{"),
         CommandRule(phrase: "close brace", replacement: "}"),
         CommandRule(phrase: "dash", replacement: "-"),
-        CommandRule(phrase: "bullet point", replacement: "\n- ")
+        CommandRule(phrase: "hyphen", replacement: "-"),
+        CommandRule(phrase: "em dash", replacement: "—"),
+        CommandRule(phrase: "ellipsis", replacement: "…"),
+        CommandRule(phrase: "dot dot dot", replacement: "…"),
+        CommandRule(phrase: "ampersand", replacement: "&"),
+        CommandRule(phrase: "at sign", replacement: "@"),
+        CommandRule(phrase: "hashtag", replacement: "#"),
+        CommandRule(phrase: "hash sign", replacement: "#"),
+        CommandRule(phrase: "dollar sign", replacement: "$"),
+        CommandRule(phrase: "percent sign", replacement: "%"),
+        CommandRule(phrase: "slash", replacement: "/"),
+        CommandRule(phrase: "backslash", replacement: "\\"),
+        CommandRule(phrase: "underscore", replacement: "_"),
+        CommandRule(phrase: "single quote", replacement: "'"),
+        CommandRule(phrase: "apostrophe", replacement: "'"),
+        CommandRule(phrase: "bullet point", replacement: "\n- "),
+        CommandRule(phrase: "tab character", replacement: "\t"),
+        CommandRule(phrase: "plus sign", replacement: "+"),
+        CommandRule(phrase: "equals sign", replacement: "="),
+        CommandRule(phrase: "asterisk", replacement: "*"),
+        CommandRule(phrase: "pipe", replacement: "|"),
+        CommandRule(phrase: "tilde", replacement: "~")
     ]
 }
 
