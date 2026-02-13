@@ -410,6 +410,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             }
             return toggleStatusMessage(isRecording: transcriber?.isRecording ?? false)
         }
+
+        if let transcriber, !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+            if transcriber.isStartAfterFinalizeQueued {
+                return "Hotkey active (\(currentComboSummary())) — hold queue armed after finalize"
+            }
+            return "Hotkey active (\(currentComboSummary())) — finalizing previous recording"
+        }
+
         return "Hotkey active (\(currentComboSummary())) — hold to record"
     }
 
@@ -486,7 +494,13 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func holdActiveStatusMessage() -> String {
-        "Hold active: recording while pressed (\(currentComboSummary()))"
+        if let transcriber, !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
+            if transcriber.isStartAfterFinalizeQueued {
+                return "Hold active: waiting for finalize (\(currentComboSummary()))"
+            }
+            return "Hold active: finalizing previous recording (\(currentComboSummary()))"
+        }
+        return "Hold active: recording while pressed (\(currentComboSummary()))"
     }
 
     private func unsupportedTriggerKeyMessage() -> String {
