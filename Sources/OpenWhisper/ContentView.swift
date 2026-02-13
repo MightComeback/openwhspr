@@ -642,6 +642,11 @@ struct ContentView: View {
             guard let target = insertTargetAppName, !target.isEmpty else {
                 return "Insert → Last App"
             }
+
+            if shouldSuggestRetarget {
+                return "Insert → \(abbreviatedAppName(target)) ⚠︎"
+            }
+
             return "Insert → \(abbreviatedAppName(target))"
         }
 
@@ -665,6 +670,13 @@ struct ContentView: View {
                 return "Accessibility permission is missing, so this will copy text for \(target)"
             }
             return "Accessibility permission is missing, so this will copy transcription to clipboard"
+        }
+
+        if shouldSuggestRetarget,
+           let currentFrontAppName = currentExternalFrontAppName(),
+           let frozenTarget = insertTargetAppName,
+           !frozenTarget.isEmpty {
+            return "Current front app is \(currentFrontAppName), but Insert is still targeting \(frozenTarget). Use Retarget + Insert if you switched apps after transcription finished."
         }
 
         guard let target = insertTargetAppName, !target.isEmpty else {
