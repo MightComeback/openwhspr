@@ -21,6 +21,9 @@ private struct MenuBarLabel: View {
         if transcriber.pendingChunkCount > 0 {
             return "ellipsis.circle"
         }
+        if !transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "doc.text"
+        }
         return "mic"
     }
 
@@ -45,6 +48,14 @@ private struct MenuBarLabel: View {
                 return "\(pending)⏳\(remaining)s"
             }
             return "\(pending) left"
+        }
+
+        // Show word count when transcription text is ready to insert/copy,
+        // so users can confirm at a glance that text is waiting.
+        let text = transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
+            return "\(words)w"
         }
 
         return nil
