@@ -252,6 +252,7 @@ struct ContentView: View {
                     .padding(8)
                     .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
 
+                    // Primary actions
                     HStack {
                         Button("Copy") {
                             Task { @MainActor in
@@ -265,9 +266,6 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
-                                // Keep primary Insert deterministic: use the currently captured
-                                // target so users can switch apps for reference without losing
-                                // the intended destination. Use Retarget + Insert when needed.
                                 if insertTargetAppName == nil {
                                     refreshInsertTargetSnapshot()
                                 }
@@ -286,108 +284,10 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command])
                         .disabled(!canInsertNow)
 
-                        Button(retargetAndInsertButtonTitle()) {
-                            Task { @MainActor in
-                                refreshInsertTargetSnapshot()
-                                if canInsertDirectly {
-                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
-                                } else {
-                                    _ = transcriber.copyTranscriptionToClipboard()
-                                }
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .help(retargetAndInsertHelpText())
-                        .controlSize(.small)
-                        .keyboardShortcut(.return, modifiers: [.command, .shift])
-                        .disabled(!canInsertNow)
-
-                        Button(useCurrentAppButtonTitle()) {
-                            Task { @MainActor in
-                                refreshInsertTargetSnapshot()
-                                if canInsertDirectly {
-                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
-                                } else {
-                                    _ = transcriber.copyTranscriptionToClipboard()
-                                }
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .keyboardShortcut(.return, modifiers: [.command, .option])
-                        .help(useCurrentAppButtonHelpText())
-                        .disabled(!canInsertNow)
-
-                        Button(retargetButtonTitle()) {
-                            Task { @MainActor in
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .keyboardShortcut("r", modifiers: [.command, .shift])
-                        .help(retargetButtonHelpText())
-                        .disabled(!canRetargetInsertTarget)
-
-                        Button(focusTargetButtonTitle()) {
-                            Task { @MainActor in
-                                _ = transcriber.focusManualInsertTargetApp()
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .keyboardShortcut("f", modifiers: [.command, .shift])
-                        .help(focusTargetButtonHelpText())
-                        .disabled(!hasResolvableInsertTarget || transcriber.isRecording || transcriber.pendingChunkCount > 0)
-
-                        Button(focusAndInsertButtonTitle()) {
-                            Task { @MainActor in
-                                let focused = transcriber.focusManualInsertTargetApp()
-                                guard focused || !canInsertDirectly else {
-                                    refreshInsertTargetSnapshot()
-                                    return
-                                }
-
-                                if canInsertDirectly {
-                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
-                                } else {
-                                    _ = transcriber.copyTranscriptionToClipboard()
-                                }
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .keyboardShortcut("f", modifiers: [.command, .option])
-                        .help(focusAndInsertButtonHelpText())
-                        .disabled(!canInsertNow || !hasResolvableInsertTarget)
-
-                        Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
-                            Task { @MainActor in
-                                _ = transcriber.runInsertionProbe()
-                                refreshInsertTargetSnapshot()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0 || transcriber.isRunningInsertionProbe)
-
-                        Button("Clear") {
-                            Task { @MainActor in
-                                lastClearedTranscription = transcriber.transcription
-                                transcriber.clearTranscription()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .keyboardShortcut(.delete, modifiers: [.command])
-                        .disabled(!hasTranscriptionText)
+                        Spacer()
 
                         if lastClearedTranscription != nil {
-                            Button("Undo Clear") {
+                            Button("Undo") {
                                 Task { @MainActor in
                                     if let restored = lastClearedTranscription {
                                         transcriber.transcription = restored
@@ -400,7 +300,119 @@ struct ContentView: View {
                             .keyboardShortcut("z", modifiers: [.command])
                             .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
                         }
+
+                        Button("Clear") {
+                            Task { @MainActor in
+                                lastClearedTranscription = transcriber.transcription
+                                transcriber.clearTranscription()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .keyboardShortcut(.delete, modifiers: [.command])
+                        .disabled(!hasTranscriptionText)
                     }
+
+                    // Secondary insertion actions (collapsed by default)
+                    DisclosureGroup("More actions") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Button(retargetAndInsertButtonTitle()) {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                        if canInsertDirectly {
+                                            _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                        } else {
+                                            _ = transcriber.copyTranscriptionToClipboard()
+                                        }
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .help(retargetAndInsertHelpText())
+                                .controlSize(.small)
+                                .keyboardShortcut(.return, modifiers: [.command, .shift])
+                                .disabled(!canInsertNow)
+
+                                Button(useCurrentAppButtonTitle()) {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                        if canInsertDirectly {
+                                            _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                        } else {
+                                            _ = transcriber.copyTranscriptionToClipboard()
+                                        }
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .keyboardShortcut(.return, modifiers: [.command, .option])
+                                .help(useCurrentAppButtonHelpText())
+                                .disabled(!canInsertNow)
+                            }
+
+                            HStack {
+                                Button(retargetButtonTitle()) {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .keyboardShortcut("r", modifiers: [.command, .shift])
+                                .help(retargetButtonHelpText())
+                                .disabled(!canRetargetInsertTarget)
+
+                                Button(focusTargetButtonTitle()) {
+                                    Task { @MainActor in
+                                        _ = transcriber.focusManualInsertTargetApp()
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .keyboardShortcut("f", modifiers: [.command, .shift])
+                                .help(focusTargetButtonHelpText())
+                                .disabled(!hasResolvableInsertTarget || transcriber.isRecording || transcriber.pendingChunkCount > 0)
+
+                                Button(focusAndInsertButtonTitle()) {
+                                    Task { @MainActor in
+                                        let focused = transcriber.focusManualInsertTargetApp()
+                                        guard focused || !canInsertDirectly else {
+                                            refreshInsertTargetSnapshot()
+                                            return
+                                        }
+
+                                        if canInsertDirectly {
+                                            _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                        } else {
+                                            _ = transcriber.copyTranscriptionToClipboard()
+                                        }
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.small)
+                                .keyboardShortcut("f", modifiers: [.command, .option])
+                                .help(focusAndInsertButtonHelpText())
+                                .disabled(!canInsertNow || !hasResolvableInsertTarget)
+                            }
+
+                            HStack {
+                                Button(transcriber.isRunningInsertionProbe ? "Probing…" : "Probe Insert") {
+                                    Task { @MainActor in
+                                        _ = transcriber.runInsertionProbe()
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0 || transcriber.isRunningInsertionProbe)
+                            }
+                        }
+                    }
+                    .font(.caption)
 
                     if let insertActionDisabledReason {
                         Text(insertActionDisabledReason)
