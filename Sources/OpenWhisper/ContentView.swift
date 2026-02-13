@@ -296,24 +296,22 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command, .shift])
                         .disabled(!canInsertNow)
 
-                        if shouldSuggestRetarget {
-                            Button("Use Current App") {
-                                Task { @MainActor in
-                                    refreshInsertTargetSnapshot()
-                                    if canInsertDirectly {
-                                        _ = transcriber.insertTranscriptionIntoFocusedApp()
-                                    } else {
-                                        _ = transcriber.copyTranscriptionToClipboard()
-                                    }
-                                    refreshInsertTargetSnapshot()
+                        Button(useCurrentAppButtonTitle()) {
+                            Task { @MainActor in
+                                refreshInsertTargetSnapshot()
+                                if canInsertDirectly {
+                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                } else {
+                                    _ = transcriber.copyTranscriptionToClipboard()
                                 }
+                                refreshInsertTargetSnapshot()
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .keyboardShortcut(.return, modifiers: [.command, .option])
-                            .help("Retarget to the current front app and insert immediately")
-                            .disabled(!canInsertNow)
                         }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .keyboardShortcut(.return, modifiers: [.command, .option])
+                        .help(useCurrentAppButtonHelpText())
+                        .disabled(!canInsertNow)
 
                         Button(retargetButtonTitle()) {
                             Task { @MainActor in
@@ -857,6 +855,29 @@ struct ContentView: View {
         }
 
         return "Retarget → \(abbreviatedAppName(target))"
+    }
+
+    private func useCurrentAppButtonTitle() -> String {
+        if canInsertDirectly {
+            if let currentFront = currentExternalFrontAppName(), !currentFront.isEmpty {
+                return "Use Current → \(abbreviatedAppName(currentFront))"
+            }
+            return "Use Current App"
+        }
+
+        return "Use Current + Copy"
+    }
+
+    private func useCurrentAppButtonHelpText() -> String {
+        if let insertActionDisabledReason {
+            return "\(insertActionDisabledReason) before using current app"
+        }
+
+        if canInsertDirectly {
+            return "Retarget to the current front app and insert immediately"
+        }
+
+        return "Retarget to the current front app and copy to clipboard"
     }
 
     private func retargetAndInsertButtonTitle() -> String {
