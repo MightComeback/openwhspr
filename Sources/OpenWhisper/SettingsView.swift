@@ -1698,10 +1698,7 @@ struct SettingsView: View {
         }
 
         if normalized.contains("+") || normalized.contains(",") {
-            let tokens = normalized
-                .split(whereSeparator: { $0 == "+" || $0 == "," })
-                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
+            let tokens = splitPlusCommaHotkeyTokens(normalized)
             return parseHotkeyTokens(tokens)
         }
 
@@ -1781,6 +1778,24 @@ struct SettingsView: View {
             .filter { !$0.isEmpty }
 
         return tokens.contains { parseModifierToken($0) != nil }
+    }
+
+    private func splitPlusCommaHotkeyTokens(_ raw: String) -> [String] {
+        var tokens = raw
+            .split(whereSeparator: { $0 == "+" || $0 == "," })
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        // Pasted shortcuts like "cmd++" or "cmd+shift++" mean the
+        // trigger key is literal plus. Preserve that trailing key instead
+        // of dropping it during split.
+        if raw.hasSuffix("+") {
+            tokens.append("plus")
+        } else if raw.hasSuffix(",") {
+            tokens.append("comma")
+        }
+
+        return tokens
     }
 
     private func mergeSpaceSeparatedKeyTokens(_ tokens: [String]) -> [String] {
