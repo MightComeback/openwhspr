@@ -246,10 +246,10 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
-                                // If the target was never captured (e.g. app switch right before
-                                // insertion), take one fresh snapshot so Command+Return still hits
-                                // the expected front app without requiring a manual retarget first.
-                                if insertTargetAppName == nil {
+                                // If target context looks stale/mismatched (or was never captured),
+                                // refresh first so the primary Insert action follows the app that's
+                                // actually in front right now.
+                                if insertTargetAppName == nil || shouldSuggestRetarget {
                                     refreshInsertTargetSnapshot()
                                 }
 
