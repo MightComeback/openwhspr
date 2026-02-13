@@ -510,7 +510,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
-        let settings = effectiveOutputSettingsForCurrentApp()
+        // Apply per-app output behavior based on the destination app (manual
+        // insert target) rather than the OpenWhisper popover.
+        captureInsertionTargetApp()
+        let settings = effectiveOutputSettingsForInsertionTarget()
         let normalized = normalizeOutputText(transcription, settings: settings)
         guard !normalized.isEmpty else {
             statusMessage = "Nothing to insert"
@@ -746,7 +749,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         lastError = nil
         inputLevel = 0
         captureInsertionTargetApp()
-        recordingOutputSettings = effectiveOutputSettingsForCurrentApp()
+        recordingOutputSettings = effectiveOutputSettingsForInsertionTarget()
         pendingSessionFinalize = false
         pendingChunks.removeAll()
         pendingChunkEnqueueTimes.removeAll()
@@ -1556,6 +1559,25 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         guard !frontmostBundleIdentifier.isEmpty,
               let profile = appProfiles.first(where: { $0.bundleIdentifier == frontmostBundleIdentifier }) else {
+            return defaults
+        }
+
+        return resolveOutputSettings(defaults: defaults, profile: profile)
+    }
+
+    /// Output behavior should follow the app we will insert into, not the
+    /// OpenWhisper menu-bar UI. This matters because the menu bar popover can
+    /// be frontmost while the user expects app-specific rules (punctuation,
+    /// capitalization, commands) for the destination app.
+    @MainActor
+    func effectiveOutputSettingsForInsertionTarget() -> EffectiveOutputSettings {
+        let defaults = defaultOutputSettings()
+
+        guard let target = resolveInsertionTargetApp(),
+              let bundleIdentifier = target.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !bundleIdentifier.isEmpty,
+              bundleIdentifier.caseInsensitiveCompare(Bundle.main.bundleIdentifier ?? "") != .orderedSame,
+              let profile = appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier }) else {
             return defaults
         }
 
