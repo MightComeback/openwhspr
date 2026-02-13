@@ -1616,18 +1616,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     private func resolveInsertionTargetApp() -> NSRunningApplication? {
         if insertionTargetApp?.isTerminated != false,
+           let frontmost = NSWorkspace.shared.frontmostApplication,
+           frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            // Prefer the currently frontmost external app over stale fallback
+            // context when the original target has exited.
+            insertionTargetApp = frontmost
+            insertionTargetUsesFallbackApp = false
+            lastKnownExternalApp = frontmost
+        }
+
+        if insertionTargetApp?.isTerminated != false,
            let fallback = lastKnownExternalApp,
            fallback.isTerminated == false {
             insertionTargetApp = fallback
             insertionTargetUsesFallbackApp = true
-        }
-
-        if insertionTargetApp?.isTerminated != false,
-           let frontmost = NSWorkspace.shared.frontmostApplication,
-           frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier {
-            insertionTargetApp = frontmost
-            insertionTargetUsesFallbackApp = false
-            lastKnownExternalApp = frontmost
         }
 
         guard let targetApp = insertionTargetApp,
