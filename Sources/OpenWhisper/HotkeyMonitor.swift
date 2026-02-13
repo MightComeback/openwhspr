@@ -410,7 +410,6 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard type == .keyDown else { return }
 
         comboMismatchResetTask?.cancel()
-        let priorStatus = statusMessage
 
         let expectedCombo = currentComboSummary()
         let pressedModifiers = modifierGlyphSummary(from: flags)
@@ -430,7 +429,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             guard let self, !Task.isCancelled else { return }
 
             if self.statusMessage == mismatchMessage {
-                self.setStatus(active: self.isHotkeyActive, message: priorStatus)
+                self.refreshStatusFromRuntimeState()
             }
         }
     }
