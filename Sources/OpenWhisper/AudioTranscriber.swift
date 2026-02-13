@@ -602,9 +602,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func performManualInsert(text: String) -> ManualInsertResult {
-        // Manual insert should target the app currently in front, not the app
-        // that happened to be active when recording started.
-        captureInsertionTargetApp()
+        // Front-app insertion UX freezes a manual target in the UI once text is
+        // ready, so honor an existing captured target. Only recapture when we
+        // truly don't have a live destination anymore.
+        if insertionTargetApp?.isTerminated != false {
+            captureInsertionTargetApp()
+        }
         let resolvedTargetApp = resolveInsertionTargetApp()
         let resolvedTargetName = insertionTargetDisplayName(resolvedTargetApp)
 
