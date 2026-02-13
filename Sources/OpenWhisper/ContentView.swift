@@ -91,6 +91,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .keyboardShortcut("r", modifiers: [.command])
                 .help(startStopButtonHelpText())
                 .disabled(!canToggleRecording)
             }
