@@ -31,6 +31,7 @@ struct ContentView: View {
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
     private let recordingMetricsTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    private let insertTargetStatusTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let appActivationPublisher = NotificationCenter.default.publisher(
         for: NSWorkspace.didActivateApplicationNotification,
         object: NSWorkspace.shared
@@ -505,6 +506,12 @@ struct ContentView: View {
             }
             uiNow = now
         }
+        .onReceive(insertTargetStatusTimer) { now in
+            guard hasTranscriptionText, insertTargetCapturedAt != nil else {
+                return
+            }
+            uiNow = now
+        }
         .onReceive(appActivationPublisher) { notification in
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
                 return
@@ -823,7 +830,7 @@ struct ContentView: View {
             return false
         }
 
-        return Date().timeIntervalSince(capturedAt) >= insertTargetStaleAfterSeconds
+        return uiNow.timeIntervalSince(capturedAt) >= insertTargetStaleAfterSeconds
     }
 
     private func currentExternalFrontAppName() -> String? {
@@ -848,7 +855,7 @@ struct ContentView: View {
             return nil
         }
 
-        let elapsed = max(0, Date().timeIntervalSince(capturedAt))
+        let elapsed = max(0, uiNow.timeIntervalSince(capturedAt))
 
         if elapsed < 1 {
             return "just now"
