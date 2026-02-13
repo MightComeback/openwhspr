@@ -413,7 +413,8 @@ struct ContentView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .font(.caption2)
-                                .help("Update Insert target to the current front app")
+                                .keyboardShortcut("r", modifiers: [.command, .option])
+                                .help("Update Insert target to the current front app (⌘⌥R)")
 
                                 Text("⌘⌥↩ inserts into current app")
                                     .font(.caption2)
@@ -432,7 +433,8 @@ struct ContentView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .font(.caption2)
-                                .help("Refresh insertion target from your current front app")
+                                .keyboardShortcut("r", modifiers: [.command, .option])
+                                .help("Refresh insertion target from your current front app (⌘⌥R)")
                             }
                         }
                     } else {
