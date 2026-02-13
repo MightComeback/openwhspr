@@ -550,7 +550,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Manual insert should target the app currently in front, not the app
         // that happened to be active when recording started.
         captureInsertionTargetApp()
-        let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+        let resolvedTargetApp = resolveInsertionTargetApp()
+        let resolvedTargetName = insertionTargetDisplayName(resolvedTargetApp)
 
         guard canAutoPasteIntoTargetApp() else {
             _ = copyToPasteboard(text)
@@ -1205,7 +1206,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             // Re-capture right before auto-insert so the destination follows the
             // app the user actually ended on (common in push-to-talk flows).
             captureInsertionTargetApp()
-            let resolvedTargetName = resolveInsertionTargetApp()?.localizedName
+            let resolvedTargetApp = resolveInsertionTargetApp()
+            let resolvedTargetName = insertionTargetDisplayName(resolvedTargetApp)
 
             guard canAutoPasteIntoTargetApp() else {
                 if shouldAutoCopy {
@@ -1558,6 +1560,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if let previousClipboardString {
             _ = pasteboard.setString(previousClipboardString, forType: .string)
         }
+    }
+
+    @MainActor
+    private func insertionTargetDisplayName(_ app: NSRunningApplication?) -> String? {
+        guard let app else { return nil }
+
+        let trimmedName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmedName.isEmpty else { return nil }
+
+        if insertionTargetUsesFallbackApp {
+            return "\(trimmedName) (recent app)"
+        }
+
+        return trimmedName
     }
 
     @MainActor
