@@ -124,6 +124,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad ."), "keypaddecimal")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad ,"), "keypadcomma")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad +"), "keypadplus")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad clear"), "keypadclear")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("clear"), "keypadclear")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("keypad -"), "keypadminus")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd+shift+space"), "space")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd shift space"), "space")

@@ -844,7 +844,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case "keypadcomma", "numpadcomma": return CGKeyCode(kVK_JIS_KeypadComma)
         case "keypadmultiply", "numpadmultiply": return CGKeyCode(kVK_ANSI_KeypadMultiply)
         case "keypadplus", "numpadplus": return CGKeyCode(kVK_ANSI_KeypadPlus)
-        case "keypadclear", "numpadclear": return CGKeyCode(kVK_ANSI_KeypadClear)
+        case "keypadclear", "numpadclear", "clear": return CGKeyCode(kVK_ANSI_KeypadClear)
         case "keypaddivide", "numpaddivide": return CGKeyCode(kVK_ANSI_KeypadDivide)
         case "keypadenter", "numpadenter": return CGKeyCode(kVK_ANSI_KeypadEnter)
         case "keypadminus", "numpadminus": return CGKeyCode(kVK_ANSI_KeypadMinus)

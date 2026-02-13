@@ -101,7 +101,7 @@ enum HotkeyDisplay {
         case "numpadcomma", "numcomma", "kpcomma": return "keypadcomma"
         case "numpadmultiply", "nummultiply", "numtimes", "kpmultiply", "kptimes": return "keypadmultiply"
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
-        case "numpadclear", "numclear", "kpclear": return "keypadclear"
+        case "numpadclear", "numclear", "kpclear", "clear": return "keypadclear"
         case "numpaddivide", "numdivide", "kpdivide": return "keypaddivide"
         case "numpadenter", "numenter", "kpenter", "keypadenterkey", "⌤": return "keypadenter"
         case "numpadminus", "numminus", "kpminus": return "keypadminus"
