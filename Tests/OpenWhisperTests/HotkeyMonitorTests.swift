@@ -839,6 +839,24 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: forbidden modifier ⇧ is held. Use Toggle • ⌘+Space")
     }
 
+    func testModifierMismatchShowsMultipleForbiddenModifiersGuidance() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyForbiddenOption)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [.maskCommand, .maskShift, .maskAlternate], keyDown: true)
+        XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
+        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: forbidden modifiers ⇧+⌥ are held. Use Toggle • ⌘+Space")
+    }
+
     func testHoldModeUpdatesStatusMessageWhilePressed() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

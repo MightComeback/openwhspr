@@ -447,7 +447,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         let mismatchMessage: String
         if hasForbidden, !forbiddenHeld.isEmpty {
-            mismatchMessage = "Hotkey not triggered: forbidden modifier \(forbiddenHeld) is held. Use \(expectedCombo)"
+            let forbiddenTokenCount = forbiddenHeld.split(separator: "+").count
+            let modifierLabel = forbiddenTokenCount > 1 ? "modifiers" : "modifier"
+            let verb = forbiddenTokenCount > 1 ? "are" : "is"
+            mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held. Use \(expectedCombo)"
         } else if !hasRequired {
             if pressedModifiers.isEmpty {
                 mismatchMessage = "Hotkey not triggered: no modifiers held. Use \(expectedCombo)"
