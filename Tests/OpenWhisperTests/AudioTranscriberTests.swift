@@ -536,6 +536,26 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testRunInsertionProbeBlockedWhenSampleTextIsEmpty() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            let success = transcriber.runInsertionProbe(sampleText: "   ")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Insertion test text is empty. Enter sample text and try again.")
+            XCTAssertEqual(transcriber.lastError, "Insertion test text is empty. Enter sample text and try again.")
+        }
+    }
+
     func testRunInsertionProbeBlockedWhenAnotherProbeIsRunning() async {
         let transcriber = AudioTranscriber.shared
 
