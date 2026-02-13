@@ -279,6 +279,25 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command, .shift])
                         .disabled(!canInsertNow)
 
+                        if shouldSuggestRetarget {
+                            Button("Use Current App") {
+                                Task { @MainActor in
+                                    refreshInsertTargetSnapshot()
+                                    if canInsertDirectly {
+                                        _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                    } else {
+                                        _ = transcriber.copyTranscriptionToClipboard()
+                                    }
+                                    refreshInsertTargetSnapshot()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .keyboardShortcut(.return, modifiers: [.command, .option])
+                            .help("Retarget to the current front app and insert immediately")
+                            .disabled(!canInsertNow)
+                        }
+
                         Button(retargetButtonTitle()) {
                             Task { @MainActor in
                                 refreshInsertTargetSnapshot()
@@ -355,6 +374,10 @@ struct ContentView: View {
                                 .buttonStyle(.borderless)
                                 .font(.caption2)
                                 .help("Update Insert target to the current front app")
+
+                                Text("⌘⌥↩ inserts into current app")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     } else {
