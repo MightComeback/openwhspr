@@ -139,17 +139,19 @@ struct SettingsView: View {
                         }
 
                         HStack(spacing: 10) {
-                            Button("Preset: Toggle") {
+                            Button(currentHotkeyMode == .toggle ? "Preset: Toggle ✓" : "Preset: Toggle") {
                                 applyHotkeyPreset(.toggle)
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
+                            .disabled(currentHotkeyMode == .toggle)
 
-                            Button("Preset: Push to talk") {
+                            Button(currentHotkeyMode == .hold ? "Preset: Push to talk ✓" : "Preset: Push to talk") {
                                 applyHotkeyPreset(.hold)
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
+                            .disabled(currentHotkeyMode == .hold)
 
                             Spacer()
 
@@ -951,6 +953,10 @@ struct SettingsView: View {
                 }
             }
         )
+    }
+
+    private var currentHotkeyMode: HotkeyMode {
+        HotkeyMode(rawValue: hotkeyModeRaw) ?? .toggle
     }
 
     private var isHotkeyKeyDraftSupported: Bool {
