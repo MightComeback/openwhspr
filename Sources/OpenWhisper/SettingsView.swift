@@ -446,6 +446,16 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.bordered)
                             .disabled(!canRunInsertionTest)
+
+                            Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Focus target + test") {
+                                Task { @MainActor in
+                                    let focused = transcriber.focusManualInsertTargetApp()
+                                    guard focused else { return }
+                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!canFocusAndRunInsertionTest)
                         }
 
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -1237,6 +1247,10 @@ struct SettingsView: View {
             return false
         }
         return insertionTestTargetDisplay != nil
+    }
+
+    private var canFocusAndRunInsertionTest: Bool {
+        canFocusInsertionTarget && canRunInsertionTest
     }
 
     private var canFocusInsertionTarget: Bool {
