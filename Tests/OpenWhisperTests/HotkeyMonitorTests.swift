@@ -1002,6 +1002,20 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
+    func testSingleModifierGlyphInputShowsModifierOnlyGuidance() {
+        let defaults = makeDefaults()
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.updateConfig(required: [], forbidden: [], key: "⌥", mode: .toggle)
+
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey disabled: trigger key cannot be only a modifier ‘⌥’. Choose one key like space or f6, then set modifiers with the toggles above."
+        )
+    }
+
     func testUnsafeTypingTriggerWithoutModifiersShowsGuidance() {
         let defaults = makeDefaults()
         let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)

@@ -221,6 +221,15 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "\u{FE0F}", with: "")
 
         switch trimmed {
+        case "⌘": return "command"
+        case "⇧": return "shift"
+        case "⌥": return "option"
+        case "⌃": return "control"
+        case "⇪": return "capslock"
+        default: break
+        }
+
+        switch trimmed {
         case "numpad +", "keypad +": return "numpad+"
         case "numpad -", "keypad -": return "numpad-"
         case "numpad *", "keypad *", "numpad x", "keypad x": return "numpad*"
