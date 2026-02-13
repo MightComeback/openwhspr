@@ -16,6 +16,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     private var forbiddenModifiers: CGEventFlags = [.maskAlternate, .maskControl]
     private var keyCharacter: String = " "
     private var keyCode: CGKeyCode? = CGKeyCode(kVK_Space)
+    private var triggerKeyToken: String = "space"
     private var hasValidTriggerKey: Bool = true
     private var invalidTriggerKeyInput: String? = nil
     private var holdSessionArmed: Bool = false
@@ -115,6 +116,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return
         }
 
+        guard hasSafeModifierConfig() else {
+            setStatus(active: false, message: unsafeModifierConfigurationMessage())
+            isListening = false
+            return
+        }
+
         let missingPermissions = Self.missingHotkeyPermissionNames()
         if !missingPermissions.isEmpty {
             setStatus(active: false, message: missingPermissionStatusMessage(missingPermissions))
@@ -179,6 +186,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let normalized = normalizeKeyString(key)
         self.keyCharacter = normalized.character
         self.keyCode = normalized.keyCode
+        self.triggerKeyToken = normalized.token
         self.hasValidTriggerKey = normalized.isValid
         self.invalidTriggerKeyInput = normalized.isValid ? nil : key
 
@@ -190,6 +198,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
                 stop()
             }
             setStatus(active: false, message: unsupportedTriggerKeyMessage())
+            return
+        }
+
+        if !hasSafeModifierConfig() {
+            if isListening {
+                stop()
+            }
+            setStatus(active: false, message: unsafeModifierConfigurationMessage())
             return
         }
 
@@ -400,6 +416,32 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return "Hotkey disabled: unsupported trigger key. Use one key like space, f6, or /."
     }
 
+    private func hasSafeModifierConfig() -> Bool {
+        if !requiredModifiers.isEmpty {
+            return true
+        }
+        return allowsNoModifierTrigger(triggerKeyToken)
+    }
+
+    private func unsafeModifierConfigurationMessage() -> String {
+        "Hotkey disabled: add at least one required modifier for this trigger key to avoid accidental activation while typing."
+    }
+
+    private func allowsNoModifierTrigger(_ key: String) -> Bool {
+        let normalized = key.lowercased()
+
+        if normalized.hasPrefix("f"), let functionIndex = Int(normalized.dropFirst()) {
+            return (1...24).contains(functionIndex)
+        }
+
+        switch normalized {
+        case "escape", "tab", "return", "space", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
+            return true
+        default:
+            return false
+        }
+    }
+
     private func looksLikeShortcutCombo(_ raw: String) -> Bool {
         let normalized = raw.lowercased()
         if normalized.contains("+") {
@@ -504,24 +546,24 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return "Hotkey disabled: missing \(missingList) permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections."
     }
 
-    private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?, isValid: Bool) {
+    private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?, token: String, isValid: Bool) {
         let normalized = normalizeNamedKey(raw)
         if let keyCode = keyCodeForKeyString(normalized) {
-            return (normalized, keyCode, true)
+            return (normalized, keyCode, normalized, true)
         }
 
         switch normalized {
-        case "space", "spacebar": return (" ", nil, true)
-        case "tab": return ("\t", nil, true)
-        case "return", "enter": return ("\r", nil, true)
-        case "escape", "esc": return ("\u{1B}", nil, true)
+        case "space", "spacebar": return (" ", nil, "space", true)
+        case "tab": return ("\t", nil, "tab", true)
+        case "return", "enter": return ("\r", nil, "return", true)
+        case "escape", "esc": return ("\u{1B}", nil, "escape", true)
         default: break
         }
 
         if normalized.count == 1 {
-            return (normalized, nil, true)
+            return (normalized, nil, normalized, true)
         }
-        return (normalized, nil, false)
+        return (normalized, nil, normalized, false)
     }
 
     private func normalizeNamedKey(_ raw: String) -> String {

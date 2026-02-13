@@ -827,6 +827,28 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
+    func testUnsafeTypingTriggerWithoutModifiersShowsGuidance() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "a", mode: .toggle)
+
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey disabled: add at least one required modifier for this trigger key to avoid accidental activation while typing."
+        )
+    }
+
+    func testFunctionKeyTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "f6", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_F6), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
         let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
 
