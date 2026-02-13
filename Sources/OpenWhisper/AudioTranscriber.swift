@@ -1424,7 +1424,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let lastCharacter = trimmed.last else { return trimmed }
 
-        if [".", "!", "?", ":", ";"].contains(lastCharacter) {
+        if [".", "!", "?", ":", ";", "…"].contains(lastCharacter) {
             return trimmed
         }
 

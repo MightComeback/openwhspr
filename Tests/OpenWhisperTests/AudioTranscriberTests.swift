@@ -155,6 +155,27 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testNormalizeOutputTextTreatsEllipsisAsTerminalPunctuation() async throws {
+        try await withStandardDefaults([
+            AppDefaults.Keys.transcriptionReplacements: ""
+        ]) {
+            let transcriber = AudioTranscriber.shared
+            let settings = AudioTranscriber.EffectiveOutputSettings(
+                autoCopy: false,
+                autoPaste: false,
+                clearAfterInsert: false,
+                commandReplacements: false,
+                smartCapitalization: false,
+                terminalPunctuation: true,
+                customCommandsRaw: ""
+            )
+            let output = await MainActor.run {
+                transcriber.normalizeOutputText("hello…", settings: settings)
+            }
+            XCTAssertEqual(output, "hello…")
+        }
+    }
+
     func testNormalizeOutputTextAppliesTextReplacements() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: "foo=bar"
