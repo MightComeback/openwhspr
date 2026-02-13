@@ -784,6 +784,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case "insert", "ins", "help": return CGKeyCode(kVK_Help)
         case "caps", "capslock": return CGKeyCode(kVK_CapsLock)
         case "fn", "function", "globe", "globekey": return CGKeyCode(kVK_Function)
+        case "section", "paragraph", "§", "±": return CGKeyCode(kVK_ISO_Section)
         case "-", "minus", "hyphen", "_": return CGKeyCode(kVK_ANSI_Minus)
         case "=", "equals", "equal", "plus", "+": return CGKeyCode(kVK_ANSI_Equal)
         case "[", "openbracket", "leftbracket", "{": return CGKeyCode(kVK_ANSI_LeftBracket)

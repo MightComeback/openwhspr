@@ -34,6 +34,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("insert key"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("help"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("help key"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("section"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("§"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("space key"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("tab key"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("home key"))
@@ -91,6 +93,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("ins"), "insert")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("help"), "help")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("help key"), "help")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("section"), "section")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("§"), "section")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("caps"), "capslock")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("caps lock"), "capslock")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("caps-lock"), "capslock")
@@ -146,6 +150,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.displayKey("return"), "Return/Enter")
         XCTAssertEqual(HotkeyDisplay.displayKey("insert"), "Insert")
         XCTAssertEqual(HotkeyDisplay.displayKey("help"), "Help")
+        XCTAssertEqual(HotkeyDisplay.displayKey("section"), "§")
         XCTAssertEqual(HotkeyDisplay.displayKey("fn"), "Fn/Globe")
     }
 }
