@@ -1694,6 +1694,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .success
         }
 
+        // Last-chance recovery: some editor/webview targets only accept the
+        // synthetic paste after one more focus-confirmed activation cycle.
+        guard bringAppToFrontForInsertion(targetApp) else {
+            return .activationFailed
+        }
+
+        Thread.sleep(forTimeInterval: 0.09)
+        if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
+            return .success
+        }
+
         return .pasteKeystrokeFailed
     }
 
