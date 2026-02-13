@@ -1015,8 +1015,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard let startedAt = recordingStartedAt else { return nil }
 
         let elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
-        let minutes = elapsedSeconds / 60
+        let hours = elapsedSeconds / 3600
+        let minutes = (elapsedSeconds % 3600) / 60
         let seconds = elapsedSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        }
+
         return String(format: "%d:%02d", minutes, seconds)
     }
 

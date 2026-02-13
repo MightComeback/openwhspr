@@ -579,6 +579,41 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testRefreshStreamingStatusShowsHourAwareElapsedTime() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStatusMessage = transcriber.statusMessage
+            let originalIsRecording = transcriber.isRecording
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalProcessedChunkCount = transcriber.processedChunkCount
+            let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
+            let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
+
+            defer {
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.isRecording = originalIsRecording
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.processedChunkCount = originalProcessedChunkCount
+                transcriber.lastChunkLatencySeconds = originalLastChunkLatency
+                transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
+            }
+
+            transcriber.isRecording = true
+            transcriber.recordingStartedAt = Date().addingTimeInterval(-3661)
+            transcriber.pendingChunkCount = 0
+            transcriber.processedChunkCount = 0
+            transcriber.lastChunkLatencySeconds = 0
+            transcriber.averageChunkLatencySeconds = 0
+
+            transcriber.refreshStreamingStatusForTesting()
+
+            XCTAssertTrue(transcriber.statusMessage.contains("1:01:01"))
+        }
+    }
+
     func testRunInsertionProbeBlockedWhenSampleTextIsEmpty() async {
         let transcriber = AudioTranscriber.shared
 
