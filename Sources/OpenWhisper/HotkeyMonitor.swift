@@ -291,7 +291,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             }
 
             guard comboMatches else {
-                showComboMismatchHintIfNeeded(type: type, flags: flags)
+                showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
                 return false
             }
 
@@ -312,7 +312,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case .hold:
             if type == .keyDown {
                 guard comboMatches else {
-                    showComboMismatchHintIfNeeded(type: type, flags: flags)
+                    showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
                     return false
                 }
                 if !holdSessionArmed {
@@ -436,16 +436,24 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return toggleStatusMessage(isRecording: transcriber.isRecording)
     }
 
-    private func showComboMismatchHintIfNeeded(type: CGEventType, flags: CGEventFlags) {
+    private func showComboMismatchHintIfNeeded(type: CGEventType, flags: CGEventFlags, hasRequired: Bool, hasForbidden: Bool) {
         guard type == .keyDown else { return }
 
         comboMismatchResetTask?.cancel()
 
         let expectedCombo = currentComboSummary()
         let pressedModifiers = modifierGlyphSummary(from: flags)
+        let forbiddenHeld = modifierGlyphSummary(from: flags.intersection(forbiddenModifiers))
+
         let mismatchMessage: String
-        if pressedModifiers.isEmpty {
-            mismatchMessage = "Hotkey not triggered: no modifiers held. Use \(expectedCombo)"
+        if hasForbidden, !forbiddenHeld.isEmpty {
+            mismatchMessage = "Hotkey not triggered: forbidden modifier \(forbiddenHeld) is held. Use \(expectedCombo)"
+        } else if !hasRequired {
+            if pressedModifiers.isEmpty {
+                mismatchMessage = "Hotkey not triggered: no modifiers held. Use \(expectedCombo)"
+            } else {
+                mismatchMessage = "Hotkey not triggered: held \(pressedModifiers). Use \(expectedCombo)"
+            }
         } else {
             mismatchMessage = "Hotkey not triggered: held \(pressedModifiers). Use \(expectedCombo)"
         }
