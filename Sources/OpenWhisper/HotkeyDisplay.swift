@@ -34,6 +34,11 @@ enum HotkeyDisplay {
     /// canonical key value stored in user defaults.
     static func canonicalKey(_ raw: String) -> String {
         let normalized = normalizeKey(raw)
+
+        if let functionAlias = canonicalFunctionKeyAlias(normalized) {
+            return functionAlias
+        }
+
         switch normalized {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
         case "tabkey", "⇥", "⇤": return "tab"
@@ -169,6 +174,25 @@ enum HotkeyDisplay {
             }
             return normalized.capitalized
         }
+    }
+
+    private static func canonicalFunctionKeyAlias(_ normalized: String) -> String? {
+        let prefixes = ["fn", "function", "f"]
+
+        for prefix in prefixes {
+            guard normalized.hasPrefix(prefix), normalized.count > prefix.count else {
+                continue
+            }
+
+            let suffix = String(normalized.dropFirst(prefix.count))
+            guard let value = Int(suffix), (1...24).contains(value) else {
+                continue
+            }
+
+            return "f\(value)"
+        }
+
+        return nil
     }
 
     private static func normalizeKey(_ raw: String) -> String {
