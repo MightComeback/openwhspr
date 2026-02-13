@@ -39,6 +39,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad0"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypadenter"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad ."))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad ,"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("numpad +"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("keypad -"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("globe"))
@@ -111,6 +112,7 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad0"), "keypad0")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad enter"), "keypadenter")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad ."), "keypaddecimal")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad ,"), "keypadcomma")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("numpad +"), "keypadplus")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("keypad -"), "keypadminus")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("cmd+shift+space"), "space")
@@ -133,6 +135,7 @@ final class OpenWhisperTests: XCTestCase {
     func testHotkeyDisplayForKeypadKeys() throws {
         XCTAssertEqual(HotkeyDisplay.displayKey("keypad0"), "Num0")
         XCTAssertEqual(HotkeyDisplay.displayKey("numpadplus"), "Num+")
+        XCTAssertEqual(HotkeyDisplay.displayKey("keypadcomma"), "Num,")
         XCTAssertEqual(HotkeyDisplay.displayKey("keypadenter"), "NumEnter")
         XCTAssertEqual(HotkeyDisplay.displayKey("return"), "Return/Enter")
         XCTAssertEqual(HotkeyDisplay.displayKey("insert"), "Insert")

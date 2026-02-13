@@ -13,7 +13,7 @@ enum HotkeyDisplay {
         }
 
         switch normalized {
-        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "del", "backspace", "bksp", "forwarddelete", "insert", "ins", "help", "caps", "capslock", "fn", "function", "globe", "globekey", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadenter", "numpadenter", "keypadminus", "numpadminus", "keypadequals", "numpadequals":
+        case "space", "spacebar", "tab", "return", "enter", "escape", "esc", "delete", "del", "backspace", "bksp", "forwarddelete", "insert", "ins", "help", "caps", "capslock", "fn", "function", "globe", "globekey", "left", "right", "up", "down", "home", "end", "pageup", "pgup", "pagedown", "pgdn", "minus", "hyphen", "equals", "equal", "plus", "openbracket", "leftbracket", "closebracket", "rightbracket", "semicolon", "apostrophe", "quote", "comma", "period", "dot", "slash", "forwardslash", "backslash", "backtick", "grave", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadcomma", "numpadcomma", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadenter", "numpadenter", "keypadminus", "numpadminus", "keypadequals", "numpadequals":
             return true
         case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24":
             return true
@@ -90,12 +90,14 @@ enum HotkeyDisplay {
         case "numpad8": return "keypad8"
         case "numpad9": return "keypad9"
         case "numpad.", "keypad.": return "keypaddecimal"
+        case "numpad,", "keypad,": return "keypadcomma"
         case "numpad+", "keypad+": return "keypadplus"
         case "numpad-", "keypad-": return "keypadminus"
         case "numpad*", "keypad*", "numpadx", "keypadx": return "keypadmultiply"
         case "numpad/", "keypad/": return "keypaddivide"
         case "numpad=", "keypad=": return "keypadequals"
         case "numpaddecimal", "numdecimal", "numdot", "numperiod", "kpdecimal", "kpdot": return "keypaddecimal"
+        case "numpadcomma", "numcomma", "kpcomma": return "keypadcomma"
         case "numpadmultiply", "nummultiply", "numtimes", "kpmultiply", "kptimes": return "keypadmultiply"
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
         case "numpadclear", "numclear", "kpclear": return "keypadclear"
@@ -167,6 +169,7 @@ enum HotkeyDisplay {
         case "keypad8": return "Num8"
         case "keypad9": return "Num9"
         case "keypaddecimal": return "Num."
+        case "keypadcomma": return "Num,"
         case "keypadmultiply": return "Num*"
         case "keypadplus": return "Num+"
         case "keypadclear": return "NumClear"
@@ -235,6 +238,7 @@ enum HotkeyDisplay {
         case "numpad *", "keypad *", "numpad x", "keypad x": return "numpad*"
         case "numpad /", "keypad /": return "numpad/"
         case "numpad .", "keypad .": return "numpad."
+        case "numpad ,", "keypad ,": return "numpad,"
         case "numpad =", "keypad =": return "numpad="
         default: break
         }
@@ -255,6 +259,7 @@ enum HotkeyDisplay {
         case "num*", "kp*", "numx", "kpx", "numpad*", "keypad*": return "numpadmultiply"
         case "num/", "kp/", "numpad/", "keypad/": return "numpaddivide"
         case "num.", "kp.", "numpad.", "keypad.": return "numpaddecimal"
+        case "num,", "kp,", "numpad,", "keypad,": return "numpadcomma"
         case "num=", "kp=", "numpad=", "keypad=": return "numpadequals"
         case "capslock", "capslockkey": return "capslock"
         case "fnglobe", "globefn", "functionglobe", "globefunction": return "fn"

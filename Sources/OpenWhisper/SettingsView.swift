@@ -269,7 +269,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function/globe, left/right/up/down, f1-f24, keypad1/numpad1, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function/globe, left/right/up/down, f1-f24, keypad1/numpad1, keypadcomma, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1101,7 +1101,7 @@ struct SettingsView: View {
             ),
             (
                 title: "Keypad",
-                keys: ["keypad0", "keypad1", "keypad2", "keypad3", "keypad4", "keypad5", "keypad6", "keypad7", "keypad8", "keypad9", "keypaddecimal", "keypadplus", "keypadminus", "keypadmultiply", "keypaddivide", "keypadenter", "keypadequals"]
+                keys: ["keypad0", "keypad1", "keypad2", "keypad3", "keypad4", "keypad5", "keypad6", "keypad7", "keypad8", "keypad9", "keypaddecimal", "keypadcomma", "keypadplus", "keypadminus", "keypadmultiply", "keypaddivide", "keypadenter", "keypadequals"]
             )
         ]
     }
@@ -1658,6 +1658,7 @@ struct SettingsView: View {
         case kVK_ANSI_Keypad8: return "keypad8"
         case kVK_ANSI_Keypad9: return "keypad9"
         case kVK_ANSI_KeypadDecimal: return "keypaddecimal"
+        case kVK_JIS_KeypadComma: return "keypadcomma"
         case kVK_ANSI_KeypadMultiply: return "keypadmultiply"
         case kVK_ANSI_KeypadPlus: return "keypadplus"
         case kVK_ANSI_KeypadClear: return "keypadclear"
