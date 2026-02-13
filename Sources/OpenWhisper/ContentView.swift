@@ -505,9 +505,17 @@ struct ContentView: View {
                                     .lineLimit(2)
                                     .font(.caption)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(entry.createdAt.formatted(date: .omitted, time: .shortened))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 6) {
+                                    Text(entry.createdAt.formatted(date: .omitted, time: .shortened))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    Text("·")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                    Text(historyEntryStats(entry))
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
 
                             Button {
@@ -1118,6 +1126,12 @@ struct ContentView: View {
                 .controlSize(.mini)
             }
         }
+    }
+
+    private func historyEntryStats(_ entry: TranscriptionEntry) -> String {
+        let text = entry.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
+        return "\(words)w"
     }
 
     private func openSystemSettingsPane(_ paneURL: String) {
