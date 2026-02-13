@@ -752,6 +752,26 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertFalse(monitor.holdSessionArmedForTesting)
     }
 
+    func testHoldModeDisarmsWhenRequiredModifierIsReleased() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.hold.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let downEvent = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [.maskCommand], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(downEvent, type: .keyDown))
+        XCTAssertTrue(monitor.holdSessionArmedForTesting)
+
+        let modifierRelease = makeEvent(keyCode: CGKeyCode(kVK_Command), flags: [], keyDown: false)
+        XCTAssertFalse(monitor.handleForTesting(modifierRelease, type: .flagsChanged))
+        XCTAssertFalse(monitor.holdSessionArmedForTesting)
+        XCTAssertTrue(monitor.statusMessage.contains("hold to record"))
+    }
+
     func testModifierMismatchShowsComboGuidance() {
         let defaults = makeDefaults()
         defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

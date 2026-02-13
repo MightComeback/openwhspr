@@ -136,7 +136,11 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return
         }
 
-        let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue))
+        let mask = CGEventMask(
+            (1 << CGEventType.keyDown.rawValue)
+            | (1 << CGEventType.keyUp.rawValue)
+            | (1 << CGEventType.flagsChanged.rawValue)
+        )
 
         let refcon = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         guard let tap = CGEvent.tapCreate(
@@ -241,7 +245,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return Unmanaged.passUnretained(event)
         }
 
-        guard type == .keyDown || type == .keyUp else {
+        guard type == .keyDown || type == .keyUp || type == .flagsChanged else {
             return Unmanaged.passUnretained(event)
         }
 
@@ -250,6 +254,10 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     private func handle(_ event: CGEvent, type: CGEventType) -> Bool {
+        if type == .flagsChanged {
+            return handleModifierFlagsChange(event.flags)
+        }
+
         if let keyCode {
             let eventKeyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
             guard eventKeyCode == keyCode else { return false }
@@ -331,6 +339,28 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
             return false
         }
+    }
+
+    private func handleModifierFlagsChange(_ flags: CGEventFlags) -> Bool {
+        guard mode == .hold, holdSessionArmed else { return false }
+
+        let hasRequired = flags.intersection(requiredModifiers) == requiredModifiers
+        let hasForbidden = !flags.intersection(forbiddenModifiers).isEmpty
+        let comboMatches = hasRequired && !hasForbidden
+
+        guard !comboMatches else { return false }
+
+        holdSessionArmed = false
+        setStatus(active: true, message: standbyStatusMessage())
+        Task { @MainActor [weak transcriber] in
+            if transcriber?.cancelQueuedStartAfterFinalizeFromHotkey() == true {
+                return
+            }
+            transcriber?.stopRecordingFromHotkey()
+        }
+
+        // Let modifier events continue to the system/app.
+        return false
     }
 
     func handleForTesting(_ event: CGEvent, type: CGEventType) -> Bool {
