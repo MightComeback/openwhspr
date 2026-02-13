@@ -534,9 +534,19 @@ struct ContentView: View {
             }
             refreshInsertTargetAppName()
         }
-        .onReceive(transcriber.$isRecording.removeDuplicates()) { _ in
+        .onReceive(transcriber.$isRecording.removeDuplicates()) { isRecording in
             hotkeyMonitor.refreshStatusFromRuntimeState()
             refreshFinalizationProgressBaseline(pendingChunks: transcriber.pendingChunkCount)
+
+            // Front-app insertion UX: lock/refresh the manual insert target
+            // as soon as recording starts, before any transcript text appears.
+            // This preserves the user's intended destination app even if they
+            // switch windows while speaking.
+            if isRecording {
+                Task { @MainActor in
+                    refreshInsertTargetSnapshot()
+                }
+            }
         }
         .onReceive(transcriber.$pendingChunkCount.removeDuplicates()) { pending in
             hotkeyMonitor.refreshStatusFromRuntimeState()
