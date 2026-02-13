@@ -381,6 +381,7 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .keyboardShortcut(.delete, modifiers: [.command])
                         .disabled(!hasTranscriptionText)
                     }
 
