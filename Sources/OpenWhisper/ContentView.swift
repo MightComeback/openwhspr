@@ -104,6 +104,17 @@ struct ContentView: View {
                             .font(.caption2)
                     }
 
+                    if let wordsPerMinute = liveWordsPerMinute {
+                        HStack {
+                            Text("Live speed")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(wordsPerMinute) wpm")
+                                .font(.caption2)
+                        }
+                    }
+
                     if transcriber.lastChunkLatencySeconds > 0 {
                         HStack {
                             Text("Last chunk latency")
@@ -650,6 +661,24 @@ struct ContentView: View {
         let minutes = rounded / 60
         let remainder = rounded % 60
         return "\(minutes)m \(remainder)s"
+    }
+
+    private var liveWordsPerMinute: Int? {
+        let duration = recordingDuration()
+        guard duration >= 5 else {
+            return nil
+        }
+
+        let words = transcriber.transcription
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .count
+
+        guard words > 0 else {
+            return nil
+        }
+
+        let perMinute = Double(words) * 60 / duration
+        return max(1, Int(perMinute.rounded()))
     }
 
     private func refreshFinalizationProgressBaseline(pendingChunks: Int) {
