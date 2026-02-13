@@ -27,7 +27,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
-    private let insertionProbeMaxCharacters: Int = 120
+    private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true

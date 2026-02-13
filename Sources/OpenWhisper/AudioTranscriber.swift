@@ -64,6 +64,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private var statusRefreshTimer: DispatchSourceTimer?
 
     static let shared = AudioTranscriber()
+    static let insertionProbeMaxCharacters: Int = 120
 
     struct EffectiveOutputSettings {
         var autoCopy: Bool
@@ -540,13 +541,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func runInsertionProbe(sampleText: String = "OpenWhisper insertion test") -> Bool {
-        let probe = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !probe.isEmpty else {
+        let trimmedSample = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSample.isEmpty else {
             let message = "Insertion test text is empty. Enter sample text and try again."
             statusMessage = message
             lastError = message
             return false
         }
+
+        let maxProbeCharacters = Self.insertionProbeMaxCharacters
+        let probe = String(trimmedSample.prefix(maxProbeCharacters))
+        let wasTrimmed = probe.count < trimmedSample.count
 
         guard !isRunningInsertionProbe else {
             let message = "Insertion test already running."
@@ -589,15 +594,17 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let now = Date()
         lastInsertionProbeDate = now
 
+        let trimSuffix = wasTrimmed ? " (trimmed to \(maxProbeCharacters) chars)" : ""
+
         switch result.outcome {
         case .inserted:
             lastInsertionProbeSucceeded = true
             if let targetName = result.targetName, !targetName.isEmpty {
-                let message = "Insertion test succeeded in \(targetName)"
+                let message = "Insertion test succeeded in \(targetName)\(trimSuffix)"
                 statusMessage = message
                 lastInsertionProbeMessage = message
             } else {
-                let message = "Insertion test succeeded"
+                let message = "Insertion test succeeded\(trimSuffix)"
                 statusMessage = message
                 lastInsertionProbeMessage = message
             }
@@ -610,11 +617,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             // "inserted" behavior.
             lastInsertionProbeSucceeded = false
             if let targetName = result.targetName, !targetName.isEmpty {
-                let message = "Insertion test used clipboard fallback for \(targetName) (Accessibility permission missing)"
+                let message = "Insertion test used clipboard fallback for \(targetName) (Accessibility permission missing)\(trimSuffix)"
                 statusMessage = message
                 lastInsertionProbeMessage = message
             } else {
-                let message = "Insertion test used clipboard fallback (Accessibility permission missing)"
+                let message = "Insertion test used clipboard fallback (Accessibility permission missing)\(trimSuffix)"
                 statusMessage = message
                 lastInsertionProbeMessage = message
             }
