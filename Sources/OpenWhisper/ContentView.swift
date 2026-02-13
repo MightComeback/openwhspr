@@ -745,10 +745,10 @@ struct ContentView: View {
 
     private func retargetAndInsertButtonTitle() -> String {
         if canInsertDirectly {
-            guard let target = insertTargetAppName, !target.isEmpty else {
-                return "Retarget + Insert"
+            if let currentFront = currentExternalFrontAppName(), !currentFront.isEmpty {
+                return "Retarget + Insert → \(abbreviatedAppName(currentFront))"
             }
-            return "Retarget + Insert → \(abbreviatedAppName(target))"
+            return "Retarget + Insert → Current App"
         }
 
         return "Retarget + Copy → Clipboard"
