@@ -247,10 +247,10 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
-                                // If target context looks stale/mismatched (or was never captured),
-                                // refresh first so the primary Insert action follows the app that's
-                                // actually in front right now.
-                                if insertTargetAppName == nil || shouldSuggestRetarget {
+                                // Keep primary Insert deterministic: use the currently captured
+                                // target so users can switch apps for reference without losing
+                                // the intended destination. Use Retarget + Insert when needed.
+                                if insertTargetAppName == nil {
                                     refreshInsertTargetSnapshot()
                                 }
 
