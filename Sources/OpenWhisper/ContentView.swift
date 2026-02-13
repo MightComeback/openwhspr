@@ -309,6 +309,12 @@ struct ContentView: View {
                         .disabled(!hasTranscriptionText)
                     }
 
+                    if let insertActionDisabledReason {
+                        Text(insertActionDisabledReason)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
                     if !accessibilityAuthorized {
                         HStack(spacing: 6) {
                             Text("Insert needs Accessibility permission. Command+Return copies to clipboard until enabled.")
@@ -631,10 +637,23 @@ struct ContentView: View {
     }
 
     private var canInsertNow: Bool {
-        hasTranscriptionText
-            && !transcriber.isRecording
-            && transcriber.pendingChunkCount == 0
-            && !transcriber.isRunningInsertionProbe
+        insertActionDisabledReason == nil
+    }
+
+    private var insertActionDisabledReason: String? {
+        if !hasTranscriptionText {
+            return "No transcription to insert yet"
+        }
+
+        if transcriber.isRunningInsertionProbe {
+            return "Wait for the insertion probe to finish"
+        }
+
+        if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
+            return "Stop recording and wait for pending chunks"
+        }
+
+        return nil
     }
 
     private func insertButtonTitle() -> String {
@@ -654,15 +673,8 @@ struct ContentView: View {
     }
 
     private func insertButtonHelpText() -> String {
-        guard hasTranscriptionText else {
-            return "No transcription to insert yet"
-        }
-
-        guard canInsertNow else {
-            if transcriber.isRunningInsertionProbe {
-                return "Wait for the insertion probe to finish before inserting"
-            }
-            return "Stop recording and wait for pending chunks to finish before inserting"
+        if let insertActionDisabledReason {
+            return "\(insertActionDisabledReason) before inserting"
         }
 
         guard canInsertDirectly else {
@@ -705,15 +717,8 @@ struct ContentView: View {
     }
 
     private func retargetAndInsertHelpText() -> String {
-        guard hasTranscriptionText else {
-            return "No transcription to insert yet"
-        }
-
-        guard canInsertNow else {
-            if transcriber.isRunningInsertionProbe {
-                return "Wait for the insertion probe to finish before retargeting and inserting"
-            }
-            return "Stop recording and wait for pending chunks to finish before inserting"
+        if let insertActionDisabledReason {
+            return "\(insertActionDisabledReason) before retargeting and inserting"
         }
 
         guard canInsertDirectly else {
