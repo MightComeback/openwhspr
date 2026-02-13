@@ -1412,7 +1412,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         output = replaceRegex(pattern: "[\\t ]+", in: output, with: " ")
         output = replaceRegex(pattern: " *\\n *", in: output, with: "\n")
         output = replaceRegex(pattern: "\\n{3,}", in: output, with: "\n\n")
-        output = replaceRegex(pattern: "\\s+([,.;:!?])", in: output, with: "$1")
+        output = replaceRegexTemplate(pattern: "\\s+([,.;:!?])", in: output, withTemplate: "$1")
         return output
     }
 
@@ -1466,6 +1466,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let literalTemplate = NSRegularExpression.escapedTemplate(for: template)
         return regex.stringByReplacingMatches(in: text, range: range, withTemplate: literalTemplate)
+    }
+
+    /// Replace using a regex template that may contain backreferences like $1.
+    func replaceRegexTemplate(pattern: String, in text: String, withTemplate template: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, range: range, withTemplate: template)
     }
 
     func isLetter(_ character: Character) -> Bool {

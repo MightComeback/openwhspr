@@ -659,4 +659,31 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
         }
     }
+
+    // MARK: - Whitespace normalization
+
+    func testNormalizeWhitespaceCollapsesSpaceBeforePunctuation() async throws {
+        let transcriber = AudioTranscriber.shared
+        let result = transcriber.normalizeWhitespace(in: "hello , world .")
+        XCTAssertEqual(result, "hello, world.")
+    }
+
+    func testNormalizeWhitespacePreservesPunctuationCharacter() async throws {
+        let transcriber = AudioTranscriber.shared
+        // Verify that the $1 backreference works — punctuation is kept, not replaced with literal "$1".
+        let result = transcriber.normalizeWhitespace(in: "wait ! really ?")
+        XCTAssertEqual(result, "wait! really?")
+    }
+
+    func testNormalizeWhitespaceCollapsesMultipleSpaces() async throws {
+        let transcriber = AudioTranscriber.shared
+        let result = transcriber.normalizeWhitespace(in: "hello    world")
+        XCTAssertEqual(result, "hello world")
+    }
+
+    func testNormalizeWhitespaceCollapsesExcessiveNewlines() async throws {
+        let transcriber = AudioTranscriber.shared
+        let result = transcriber.normalizeWhitespace(in: "hello\n\n\n\nworld")
+        XCTAssertEqual(result, "hello\n\nworld")
+    }
 }
