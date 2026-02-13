@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var hotkeyKeyDraft: String = ""
     @State private var isCapturingHotkey: Bool = false
     @State private var hotkeyCaptureMonitor: Any?
+    @State private var hotkeyCaptureTimeoutTask: Task<Void, Never>?
     @State private var hotkeyCaptureError: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
 
@@ -1384,14 +1385,37 @@ struct SettingsView: View {
             captureHotkey(from: event)
             return nil
         }
+
+        hotkeyCaptureTimeoutTask?.cancel()
+        hotkeyCaptureTimeoutTask = Task {
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard !Task.isCancelled else {
+                return
+            }
+
+            await MainActor.run {
+                guard isCapturingHotkey else {
+                    return
+                }
+
+                hotkeyCaptureError = "Hotkey capture timed out. Click Record shortcut and try again."
+                stopHotkeyCapture(clearError: false)
+            }
+        }
     }
 
-    private func stopHotkeyCapture() {
+    private func stopHotkeyCapture(clearError: Bool = true) {
         if let hotkeyCaptureMonitor {
             NSEvent.removeMonitor(hotkeyCaptureMonitor)
             self.hotkeyCaptureMonitor = nil
         }
-        hotkeyCaptureError = nil
+
+        hotkeyCaptureTimeoutTask?.cancel()
+        hotkeyCaptureTimeoutTask = nil
+
+        if clearError {
+            hotkeyCaptureError = nil
+        }
         isCapturingHotkey = false
     }
 
