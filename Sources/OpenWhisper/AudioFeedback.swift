@@ -32,6 +32,19 @@ enum AudioFeedback {
         playSystemSound(named: "Purr")
     }
 
+    /// Play a short "text is ready for manual copy/insert" sound.
+    ///
+    /// When auto-paste is disabled, users triggering dictation via global hotkey
+    /// need audible confirmation that finalization completed and transcription
+    /// text is available. Distinct from the inserted sound so the user knows
+    /// text still needs a manual action (copy/insert).
+    static func playTextReadySound() {
+        guard isEnabled else { return }
+        // "Glass" is a bright, short chime — signals "ready for you" without
+        // implying text was already delivered.
+        playSystemSound(named: "Glass")
+    }
+
     /// Play a short "action failed / needs attention" sound.
     static func playErrorSound() {
         guard isEnabled else { return }

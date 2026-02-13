@@ -1418,6 +1418,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         lastError = nil
+        AudioFeedback.playTextReadySound()
         statusMessage = shouldAutoCopy ? "Copied to clipboard" : "Ready"
     }
 
