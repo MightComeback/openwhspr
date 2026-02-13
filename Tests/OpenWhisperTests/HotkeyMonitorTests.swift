@@ -856,7 +856,7 @@ final class HotkeyMonitorTests: XCTestCase {
 
         let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true)
         XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
-        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: no modifiers held. Use Toggle • ⌘+Space")
+        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: missing required modifier ⌘. Use Toggle • ⌘+Space")
     }
 
     func testModifierMismatchShowsHeldModifiersInGuidance() {
@@ -873,7 +873,7 @@ final class HotkeyMonitorTests: XCTestCase {
 
         let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [.maskShift], keyDown: true)
         XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
-        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: held ⇧. Use Toggle • ⌘+Space")
+        XCTAssertEqual(monitor.statusMessage, "Hotkey not triggered: missing required modifier ⌘; held ⇧. Use Toggle • ⌘+Space")
     }
 
     func testModifierMismatchShowsForbiddenModifierGuidance() {
