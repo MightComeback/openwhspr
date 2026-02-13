@@ -601,6 +601,12 @@ struct ContentView: View {
 
                 Spacer()
 
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }

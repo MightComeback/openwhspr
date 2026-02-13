@@ -95,13 +95,6 @@ struct OpenWhisperApp: App {
     var body: some Scene {
         MenuBarExtra {
             ContentView(transcriber: transcriber, hotkeyMonitor: hotkeyMonitor)
-            Divider()
-            Button("Settings…") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
         } label: {
             MenuBarLabel(transcriber: transcriber)
         }
