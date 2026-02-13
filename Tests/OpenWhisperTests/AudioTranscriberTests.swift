@@ -406,6 +406,12 @@ final class AudioTranscriberTests: XCTestCase {
             let originalIsRecording = transcriber.isRecording
 
             defer {
+                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                    transcriber.isRecording = false
+                    transcriber.recordingStartedAt = Date()
+                    transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
+                    transcriber.toggleRecording()
+                }
                 transcriber.recordingStartedAt = originalStartedAt
                 transcriber.pendingChunkCount = originalPendingChunkCount
                 transcriber.statusMessage = originalStatusMessage
@@ -415,6 +421,10 @@ final class AudioTranscriberTests: XCTestCase {
             transcriber.isRecording = false
             transcriber.recordingStartedAt = Date()
             transcriber.pendingChunkCount = 1
+
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.toggleRecording()
+            }
 
             transcriber.toggleRecording()
 
@@ -426,6 +436,45 @@ final class AudioTranscriberTests: XCTestCase {
 
             XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… queued start canceled")
             XCTAssertFalse(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+        }
+    }
+
+    func testRefreshStreamingStatusKeepsQueuedStartHintWhileFinalizing() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStartedAt = transcriber.recordingStartedAt
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalStatusMessage = transcriber.statusMessage
+            let originalIsRecording = transcriber.isRecording
+
+            defer {
+                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                    transcriber.isRecording = false
+                    transcriber.recordingStartedAt = Date()
+                    transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
+                    transcriber.toggleRecording()
+                }
+                transcriber.recordingStartedAt = originalStartedAt
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.isRecording = originalIsRecording
+            }
+
+            transcriber.isRecording = false
+            transcriber.recordingStartedAt = Date()
+            transcriber.pendingChunkCount = 2
+
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.toggleRecording()
+            }
+
+            transcriber.toggleRecording()
+            transcriber.refreshStreamingStatusForTesting()
+
+            XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+            XCTAssertTrue(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
+            XCTAssertTrue(transcriber.statusMessage.contains("next recording queued"))
         }
     }
 

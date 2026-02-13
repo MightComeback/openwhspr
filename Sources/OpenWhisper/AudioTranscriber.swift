@@ -835,6 +835,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private func refreshStreamingStatusIfNeeded() {
         let inFlightChunks = pendingChunkCount + (isTranscribing ? 1 : 0)
         let statusSuffix = streamingStatusSuffix()
+        let queuedStartSuffix = startRecordingAfterFinalizeRequested ? " • next recording queued" : ""
 
         if isRecording {
             if inFlightChunks > 0 {
@@ -846,12 +847,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         if inFlightChunks > 0 {
-            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)"
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)\(queuedStartSuffix)"
             return
         }
 
         if pendingSessionFinalize {
-            statusMessage = "Finalizing…\(statusSuffix)"
+            statusMessage = "Finalizing…\(statusSuffix)\(queuedStartSuffix)"
         }
     }
 
@@ -1097,6 +1098,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     var startRecordingAfterFinalizeRequestedForTesting: Bool {
         startRecordingAfterFinalizeRequested
+    }
+
+    @MainActor
+    func refreshStreamingStatusForTesting() {
+        refreshStreamingStatusIfNeeded()
     }
 
     func setAccessibilityPermissionCheckerForTesting(_ checker: @escaping () -> Bool) {
