@@ -1463,12 +1463,9 @@ struct SettingsView: View {
             return
         }
 
-        let includesFunctionModifier = event.modifierFlags.contains(.function)
-        if includesFunctionModifier && key != "fn" {
-            hotkeyCaptureError = "Fn/Globe can't be recorded as a required modifier yet. Use Command/Shift/Option/Control + key."
-            return
-        }
-
+        // Fn/Globe currently isn't configurable as a required modifier.
+        // If users hold it while recording another key (common on laptops),
+        // ignore Fn instead of rejecting the whole capture attempt.
         hotkeyCaptureError = nil
 
         // Ignore Caps Lock state during capture. If Caps Lock is currently on,
