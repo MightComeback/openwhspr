@@ -254,6 +254,16 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: "_", with: "")
         switch compact {
+        case "num0", "kp0", "numpad0", "keypad0": return "numpad0"
+        case "num1", "kp1", "numpad1", "keypad1": return "numpad1"
+        case "num2", "kp2", "numpad2", "keypad2": return "numpad2"
+        case "num3", "kp3", "numpad3", "keypad3": return "numpad3"
+        case "num4", "kp4", "numpad4", "keypad4": return "numpad4"
+        case "num5", "kp5", "numpad5", "keypad5": return "numpad5"
+        case "num6", "kp6", "numpad6", "keypad6": return "numpad6"
+        case "num7", "kp7", "numpad7", "keypad7": return "numpad7"
+        case "num8", "kp8", "numpad8", "keypad8": return "numpad8"
+        case "num9", "kp9", "numpad9", "keypad9": return "numpad9"
         case "num+", "kp+", "numpad+", "keypad+": return "numpadplus"
         case "num-", "kp-", "numpad-", "keypad-": return "numpadminus"
         case "num*", "kp*", "numx", "kpx", "numpad*", "keypad*": return "numpadmultiply"
