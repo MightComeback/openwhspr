@@ -1504,6 +1504,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         let result = perform()
 
+        // Only auto-restore clipboard after a successful synthetic paste.
+        // If paste fails, callers intentionally leave transcription text on the
+        // clipboard as a manual fallback, and restoring here would clobber it.
+        guard result == .success else {
+            return result
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             let pb = NSPasteboard.general
 
