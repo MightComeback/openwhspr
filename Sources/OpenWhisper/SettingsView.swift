@@ -275,7 +275,7 @@ struct SettingsView: View {
                         }
 
                         if isCapturingHotkey {
-                            Text("Listening for the next key press (works even if another app is focused). Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)")
+                            Text(hotkeyCaptureInstruction)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -968,6 +968,14 @@ struct SettingsView: View {
         HotkeyMode(rawValue: hotkeyModeRaw) ?? .toggle
     }
 
+    private var hotkeyCaptureInstruction: String {
+        if inputMonitoringAuthorized {
+            return "Listening for the next key press (works even if another app is focused). Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)"
+        }
+
+        return "Listening for the next key press in OpenWhisper only. Input Monitoring is missing, so shortcut capture from other apps is unavailable until permission is granted. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)"
+    }
+
     private var isHotkeyKeyDraftSupported: Bool {
         guard let key = normalizedHotkeyDraftForApply else {
             return false
@@ -1487,6 +1495,10 @@ struct SettingsView: View {
         hotkeyCaptureError = nil
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = 8
+
+        if !inputMonitoringAuthorized {
+            hotkeyCaptureError = "Input Monitoring permission is missing. Capture works only while OpenWhisper is focused."
+        }
 
         hotkeyCaptureLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             captureHotkey(from: event)
