@@ -56,14 +56,15 @@ private struct MenuBarLabel: View {
 
         if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
             let pending = transcriber.pendingChunkCount
+            let queuedStartSuffix = transcriber.isStartAfterFinalizeQueued ? "→●" : ""
             let latency = transcriber.averageChunkLatencySeconds > 0
                 ? transcriber.averageChunkLatencySeconds
                 : transcriber.lastChunkLatencySeconds
             if latency > 0 {
                 let remaining = Int((Double(pending) * latency).rounded())
-                return "\(pending)⏳\(remaining)s"
+                return "\(pending)⏳\(remaining)s\(queuedStartSuffix)"
             }
-            return "\(pending) left"
+            return "\(pending) left\(queuedStartSuffix)"
         }
 
         // Show word count when transcription text is ready to insert/copy,
