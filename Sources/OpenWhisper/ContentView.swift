@@ -8,6 +8,7 @@
 @preconcurrency import AVFoundation
 @preconcurrency import AppKit
 import SwiftUI
+import SwiftWhisper
 
 struct ContentView: View {
     @ObservedObject var transcriber: AudioTranscriber
@@ -60,6 +61,14 @@ struct ContentView: View {
                         .font(.headline)
                     HStack(spacing: 6) {
                         Text("Hotkey: \(hotkeySummary())")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+
+                        Text(activeLanguageLabel)
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -855,6 +864,12 @@ struct ContentView: View {
 
     private func hotkeySummary() -> String {
         HotkeyDisplay.summaryIncludingMode()
+    }
+
+    private var activeLanguageLabel: String {
+        let code = transcriber.activeLanguageCode
+        let language = WhisperLanguage(rawValue: code) ?? .auto
+        return language.displayName
     }
 
     private var canToggleRecording: Bool {
