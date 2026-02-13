@@ -299,6 +299,18 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "⌃", with: " control ")
             .replacingOccurrences(of: "⇪", with: " capslock ")
             .replacingOccurrences(of: "🌐", with: " globe ")
+            .replacingOccurrences(of: "↩", with: " return ")
+            .replacingOccurrences(of: "↵", with: " return ")
+            .replacingOccurrences(of: "⏎", with: " return ")
+            .replacingOccurrences(of: "⎋", with: " escape ")
+            .replacingOccurrences(of: "⇥", with: " tab ")
+            .replacingOccurrences(of: "⇤", with: " tab ")
+            .replacingOccurrences(of: "⌫", with: " delete ")
+            .replacingOccurrences(of: "⌦", with: " forwarddelete ")
+            .replacingOccurrences(of: "←", with: " left ")
+            .replacingOccurrences(of: "→", with: " right ")
+            .replacingOccurrences(of: "↑", with: " up ")
+            .replacingOccurrences(of: "↓", with: " down ")
 
         // UX guardrail: users often paste full shortcuts like "cmd+shift+space"
         // or "command-shift-page-down" into the trigger-key field. We only store
