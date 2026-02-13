@@ -469,10 +469,7 @@ struct SettingsView: View {
                             TextField("OpenWhisper insertion test", text: $insertionProbeSampleText)
                                 .textFieldStyle(.roundedBorder)
                                 .onSubmit {
-                                    guard canRunInsertionTest else { return }
-                                    Task { @MainActor in
-                                        _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
-                                    }
+                                    runInsertionTestFromTextFieldSubmission()
                                 }
 
                             Button("Reset") {
@@ -1285,6 +1282,30 @@ struct SettingsView: View {
             return false
         }
         return insertionTestTargetDisplay != nil
+    }
+
+    private func runInsertionTestFromTextFieldSubmission() {
+        guard !transcriber.isRunningInsertionProbe else {
+            return
+        }
+
+        Task { @MainActor in
+            if canRunInsertionTest {
+                _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
+                return
+            }
+
+            guard canCaptureAndRunInsertionTest else {
+                return
+            }
+
+            let captured = transcriber.captureProfileForFrontmostApp()
+            guard captured else {
+                return
+            }
+
+            _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
+        }
     }
 
     private var insertionTestDisabledReason: String {
