@@ -27,6 +27,8 @@ struct ContentView: View {
     @State private var uiNow = Date()
     @State private var finalizationInitialPendingChunks: Int? = nil
 
+    private let insertTargetStaleAfterSeconds: TimeInterval = 90
+
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
     private let recordingMetricsTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
     private let appActivationPublisher = NotificationCenter.default.publisher(
@@ -364,7 +366,7 @@ struct ContentView: View {
                         if let targetAge = insertTargetAgeDescription() {
                             Text("Target captured \(targetAge)")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(isInsertTargetStale ? .orange : .secondary)
                         }
 
                         if shouldSuggestRetarget,
@@ -386,6 +388,21 @@ struct ContentView: View {
                                 Text("⌘⌥↩ inserts into current app")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+                            }
+                        } else if isInsertTargetStale {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Insert target snapshot is getting stale.")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+
+                                Button("Retarget now") {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .font(.caption2)
+                                .help("Refresh insertion target from your current front app")
                             }
                         }
                     } else {
@@ -733,6 +750,12 @@ struct ContentView: View {
             return "Current front app is \(currentFrontAppName), but Insert is still targeting \(frozenTarget). Use Retarget + Insert if you switched apps after transcription finished."
         }
 
+        if isInsertTargetStale,
+           let frozenTarget = insertTargetAppName,
+           !frozenTarget.isEmpty {
+            return "Insert target \(frozenTarget) was captured a while ago. Retarget before inserting if you changed context."
+        }
+
         guard let target = insertTargetAppName, !target.isEmpty else {
             return "Insert into the last active app"
         }
@@ -788,11 +811,19 @@ struct ContentView: View {
             return false
         }
 
-        guard let front = currentExternalFrontAppName() else {
+        if let front = currentExternalFrontAppName() {
+            return target.caseInsensitiveCompare(front) != .orderedSame
+        }
+
+        return isInsertTargetStale
+    }
+
+    private var isInsertTargetStale: Bool {
+        guard let capturedAt = insertTargetCapturedAt else {
             return false
         }
 
-        return target.caseInsensitiveCompare(front) != .orderedSame
+        return Date().timeIntervalSince(capturedAt) >= insertTargetStaleAfterSeconds
     }
 
     private func currentExternalFrontAppName() -> String? {
