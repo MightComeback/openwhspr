@@ -20,7 +20,8 @@ struct SettingsView: View {
 
     @State private var hotkeyKeyDraft: String = ""
     @State private var isCapturingHotkey: Bool = false
-    @State private var hotkeyCaptureMonitor: Any?
+    @State private var hotkeyCaptureLocalMonitor: Any?
+    @State private var hotkeyCaptureGlobalMonitor: Any?
     @State private var hotkeyCaptureTimeoutTask: Task<Void, Never>?
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
@@ -274,7 +275,7 @@ struct SettingsView: View {
                         }
 
                         if isCapturingHotkey {
-                            Text("Listening for the next key press. Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)")
+                            Text("Listening for the next key press (works even if another app is focused). Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
@@ -1473,9 +1474,13 @@ struct SettingsView: View {
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = 8
 
-        hotkeyCaptureMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        hotkeyCaptureLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             captureHotkey(from: event)
             return nil
+        }
+
+        hotkeyCaptureGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
+            captureHotkey(from: event)
         }
 
         hotkeyCaptureTimeoutTask?.cancel()
@@ -1503,9 +1508,14 @@ struct SettingsView: View {
     }
 
     private func stopHotkeyCapture(clearError: Bool = true) {
-        if let hotkeyCaptureMonitor {
-            NSEvent.removeMonitor(hotkeyCaptureMonitor)
-            self.hotkeyCaptureMonitor = nil
+        if let hotkeyCaptureLocalMonitor {
+            NSEvent.removeMonitor(hotkeyCaptureLocalMonitor)
+            self.hotkeyCaptureLocalMonitor = nil
+        }
+
+        if let hotkeyCaptureGlobalMonitor {
+            NSEvent.removeMonitor(hotkeyCaptureGlobalMonitor)
+            self.hotkeyCaptureGlobalMonitor = nil
         }
 
         hotkeyCaptureTimeoutTask?.cancel()
