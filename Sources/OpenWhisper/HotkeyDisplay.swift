@@ -89,7 +89,7 @@ enum HotkeyDisplay {
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
         case "numpadclear", "numclear", "kpclear": return "keypadclear"
         case "numpaddivide", "numdivide", "kpdivide": return "keypaddivide"
-        case "numpadenter", "numenter", "kpenter": return "keypadenter"
+        case "numpadenter", "numenter", "kpenter", "keypadenterkey", "⌤": return "keypadenter"
         case "numpadminus", "numminus", "kpminus": return "keypadminus"
         case "numpadequals", "numequals", "kpequals": return "keypadequals"
         default: return normalized
