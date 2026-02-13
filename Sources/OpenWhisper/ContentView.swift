@@ -598,10 +598,11 @@ struct ContentView: View {
 
     @MainActor
     private func refreshInsertTargetSnapshot() {
-        insertTargetAppName = transcriber.manualInsertTargetAppName()
-        insertTargetBundleIdentifier = transcriber.manualInsertTargetBundleIdentifier()
-        insertTargetDisplay = transcriber.manualInsertTargetDisplay()
-        insertTargetUsesFallback = transcriber.manualInsertTargetUsesFallbackApp()
+        let snapshot = transcriber.manualInsertTargetSnapshot()
+        insertTargetAppName = snapshot.appName
+        insertTargetBundleIdentifier = snapshot.bundleIdentifier
+        insertTargetDisplay = snapshot.display
+        insertTargetUsesFallback = snapshot.usesFallbackApp
 
         if let appName = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines), !appName.isEmpty {
             insertTargetCapturedAt = Date()

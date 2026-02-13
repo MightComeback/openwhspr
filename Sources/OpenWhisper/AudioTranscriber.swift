@@ -343,63 +343,76 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         return copied
     }
 
+    struct ManualInsertTargetSnapshot {
+        let appName: String?
+        let bundleIdentifier: String?
+        let display: String?
+        let usesFallbackApp: Bool
+    }
+
+    @MainActor
+    func manualInsertTargetSnapshot() -> ManualInsertTargetSnapshot {
+        captureInsertionTargetApp()
+
+        guard let app = resolveInsertionTargetApp() else {
+            return ManualInsertTargetSnapshot(
+                appName: nil,
+                bundleIdentifier: nil,
+                display: nil,
+                usesFallbackApp: false
+            )
+        }
+
+        let appName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedAppName = appName?.isEmpty == false ? appName : nil
+
+        let bundleIdentifier = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedBundleIdentifier = bundleIdentifier?.isEmpty == false ? bundleIdentifier : nil
+
+        let baseDisplay: String?
+        if let normalizedAppName, let normalizedBundleIdentifier {
+            baseDisplay = "\(normalizedAppName) (\(normalizedBundleIdentifier))"
+        } else if let normalizedAppName {
+            baseDisplay = normalizedAppName
+        } else if let normalizedBundleIdentifier {
+            baseDisplay = normalizedBundleIdentifier
+        } else {
+            baseDisplay = nil
+        }
+
+        let display: String?
+        if insertionTargetUsesFallbackApp, let baseDisplay {
+            display = "\(baseDisplay) • recent app"
+        } else {
+            display = baseDisplay
+        }
+
+        return ManualInsertTargetSnapshot(
+            appName: normalizedAppName,
+            bundleIdentifier: normalizedBundleIdentifier,
+            display: display,
+            usesFallbackApp: insertionTargetUsesFallbackApp
+        )
+    }
+
     @MainActor
     func manualInsertTargetAppName() -> String? {
-        captureInsertionTargetApp()
-        guard let app = resolveInsertionTargetApp(),
-              let name = app.localizedName,
-              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return nil
-        }
-        return name
+        manualInsertTargetSnapshot().appName
     }
 
     @MainActor
     func manualInsertTargetBundleIdentifier() -> String? {
-        captureInsertionTargetApp()
-        guard let app = resolveInsertionTargetApp(),
-              let bundleIdentifier = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !bundleIdentifier.isEmpty else {
-            return nil
-        }
-        return bundleIdentifier
+        manualInsertTargetSnapshot().bundleIdentifier
     }
 
     @MainActor
     func manualInsertTargetDisplay() -> String? {
-        captureInsertionTargetApp()
-        guard let app = resolveInsertionTargetApp() else {
-            return nil
-        }
-
-        let trimmedName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let bundleID = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-        let baseDisplay: String
-        if !trimmedName.isEmpty && !bundleID.isEmpty {
-            baseDisplay = "\(trimmedName) (\(bundleID))"
-        } else if !trimmedName.isEmpty {
-            baseDisplay = trimmedName
-        } else if !bundleID.isEmpty {
-            baseDisplay = bundleID
-        } else {
-            return nil
-        }
-
-        if insertionTargetUsesFallbackApp {
-            return "\(baseDisplay) • recent app"
-        }
-
-        return baseDisplay
+        manualInsertTargetSnapshot().display
     }
 
     @MainActor
     func manualInsertTargetUsesFallbackApp() -> Bool {
-        captureInsertionTargetApp()
-        guard resolveInsertionTargetApp() != nil else {
-            return false
-        }
-        return insertionTargetUsesFallbackApp
+        manualInsertTargetSnapshot().usesFallbackApp
     }
 
     @MainActor
