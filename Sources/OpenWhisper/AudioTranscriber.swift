@@ -1767,7 +1767,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Final retry: keep focus stable and try once more with a slightly longer
         // settle gap. This improves insertion reliability in apps that need an
         // extra beat after activation before accepting synthetic key events.
-        Thread.sleep(forTimeInterval: 0.06)
+        runLoopSleep(0.06)
         if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
             return .success
         }
@@ -1778,7 +1778,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return .activationFailed
         }
 
-        Thread.sleep(forTimeInterval: 0.09)
+        runLoopSleep(0.09)
         if postPasteKeystroke(expectedPID: targetApp.processIdentifier) {
             return .success
         }
@@ -1821,7 +1821,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         app.unhide()
         // Some apps need a brief settle beat after unhide before activation
         // can reliably claim focus across Spaces.
-        Thread.sleep(forTimeInterval: 0.05)
+        runLoopSleep(0.05)
         _ = app.activate(options: [.activateAllWindows])
         if waitForFrontmostApp(pid: targetPID, timeout: 0.75) {
             return true
@@ -1830,7 +1830,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Last chance: some apps need an extra unhide/activate cycle after
         // space changes with a longer settle timeout.
         app.unhide()
-        Thread.sleep(forTimeInterval: 0.08)
+        runLoopSleep(0.08)
         _ = app.activate(options: [.activateAllWindows])
         if waitForFrontmostApp(pid: targetPID, timeout: 1.2) {
             return true
@@ -1859,7 +1859,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         // After activation, some apps need a brief settle window before they
         // consistently accept synthetic key events in the focused text field.
-        Thread.sleep(forTimeInterval: 0.03)
+        runLoopSleep(0.03)
 
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedPID else {
             return false
@@ -1868,12 +1868,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Some apps are flaky if the key down/up events are posted back-to-back.
         // A tiny delay makes insertion noticeably more reliable without impacting UX.
         keyDown.post(tap: .cghidEventTap)
-        Thread.sleep(forTimeInterval: 0.01)
+        runLoopSleep(0.01)
         keyUp.post(tap: .cghidEventTap)
 
         // One more focus check catches rapid app switches right after posting
         // so caller can retry instead of reporting a false-positive insertion.
-        Thread.sleep(forTimeInterval: 0.005)
+        runLoopSleep(0.005)
         return NSWorkspace.shared.frontmostApplication?.processIdentifier == expectedPID
     }
 
@@ -1887,6 +1887,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
         }
         return NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+    }
+
+    @MainActor
+    private func runLoopSleep(_ seconds: TimeInterval) {
+        guard seconds > 0 else { return }
+        let deadline = Date().addingTimeInterval(seconds)
+        while Date() < deadline {
+            RunLoop.current.run(mode: .default, before: min(deadline, Date().addingTimeInterval(0.01)))
+        }
     }
 
     @MainActor
