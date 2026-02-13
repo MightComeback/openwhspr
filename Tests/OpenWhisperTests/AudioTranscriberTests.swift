@@ -365,6 +365,8 @@ final class AudioTranscriberTests: XCTestCase {
         await MainActor.run {
             let originalIsRecording = transcriber.isRecording
             let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
             let originalTranscription = transcriber.transcription
             let originalStatusMessage = transcriber.statusMessage
             let originalLastError = transcriber.lastError
@@ -372,6 +374,8 @@ final class AudioTranscriberTests: XCTestCase {
             defer {
                 transcriber.isRecording = originalIsRecording
                 transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
                 transcriber.transcription = originalTranscription
                 transcriber.statusMessage = originalStatusMessage
                 transcriber.lastError = originalLastError
@@ -379,6 +383,8 @@ final class AudioTranscriberTests: XCTestCase {
 
             transcriber.isRecording = false
             transcriber.pendingChunkCount = 1
+            transcriber.recordingStartedAt = Date()
+            transcriber.setPendingSessionFinalizeForTesting(false)
             transcriber.transcription = "hello world"
 
             let inserted = transcriber.insertTranscriptionIntoFocusedApp()
@@ -388,12 +394,45 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testInsertTranscriptionBlockedWhileFinalizingWithoutQueuedChunks() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+            let originalTranscription = transcriber.transcription
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+                transcriber.transcription = originalTranscription
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 0
+            transcriber.setPendingSessionFinalizeForTesting(true)
+            transcriber.transcription = "hello world"
+
+            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+            XCTAssertFalse(inserted)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text.")
+        }
+    }
+
     func testInsertTranscriptionReturnsSuccessWhenAccessibilityFallbackCopiesText() async {
         let transcriber = AudioTranscriber.shared
 
         await MainActor.run {
             let originalIsRecording = transcriber.isRecording
             let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
             let originalTranscription = transcriber.transcription
             let originalStatusMessage = transcriber.statusMessage
             let originalLastError = transcriber.lastError
@@ -402,6 +441,7 @@ final class AudioTranscriberTests: XCTestCase {
             defer {
                 transcriber.isRecording = originalIsRecording
                 transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
                 transcriber.transcription = originalTranscription
                 transcriber.statusMessage = originalStatusMessage
                 transcriber.lastError = originalLastError
@@ -412,6 +452,7 @@ final class AudioTranscriberTests: XCTestCase {
             transcriber.setAccessibilityPermissionCheckerForTesting { false }
             transcriber.isRecording = false
             transcriber.pendingChunkCount = 0
+            transcriber.setPendingSessionFinalizeForTesting(false)
 
             let insertedText = "accessibility fallback \(UUID().uuidString)"
             transcriber.transcription = insertedText

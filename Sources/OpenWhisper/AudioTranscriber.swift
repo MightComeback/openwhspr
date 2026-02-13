@@ -504,7 +504,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
-        guard pendingChunkCount == 0 else {
+        let isFinalizing = pendingChunkCount > 0 || pendingSessionFinalize
+        guard !isFinalizing else {
             let message = finalizingWaitMessage(for: "inserting text")
             statusMessage = message
             lastError = message
@@ -1237,6 +1238,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     func refreshStreamingStatusForTesting() {
         refreshStreamingStatusIfNeeded()
+    }
+
+    @MainActor
+    var pendingSessionFinalizeForTesting: Bool {
+        pendingSessionFinalize
+    }
+
+    @MainActor
+    func setPendingSessionFinalizeForTesting(_ value: Bool) {
+        pendingSessionFinalize = value
     }
 
     func setAccessibilityPermissionCheckerForTesting(_ checker: @escaping () -> Bool) {
