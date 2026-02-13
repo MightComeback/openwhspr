@@ -7,6 +7,7 @@
 @preconcurrency import AVFoundation
 @preconcurrency import AppKit
 import SwiftUI
+import SwiftWhisper
 import UniformTypeIdentifiers
 import Carbon.HIToolbox
 
@@ -52,6 +53,7 @@ struct SettingsView: View {
     @State private var launchAtLogin: Bool = LaunchAtLogin.isEnabled
     @AppStorage(AppDefaults.Keys.modelSource) private var modelSourceRaw: String = ModelSource.bundledTiny.rawValue
     @AppStorage(AppDefaults.Keys.modelCustomPath) private var customModelPath: String = ""
+    @AppStorage(AppDefaults.Keys.transcriptionLanguage) private var transcriptionLanguage: String = "auto"
 
     @AppStorage(AppDefaults.Keys.transcriptionReplacements) private var replacementsRaw: String = ""
     @AppStorage(AppDefaults.Keys.transcriptionHistoryLimit) private var historyLimit: Int = 25
@@ -636,6 +638,28 @@ struct SettingsView: View {
                         }
                         .pickerStyle(.segmented)
 
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("Language")
+                                .frame(width: 110, alignment: .leading)
+
+                            Picker("", selection: $transcriptionLanguage) {
+                                ForEach(WhisperLanguage.allCases) { lang in
+                                    Text(lang.displayName).tag(lang.rawValue)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 200)
+                            .onChange(of: transcriptionLanguage) { _, newValue in
+                                Task { @MainActor in
+                                    transcriber.setTranscriptionLanguage(newValue)
+                                }
+                            }
+
+                            Text("Set to a specific language for better accuracy, or auto to detect.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
                         if modelSourceRaw == ModelSource.customPath.rawValue {
                             HStack(alignment: .center, spacing: 8) {
                                 TextField("/path/to/ggml-model.bin", text: $customModelPath)
@@ -831,7 +855,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.red)
                         }
 
-                        Text("Current model: \(transcriber.activeModelDisplayName) (\(formatBytes(sizeOfModel(path: transcriber.activeModelPath))))")
+                        Text("Current model: \(transcriber.activeModelDisplayName) (\(formatBytes(sizeOfModel(path: transcriber.activeModelPath)))) · Language: \(WhisperLanguage(rawValue: transcriber.activeLanguageCode)?.displayName ?? transcriber.activeLanguageCode)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

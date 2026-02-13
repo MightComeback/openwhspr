@@ -17,6 +17,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var activeModelDisplayName: String = "Unavailable"
     @Published var activeModelPath: String = ""
     @Published var activeModelSource: ModelSource = .bundledTiny
+    @Published var activeLanguageCode: String = "auto"
     @Published var appProfiles: [AppProfile] = []
     @Published var frontmostAppName: String = "Unknown App"
     @Published var frontmostBundleIdentifier: String = ""
@@ -260,6 +261,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             modelWarning = nil
         }
         reloadConfiguredModel()
+    }
+
+    @MainActor
+    func setTranscriptionLanguage(_ languageCode: String) {
+        UserDefaults.standard.set(languageCode, forKey: AppDefaults.Keys.transcriptionLanguage)
+        let language = WhisperLanguage(rawValue: languageCode) ?? .auto
+        activeLanguageCode = languageCode
+        whisper?.params.language = language
+        statusMessage = "Language set to \(language.displayName)"
     }
 
     @MainActor
@@ -1868,7 +1878,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
-        whisper = Whisper(fromFileURL: modelURL)
+        let languageRaw = UserDefaults.standard.string(forKey: AppDefaults.Keys.transcriptionLanguage) ?? "auto"
+        let language = WhisperLanguage(rawValue: languageRaw) ?? .auto
+        var params = WhisperParams.default
+        params.language = language
+        activeLanguageCode = languageRaw
+
+        whisper = Whisper(fromFileURL: modelURL, withParams: params)
         activeModelDisplayName = modelURL.lastPathComponent
         activeModelPath = modelURL.path
         modelStatusMessage = "Loaded \(modelURL.lastPathComponent)"
