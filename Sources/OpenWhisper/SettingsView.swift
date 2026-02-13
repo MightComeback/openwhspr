@@ -221,6 +221,14 @@ struct SettingsView: View {
                             .controlSize(.small)
                             .disabled(!isHotkeyKeyDraftSupported || !hasHotkeyDraftChangesToApply)
 
+                            Button("Revert") {
+                                hotkeyKeyDraft = hotkeyKey
+                                hotkeyCaptureError = nil
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(!hasHotkeyDraftEdits)
+
                             Button("Paste combo") {
                                 pasteHotkeyComboFromClipboard()
                             }
@@ -1000,6 +1008,10 @@ struct SettingsView: View {
         }
 
         return keyChanged || modifiersChanged
+    }
+
+    private var hasHotkeyDraftEdits: Bool {
+        sanitizeHotkeyDraftValue(hotkeyKeyDraft) != sanitizeKeyValue(hotkeyKey)
     }
 
     private var currentRequiredModifierSet: Set<ParsedModifier> {
