@@ -568,6 +568,14 @@ struct ContentView: View {
                                     Text(historyEntryStats(entry))
                                         .font(.caption2)
                                         .foregroundStyle(.tertiary)
+                                    if let appName = entry.targetAppName, !appName.isEmpty {
+                                        Text("·")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                        Text("→ \(appName)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                    }
                                 }
                             }
 

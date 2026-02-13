@@ -521,7 +521,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         switch result.outcome {
         case .inserted, .copiedFallbackAccessibilityMissing:
-            appendHistoryEntry(normalized)
+            appendHistoryEntry(normalized, targetAppName: result.targetName)
             if settings.clearAfterInsert {
                 transcription = ""
             }
@@ -1307,7 +1307,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
-        appendHistoryEntry(finalText, durationSeconds: lastRecordingDurationSeconds)
+        let savedDuration = lastRecordingDurationSeconds
         lastRecordingDurationSeconds = nil
 
         let shouldAutoCopy = settings.autoCopy
@@ -1324,6 +1324,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             captureInsertionTargetApp()
             let resolvedTargetApp = resolveInsertionTargetApp()
             let resolvedTargetName = insertionTargetDisplayName(resolvedTargetApp)
+
+            appendHistoryEntry(finalText, durationSeconds: savedDuration, targetAppName: resolvedTargetName)
 
             guard canAutoPasteIntoTargetApp() else {
                 if shouldAutoCopy {
@@ -1422,6 +1424,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return
         }
 
+        appendHistoryEntry(finalText, durationSeconds: savedDuration)
         lastError = nil
         AudioFeedback.playTextReadySound()
         statusMessage = shouldAutoCopy ? "Copied to clipboard" : "Ready"
@@ -1609,12 +1612,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func appendHistoryEntry(_ text: String, durationSeconds: TimeInterval? = nil) {
+    private func appendHistoryEntry(_ text: String, durationSeconds: TimeInterval? = nil, targetAppName: String? = nil) {
         if recentEntries.first?.text == text {
             return
         }
 
-        recentEntries.insert(TranscriptionEntry(text: text, durationSeconds: durationSeconds), at: 0)
+        recentEntries.insert(TranscriptionEntry(text: text, durationSeconds: durationSeconds, targetAppName: targetAppName), at: 0)
         let configuredLimit = UserDefaults.standard.integer(forKey: AppDefaults.Keys.transcriptionHistoryLimit)
         let maxEntries = max(1, configuredLimit)
         if recentEntries.count > maxEntries {
