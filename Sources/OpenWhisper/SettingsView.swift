@@ -28,6 +28,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureError: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
     private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
+    private let hotkeyCaptureTimeoutSeconds: Int = 8
 
     @AppStorage(AppDefaults.Keys.hotkeyRequiredCommand) private var requiredCommand: Bool = true
     @AppStorage(AppDefaults.Keys.hotkeyRequiredShift) private var requiredShift: Bool = true
@@ -282,6 +283,9 @@ struct SettingsView: View {
                             Text(hotkeyCaptureInstruction)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+
+                            ProgressView(value: hotkeyCaptureProgress)
+                                .progressViewStyle(.linear)
 
                             if let hotkeyCaptureError {
                                 Text(hotkeyCaptureError)
@@ -1032,6 +1036,14 @@ struct SettingsView: View {
         return "Listening for the next key press in OpenWhisper only. Input Monitoring is missing, so shortcut capture from other apps is unavailable until permission is granted. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)"
     }
 
+    private var hotkeyCaptureProgress: Double {
+        guard hotkeyCaptureTimeoutSeconds > 0 else {
+            return 0
+        }
+
+        return min(max(Double(hotkeyCaptureSecondsRemaining) / Double(hotkeyCaptureTimeoutSeconds), 0), 1)
+    }
+
     private var isHotkeyKeyDraftSupported: Bool {
         guard let key = normalizedHotkeyDraftForApply else {
             return false
@@ -1560,7 +1572,7 @@ struct SettingsView: View {
         stopHotkeyCapture()
         hotkeyCaptureError = nil
         isCapturingHotkey = true
-        hotkeyCaptureSecondsRemaining = 8
+        hotkeyCaptureSecondsRemaining = hotkeyCaptureTimeoutSeconds
 
         if !inputMonitoringAuthorized {
             hotkeyCaptureError = "Input Monitoring permission is missing. Capture works only while OpenWhisper is focused."
