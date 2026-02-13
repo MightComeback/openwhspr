@@ -54,7 +54,7 @@ enum HotkeyDisplay {
         case "→", "rightarrow", "rightkey": return "right"
         case "↑", "uparrow", "upkey": return "up"
         case "↓", "downarrow", "downkey": return "down"
-        case "hyphen", "_": return "minus"
+        case "hyphen", "_", "–", "—", "−": return "minus"
         case "equal", "plus", "+": return "equals"
         case "leftbracket", "{": return "openbracket"
         case "rightbracket", "}": return "closebracket"
