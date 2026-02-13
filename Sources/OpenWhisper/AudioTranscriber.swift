@@ -84,6 +84,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         Task { @MainActor in
             self.registerWorkspaceActivationObserver()
             self.reloadProfiles()
+            self.reloadHistory()
             self.refreshFrontmostAppContext()
             self.reloadConfiguredModel()
         }
@@ -108,6 +109,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     func clearHistory() {
         recentEntries.removeAll()
+        persistHistory()
     }
 
     @MainActor
@@ -1572,6 +1574,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if recentEntries.count > maxEntries {
             recentEntries = Array(recentEntries.prefix(maxEntries))
         }
+        persistHistory()
     }
 
     @MainActor
@@ -1832,6 +1835,28 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
         }
         return NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+    }
+
+    @MainActor
+    private func reloadHistory() {
+        let raw = UserDefaults.standard.string(forKey: AppDefaults.Keys.transcriptionHistory) ?? "[]"
+        guard let data = raw.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([TranscriptionEntry].self, from: data) else {
+            recentEntries = []
+            return
+        }
+        let configuredLimit = UserDefaults.standard.integer(forKey: AppDefaults.Keys.transcriptionHistoryLimit)
+        let maxEntries = max(1, configuredLimit)
+        recentEntries = Array(decoded.prefix(maxEntries))
+    }
+
+    @MainActor
+    private func persistHistory() {
+        guard let data = try? JSONEncoder().encode(recentEntries),
+              let json = String(data: data, encoding: .utf8) else {
+            return
+        }
+        UserDefaults.standard.set(json, forKey: AppDefaults.Keys.transcriptionHistory)
     }
 
     @MainActor
