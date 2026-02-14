@@ -759,11 +759,12 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
     }
 
     func missingPermissionStatusMessage(_ missingPermissions: [String]) -> String {
+        let combo = currentComboSummary()
         let missingList = Self.humanList(missingPermissions)
         if missingPermissions.count == 1, let permission = missingPermissions.first {
-            return "Hotkey disabled: missing \(permission) permission. Open System Settings → Privacy & Security → \(permission) and enable OpenWhisper."
+            return "Hotkey disabled: missing \(permission) permission. Open System Settings → Privacy & Security → \(permission) and enable OpenWhisper. Configured hotkey: \(combo)."
         }
-        return "Hotkey disabled: missing \(missingList) permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections."
+        return "Hotkey disabled: missing \(missingList) permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections. Configured hotkey: \(combo)."
     }
 
     private func normalizeKeyString(_ raw: String) -> (character: String, keyCode: CGKeyCode?, token: String, isValid: Bool) {

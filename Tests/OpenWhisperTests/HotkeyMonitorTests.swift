@@ -21,6 +21,23 @@ final class HotkeyMonitorTests: XCTestCase {
         return event
     }
 
+    func testMissingPermissionMessageIncludesConfiguredComboSummary() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let message = monitor.missingPermissionStatusMessage(["Accessibility"])
+        XCTAssertEqual(
+            message,
+            "Hotkey disabled: missing Accessibility permission. Open System Settings → Privacy & Security → Accessibility and enable OpenWhisper. Configured hotkey: Toggle • ⌘+⇧+Space."
+        )
+    }
+
     func testConfigLoadsRequiredAndForbiddenModifiers() {
         let defaults = makeDefaults()
         defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
