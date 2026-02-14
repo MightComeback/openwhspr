@@ -1462,6 +1462,14 @@ struct SettingsView: View {
 
         Task { @MainActor in
             if canRunInsertionTest {
+                // Front-app insertion UX: when target is currently a fallback
+                // snapshot, try to focus it first so the probe lands in the
+                // intended destination app instead of whichever app is
+                // currently frontmost.
+                if transcriber.manualInsertTargetUsesFallbackApp() {
+                    _ = transcriber.focusManualInsertTargetApp()
+                }
+
                 _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
                 return
             }
