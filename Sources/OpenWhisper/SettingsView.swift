@@ -464,6 +464,8 @@ struct SettingsView: View {
                                 runInsertionTestUsingAvailableTarget()
                             }
                             .buttonStyle(.bordered)
+                            .keyboardShortcut(.return, modifiers: [.command])
+                            .help("Run insertion test with ⌘↩")
                             .disabled(!canRunInsertionTestWithAutoCapture)
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Focus target + test") {
