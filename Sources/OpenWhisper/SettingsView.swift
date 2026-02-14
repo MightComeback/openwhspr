@@ -301,18 +301,18 @@ struct SettingsView: View {
 
                             ProgressView(value: hotkeyCaptureProgress)
                                 .progressViewStyle(.linear)
+                        }
 
-                            if let hotkeyCaptureError {
-                                Text(hotkeyCaptureError)
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
+                        if let hotkeyCaptureError {
+                            Text(hotkeyCaptureError)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
 
-                            if let hotkeyCaptureSuccessMessage {
-                                Text(hotkeyCaptureSuccessMessage)
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            }
+                        if let hotkeyCaptureSuccessMessage {
+                            Text(hotkeyCaptureSuccessMessage)
+                                .font(.caption)
+                                .foregroundStyle(.green)
                         }
 
                         if let hotkeyDraftValidationMessage {
