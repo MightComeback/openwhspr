@@ -101,7 +101,7 @@ enum HotkeyDisplay {
         case "numpadcomma", "numcomma", "kpcomma": return "keypadcomma"
         case "numpadmultiply", "nummultiply", "numtimes", "kpmultiply", "kptimes": return "keypadmultiply"
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
-        case "numpadclear", "numclear", "kpclear", "clear": return "keypadclear"
+        case "numpadclear", "numclear", "kpclear", "clear", "numlock", "numlockkey", "numpadlock", "keypadlock": return "keypadclear"
         case "numpaddivide", "numdivide", "kpdivide": return "keypaddivide"
         case "numpadenter", "numenter", "kpenter", "keypadenterkey": return "keypadenter"
         case "numpadminus", "numminus", "kpminus": return "keypadminus"
@@ -289,6 +289,7 @@ enum HotkeyDisplay {
         case "num,", "kp,", "numpad,", "keypad,": return "numpadcomma"
         case "num=", "kp=", "numpad=", "keypad=": return "numpadequals"
         case "capslock", "capslockkey": return "capslock"
+        case "numlock", "numlockkey", "numpadlock", "keypadlock": return "numlock"
         case "fnglobe", "globefn", "functionglobe", "globefunction": return "fn"
         default: break
         }
