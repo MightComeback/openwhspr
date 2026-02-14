@@ -511,6 +511,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
+        // Once focus succeeds, this app is now a live target rather than a
+        // fallback snapshot. Drop the “recent app” badge for cleaner UX.
+        insertionTargetUsesFallbackApp = false
+        lastKnownExternalApp = targetApp
+
         let targetName = insertionTargetDisplayName(targetApp) ?? "destination app"
         statusMessage = "Focused \(targetName)"
         lastError = nil
@@ -787,14 +792,23 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return ManualInsertResult(outcome: .failed, targetName: resolvedTargetName)
         }
 
+        // Synthetic paste succeeded, so this destination is now a confirmed
+        // live target. Promote it out of fallback mode for cleaner status text.
+        insertionTargetUsesFallbackApp = false
+        if let resolvedTargetApp {
+            lastKnownExternalApp = resolvedTargetApp
+        }
+
+        let confirmedTargetName = insertionTargetDisplayName(resolvedTargetApp)
+
         lastError = nil
         lastSuccessfulInsertionAt = Date()
-        if let resolvedTargetName, !resolvedTargetName.isEmpty {
-            statusMessage = "Inserted into \(resolvedTargetName)"
+        if let confirmedTargetName, !confirmedTargetName.isEmpty {
+            statusMessage = "Inserted into \(confirmedTargetName)"
         } else {
             statusMessage = "Inserted into active app"
         }
-        return ManualInsertResult(outcome: .inserted, targetName: resolvedTargetName)
+        return ManualInsertResult(outcome: .inserted, targetName: confirmedTargetName)
     }
 
     @MainActor
