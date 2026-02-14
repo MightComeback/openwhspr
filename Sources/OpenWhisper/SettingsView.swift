@@ -512,6 +512,8 @@ struct SettingsView: View {
                                 }
                             }
                             .buttonStyle(.bordered)
+                            .keyboardShortcut(.return, modifiers: [.command, .option])
+                            .help("Focus saved insertion target and run test with ⌘⌥↩")
                             .disabled(!canFocusAndRunInsertionTest)
                         }
 
