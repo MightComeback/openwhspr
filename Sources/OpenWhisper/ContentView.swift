@@ -320,7 +320,7 @@ struct ContentView: View {
 
                         Button(insertButtonTitle()) {
                             Task { @MainActor in
-                                if insertTargetAppName == nil {
+                                if insertTargetAppName == nil || shouldAutoRefreshInsertTargetBeforePrimaryInsert {
                                     refreshInsertTargetSnapshot()
                                 }
 
@@ -1166,6 +1166,25 @@ struct ContentView: View {
 
         if let front = currentExternalFrontAppName() {
             return target.caseInsensitiveCompare(front) != .orderedSame
+        }
+
+        return isInsertTargetStale
+    }
+
+    private var shouldAutoRefreshInsertTargetBeforePrimaryInsert: Bool {
+        guard canInsertDirectly else {
+            return false
+        }
+
+        guard canRetargetInsertTarget else {
+            return false
+        }
+
+        // If we already know the user switched apps, keep the target locked and
+        // force an explicit retarget choice. Auto-refresh only the stale-but-
+        // likely-same-app path to improve reliability without surprising jumps.
+        guard !shouldSuggestRetarget else {
+            return false
         }
 
         return isInsertTargetStale
