@@ -1898,6 +1898,20 @@ struct SettingsView: View {
             return parseHotkeyTokens(tokens)
         }
 
+        // Also accept slash-separated combos copied from docs/chat,
+        // e.g. "command/shift/space".
+        // Keep literal trailing slash keys ("cmd+shift+/") untouched.
+        if normalized.contains("/"), !normalized.hasSuffix("/") {
+            let tokens = normalized
+                .split(separator: "/")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+
+            if tokens.contains(where: { parseModifierToken($0) != nil }) {
+                return parseHotkeyTokens(tokens)
+            }
+        }
+
         // UX nicety: allow pasting combos without plus separators,
         // e.g. "cmd shift space" or "command option f6".
         if normalized.contains(" ") {
@@ -1934,9 +1948,9 @@ struct SettingsView: View {
         // Robust fallback for mixed separators copied from chats/docs,
         // e.g. "cmd + shift-space", "command_shift+page down", or
         // "ctrl- alt + delete".
-        if normalized.contains(where: { $0 == "+" || $0 == "-" || $0 == "_" || $0 == "," || $0.isWhitespace }) {
+        if normalized.contains(where: { $0 == "+" || $0 == "-" || $0 == "_" || $0 == "," || $0 == "/" || $0.isWhitespace }) {
             let tokens = normalized
-                .components(separatedBy: CharacterSet(charactersIn: "+-_, "))
+                .components(separatedBy: CharacterSet(charactersIn: "+-_,/ "))
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
 
@@ -1969,7 +1983,7 @@ struct SettingsView: View {
         }
 
         let tokens = raw
-            .components(separatedBy: CharacterSet(charactersIn: "+-_, "))
+            .components(separatedBy: CharacterSet(charactersIn: "+-_,/ "))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
