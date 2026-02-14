@@ -390,6 +390,23 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
         guard let transcriber else { return false }
 
+        // UX: during finalization, Escape should first cancel a queued
+        // follow-up recording (if any) without discarding already captured text.
+        if transcriber.isStartAfterFinalizeQueued,
+           !transcriber.isRecording,
+           transcriber.pendingChunkCount > 0 {
+            if mode == .hold {
+                holdSessionArmed = false
+            }
+            toggleKeyDownConsumed = false
+            setStatus(active: true, message: "Queued next recording canceled via Escape")
+            scheduleTemporaryStatusResetIfNeeded(for: "Queued next recording canceled via Escape")
+            Task { @MainActor [weak transcriber] in
+                _ = transcriber?.cancelQueuedStartAfterFinalizeFromHotkey()
+            }
+            return true
+        }
+
         let isActive = transcriber.isRecording || transcriber.pendingChunkCount > 0
 
         guard isActive else { return false }
