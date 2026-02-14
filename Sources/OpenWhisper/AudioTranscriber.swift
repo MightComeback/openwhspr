@@ -700,10 +700,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             _ = copyToPasteboard(text)
             if let resolvedTargetName, !resolvedTargetName.isEmpty {
                 lastError = "Accessibility permission is required to insert into \(resolvedTargetName). Copied text to clipboard instead."
-                statusMessage = "Copied to clipboard for \(resolvedTargetName)"
+                statusMessage = clipboardFallbackStatusMessage(targetName: resolvedTargetName)
             } else {
                 lastError = "Accessibility permission is required to insert text automatically. Copied text to clipboard instead."
-                statusMessage = "Copied to clipboard"
+                statusMessage = clipboardFallbackStatusMessage(targetName: nil)
             }
             return ManualInsertResult(outcome: .copiedFallbackAccessibilityMissing, targetName: resolvedTargetName)
         }
@@ -717,24 +717,24 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             case .noTargetApp:
                 _ = copyToPasteboard(text)
                 lastError = "No target app available for insertion. Copied text to clipboard instead. Switch to the destination app and try again."
-                statusMessage = "Copied to clipboard"
+                statusMessage = clipboardFallbackStatusMessage(targetName: nil)
             case .activationFailed:
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Couldn’t focus \(resolvedTargetName) for insertion. Copied text to clipboard instead."
-                    statusMessage = "Copied to clipboard for \(resolvedTargetName)"
+                    statusMessage = clipboardFallbackStatusMessage(targetName: resolvedTargetName)
                 } else {
                     lastError = "Couldn’t focus the destination app for insertion. Copied text to clipboard instead."
-                    statusMessage = "Copied to clipboard"
+                    statusMessage = clipboardFallbackStatusMessage(targetName: nil)
                 }
             case .pasteKeystrokeFailed:
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
                     lastError = "Failed to paste into \(resolvedTargetName). Copied text to clipboard instead."
-                    statusMessage = "Copied to clipboard for \(resolvedTargetName)"
+                    statusMessage = clipboardFallbackStatusMessage(targetName: resolvedTargetName)
                 } else {
                     lastError = "Failed to paste into active app. Copied text to clipboard instead."
-                    statusMessage = "Copied to clipboard"
+                    statusMessage = clipboardFallbackStatusMessage(targetName: nil)
                 }
             case .success:
                 break
@@ -1801,6 +1801,13 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         return trimmedName
+    }
+
+    private func clipboardFallbackStatusMessage(targetName: String?) -> String {
+        if let targetName, !targetName.isEmpty {
+            return "Copied to clipboard for \(targetName) — press ⌘V to paste"
+        }
+        return "Copied to clipboard — press ⌘V to paste"
     }
 
     @MainActor
