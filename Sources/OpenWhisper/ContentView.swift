@@ -331,7 +331,9 @@ struct ContentView: View {
                                     refreshInsertTargetSnapshot()
                                 }
 
-                                if canInsertDirectly {
+                                if shouldCopyBecauseTargetUnknown {
+                                    _ = transcriber.copyTranscriptionToClipboard()
+                                } else if canInsertDirectly {
                                     _ = transcriber.insertTranscriptionIntoFocusedApp()
                                 } else {
                                     _ = transcriber.copyTranscriptionToClipboard()
@@ -1009,6 +1011,18 @@ struct ContentView: View {
         accessibilityAuthorized
     }
 
+    private var shouldCopyBecauseTargetUnknown: Bool {
+        guard canInsertDirectly else {
+            return false
+        }
+
+        if hasResolvableInsertTarget {
+            return false
+        }
+
+        return currentExternalFrontAppName() == nil
+    }
+
     private var transcriptionStats: String {
         let text = transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines)
         let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
@@ -1046,7 +1060,7 @@ struct ContentView: View {
                 if let liveFrontApp = currentExternalFrontAppName(), !liveFrontApp.isEmpty {
                     return "Insert → \(abbreviatedAppName(liveFrontApp))"
                 }
-                return "Insert → Last App"
+                return "Copy → Clipboard"
             }
 
             let targetLabel = insertTargetUsesFallback
@@ -1073,6 +1087,10 @@ struct ContentView: View {
                 return "Accessibility permission is missing, so this will copy text for \(target)"
             }
             return "Accessibility permission is missing, so this will copy transcription to clipboard"
+        }
+
+        if shouldCopyBecauseTargetUnknown {
+            return "No destination app is currently available, so this will copy transcription to clipboard"
         }
 
         if shouldSuggestRetarget,
