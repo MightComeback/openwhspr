@@ -639,6 +639,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             if looksLikeModifierOnlyInput(trimmed) {
                 return "Hotkey disabled: trigger key cannot be only a modifier ‘\(trimmed)’. Choose one key like space or f6, then set modifiers with the toggles above."
             }
+            if let outOfRangeFunctionInput = normalizedOutOfRangeFunctionKeyInput(trimmed) {
+                return "Hotkey disabled: function key ‘\(outOfRangeFunctionInput)’ is out of range. Use F1 through F24."
+            }
             if looksLikeShortcutCombo(trimmed) {
                 return "Hotkey disabled: key field expects one trigger key (like space or f6), not a full shortcut ‘\(trimmed)’. Set modifiers with the toggles above."
             }
@@ -696,6 +699,17 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let modifierWords = shortcutModifierWords()
         let modifierCount = tokens.filter { modifierWords.contains($0) }.count
         return modifierCount >= 1 && tokens.count >= 2
+    }
+
+    private func normalizedOutOfRangeFunctionKeyInput(_ raw: String) -> String? {
+        let normalized = HotkeyDisplay.canonicalKey(raw)
+        guard normalized.hasPrefix("f") else { return nil }
+
+        let numberToken = String(normalized.dropFirst())
+        guard let functionNumber = Int(numberToken) else { return nil }
+        guard !(1...24).contains(functionNumber) else { return nil }
+
+        return "F\(functionNumber)"
     }
 
     private func looksLikeModifierOnlyInput(_ raw: String) -> Bool {
