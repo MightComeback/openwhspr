@@ -1481,7 +1481,7 @@ final class HotkeyMonitorTests: XCTestCase {
 
         XCTAssertEqual(
             monitor.statusMessage,
-            "Hotkey disabled: trigger key A without required modifiers is too easy to trigger while typing. Add at least one required modifier."
+            "Hotkey disabled: trigger key A without required modifiers is too easy to trigger while typing. Add at least one required modifier. Configured hotkey: Toggle • A."
         )
     }
 

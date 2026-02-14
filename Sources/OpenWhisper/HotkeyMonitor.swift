@@ -656,7 +656,19 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func unsafeModifierConfigurationMessage() -> String {
         let triggerKeyLabel = HotkeyDisplay.displayKey(triggerKeyToken)
-        return "Hotkey disabled: trigger key \(triggerKeyLabel) without required modifiers is too easy to trigger while typing. Add at least one required modifier."
+        let combo = configuredComboSummary()
+        return "Hotkey disabled: trigger key \(triggerKeyLabel) without required modifiers is too easy to trigger while typing. Add at least one required modifier. Configured hotkey: \(combo)."
+    }
+
+    private func configuredComboSummary() -> String {
+        var parts: [String] = []
+        if requiredModifiers.contains(.maskCommand) { parts.append("⌘") }
+        if requiredModifiers.contains(.maskShift) { parts.append("⇧") }
+        if requiredModifiers.contains(.maskAlternate) { parts.append("⌥") }
+        if requiredModifiers.contains(.maskControl) { parts.append("⌃") }
+        if requiredModifiers.contains(.maskAlphaShift) { parts.append("⇪") }
+        parts.append(HotkeyDisplay.displayKey(triggerKeyToken))
+        return "\(mode.title) • \(parts.joined(separator: "+"))"
     }
 
     private func allowsNoModifierTrigger(_ key: String) -> Bool {
