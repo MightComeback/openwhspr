@@ -559,6 +559,22 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testCompactShortcutPasteWithDeleteSymbolUsesTrailingDeleteKey() {
+        let defaults = makeDefaults()
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set("⌘⌫", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Delete), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testShortcutPasteWithSlashTriggerUsesSlashKey() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
@@ -1247,6 +1263,16 @@ final class HotkeyMonitorTests: XCTestCase {
         monitor.updateConfig(required: [], forbidden: [], key: "insert", mode: .toggle)
 
         let event = makeEvent(keyCode: CGKeyCode(kVK_Help), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
+    func testDeleteTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "delete", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Delete), flags: [], keyDown: true)
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
