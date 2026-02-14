@@ -30,6 +30,8 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSuccessMessage: String?
     @State private var hotkeyCaptureSuccessResetTask: Task<Void, Never>?
     @State private var hotkeyApplyMessage: String?
+    @State private var hotkeyCopyMessage: String?
+    @State private var hotkeyCopyMessageResetTask: Task<Void, Never>?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
     private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
     private let hotkeyCaptureTimeoutSeconds: Int = 8
@@ -101,6 +103,12 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                             .help("Copy hotkey mode and combo to clipboard")
+                        }
+
+                        if let hotkeyCopyMessage {
+                            Text(hotkeyCopyMessage)
+                                .font(.caption)
+                                .foregroundStyle(.green)
                         }
 
                         if showsHighRiskHotkeyWarning {
@@ -937,6 +945,8 @@ struct SettingsView: View {
             stopHotkeyCapture()
             hotkeyCaptureSuccessResetTask?.cancel()
             hotkeyCaptureSuccessResetTask = nil
+            hotkeyCopyMessageResetTask?.cancel()
+            hotkeyCopyMessageResetTask = nil
         }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
@@ -2292,6 +2302,14 @@ struct SettingsView: View {
         pasteboard.clearContents()
         let mode = HotkeyMode(rawValue: hotkeyModeRaw) ?? .toggle
         _ = pasteboard.setString("\(mode.title) • \(hotkeySummary())", forType: .string)
+
+        hotkeyCopyMessage = "Copied hotkey summary."
+        hotkeyCopyMessageResetTask?.cancel()
+        hotkeyCopyMessageResetTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            hotkeyCopyMessage = nil
+            hotkeyCopyMessageResetTask = nil
+        }
     }
 
     private func hotkeySummary() -> String {
