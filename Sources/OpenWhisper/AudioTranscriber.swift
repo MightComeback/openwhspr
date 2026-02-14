@@ -473,7 +473,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     func focusManualInsertTargetApp() -> Bool {
-        captureInsertionTargetApp()
+        // Keep an already selected target stable while Settings is frontmost.
+        // Re-capture only when the stored target is missing/terminated.
+        if insertionTargetApp == nil || insertionTargetApp?.isTerminated == true {
+            captureInsertionTargetApp()
+        }
 
         guard let targetApp = resolveInsertionTargetApp() else {
             let message = "No destination app is available yet. Switch to your target app, then refresh."
