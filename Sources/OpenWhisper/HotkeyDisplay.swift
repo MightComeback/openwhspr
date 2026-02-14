@@ -188,7 +188,9 @@ enum HotkeyDisplay {
     }
 
     private static func canonicalFunctionKeyAlias(_ normalized: String) -> String? {
-        let prefixes = ["fn", "function", "f"]
+        // Accept common human-entered variants like "fn key 6" or
+        // "function-key-12" once separators have been normalized away.
+        let prefixes = ["functionkey", "fnkey", "fkey", "fn", "function", "f"]
 
         for prefix in prefixes {
             guard normalized.hasPrefix(prefix), normalized.count > prefix.count else {
@@ -346,6 +348,13 @@ enum HotkeyDisplay {
             .components(separatedBy: CharacterSet(charactersIn: "+ -_,"))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+
+        // Preserve function-key phrases like "function key 12" and
+        // "fn key 3" before stripping modifier-looking tokens.
+        let collapsedShortcutTokens = shortcutTokens.joined()
+        if canonicalFunctionKeyAlias(collapsedShortcutTokens) != nil {
+            return collapsedShortcutTokens
+        }
 
         let modifierTokens: Set<String> = [
             "cmd", "command", "meta", "super", "win", "windows",
