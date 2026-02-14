@@ -1460,6 +1460,18 @@ struct SettingsView: View {
             return "⌃+⌘+Space usually opens the emoji/symbol picker on macOS and can block dictation trigger behavior."
         }
 
+        if key == "space" && modifiers == Set([.command, .option]) {
+            return "⌥+⌘+Space usually opens Finder search on macOS, so it’s unreliable for dictation triggering."
+        }
+
+        if key == "space" && modifiers == Set([.command, .option, .control]) {
+            return "⌃+⌥+⌘+Space is commonly used by app launchers/snippet tools and often gets intercepted before OpenWhisper."
+        }
+
+        if key == "f" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+F toggles full-screen in many macOS apps and is a bad dictation hotkey."
+        }
+
         if key == "tab" && modifiers == Set([.command]) {
             return "⌘+Tab is reserved for app switching and won't behave as a reliable dictation hotkey."
         }
