@@ -1446,7 +1446,7 @@ struct SettingsView: View {
             return "⌘+⇧+Tab is reserved for reverse app switching on macOS."
         }
 
-        if ["3", "4", "5"].contains(key),
+        if ["3", "4", "5", "6"].contains(key),
            modifiers.contains(.command),
            modifiers.contains(.shift),
            modifiers.isSubset(of: Set([.command, .shift, .control])) {
@@ -1455,8 +1455,10 @@ struct SettingsView: View {
                 return "⌘+⇧+3 is reserved for macOS screenshots (entire screen), so it will conflict with dictation trigger behavior."
             case "4":
                 return "⌘+⇧+4 is reserved for macOS screenshots (selection/window), so it will conflict with dictation trigger behavior."
-            default:
+            case "5":
                 return "⌘+⇧+5 opens the macOS screenshot/recording panel and is a bad dictation hotkey choice."
+            default:
+                return "⌘+⇧+6 toggles floating thumbnail behavior in the macOS screenshot tool and can conflict with dictation hotkeys."
             }
         }
 
