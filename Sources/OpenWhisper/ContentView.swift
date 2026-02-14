@@ -428,7 +428,7 @@ struct ContentView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
-                                .keyboardShortcut("r", modifiers: [.command, .shift])
+                                .keyboardShortcut("r", modifiers: [.command, .option])
                                 .help(retargetButtonHelpText())
                                 .disabled(!canRetargetInsertTarget)
 
