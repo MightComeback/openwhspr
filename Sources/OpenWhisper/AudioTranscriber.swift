@@ -1092,6 +1092,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return ""
         }
 
+        if insertionTargetUsesFallbackApp {
+            return " • target \(targetName) (recent)"
+        }
+
         return " • target \(targetName)"
     }
 
