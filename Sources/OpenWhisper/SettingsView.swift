@@ -30,6 +30,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSuccessMessage: String?
     @State private var hotkeyCaptureSuccessResetTask: Task<Void, Never>?
     @State private var hotkeyApplyMessage: String?
+    @State private var hotkeyApplyErrorMessage: String?
     @State private var hotkeyCopyMessage: String?
     @State private var hotkeyCopyMessageResetTask: Task<Void, Never>?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
@@ -228,6 +229,7 @@ struct SettingsView: View {
                                 .onChange(of: hotkeyKeyDraft) { _, newValue in
                                     hotkeyKeyDraft = sanitizeHotkeyDraftValue(newValue)
                                     hotkeyApplyMessage = nil
+                                    hotkeyApplyErrorMessage = nil
                                 }
                                 .onSubmit {
                                     applyHotkeyKeyDraft()
@@ -243,6 +245,7 @@ struct SettingsView: View {
                             Button("Revert") {
                                 hotkeyKeyDraft = hotkeyKey
                                 hotkeyCaptureError = nil
+                                hotkeyApplyErrorMessage = nil
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
@@ -330,6 +333,12 @@ struct SettingsView: View {
                             Text(hotkeyApplyMessage)
                                 .font(.caption)
                                 .foregroundStyle(.green)
+                        }
+
+                        if let hotkeyApplyErrorMessage {
+                            Text(hotkeyApplyErrorMessage)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
                         }
 
                         if let modifierPreview = hotkeyDraftModifierOverrideSummary {
@@ -1655,14 +1664,17 @@ struct SettingsView: View {
     private func applyHotkeyKeyDraft() {
         hotkeyCaptureSuccessMessage = nil
         hotkeyApplyMessage = nil
+        hotkeyApplyErrorMessage = nil
 
         guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
+            hotkeyApplyErrorMessage = "Enter one trigger key first (for example: space, f6, or /)."
             return
         }
 
         let sanitized = sanitizeKeyValue(parsed.key)
         hotkeyKeyDraft = sanitized
         guard HotkeyDisplay.isSupportedKey(sanitized) else {
+            hotkeyApplyErrorMessage = "Unsupported trigger key. Use one key like Space, F6, /, or a letter/number."
             return
         }
 
@@ -1685,12 +1697,16 @@ struct SettingsView: View {
     }
 
     private func pasteHotkeyComboFromClipboard() {
+        hotkeyApplyErrorMessage = nil
+
         guard let raw = NSPasteboard.general.string(forType: .string) else {
+            hotkeyApplyErrorMessage = "Clipboard is empty. Copy a shortcut like ⌘⇧Space and try again."
             return
         }
 
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
+            hotkeyApplyErrorMessage = "Clipboard is empty. Copy a shortcut like ⌘⇧Space and try again."
             return
         }
 
