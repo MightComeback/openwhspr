@@ -972,7 +972,7 @@ struct ContentView: View {
                 ? "\(abbreviatedAppName(target)) (recent)"
                 : abbreviatedAppName(target)
 
-            if shouldSuggestRetarget {
+            if shouldSuggestRetarget || isInsertTargetStale {
                 return "Insert → \(targetLabel) ⚠︎"
             }
 
