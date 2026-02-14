@@ -588,7 +588,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // Preserve an already selected insertion target when one exists.
         // This keeps Settings-driven probe runs anchored to the intended app
         // instead of accidentally retargeting to Settings itself.
-        if insertionTargetApp == nil || insertionTargetApp?.isTerminated == true {
+        //
+        // If the current target is only a fallback snapshot, try to refresh
+        // once so probe runs can upgrade to a live frontmost destination.
+        if insertionTargetApp == nil || insertionTargetApp?.isTerminated == true || insertionTargetUsesFallbackApp {
             refreshFrontmostAppContext()
             captureInsertionTargetApp()
         }
