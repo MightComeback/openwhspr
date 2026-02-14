@@ -1834,7 +1834,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         if insertionTargetUsesFallbackApp {
-            return "\(baseName) (recent app)"
+            return "\(baseName) • recent app"
         }
 
         return baseName
