@@ -359,7 +359,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
-                        Text("Tip: in hold-to-talk mode, recording starts on key down and ends on key up.")
+                        Text(hotkeyModeTipText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1030,6 +1030,15 @@ struct SettingsView: View {
 
     private var currentHotkeyMode: HotkeyMode {
         HotkeyMode(rawValue: hotkeyModeRaw) ?? .toggle
+    }
+
+    private var hotkeyModeTipText: String {
+        switch currentHotkeyMode {
+        case .toggle:
+            return "Tip: toggle mode starts recording on the first press and stops on the next press. Press Esc while recording to discard."
+        case .hold:
+            return "Tip: hold-to-talk records while the combo is pressed and stops on release. Press Esc while recording to discard."
+        }
     }
 
     private var hotkeyCaptureInstruction: String {
