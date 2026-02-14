@@ -91,6 +91,24 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
+    func testComboMismatchAutoRepeatDoesNotReplaceStatusHint() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenControl)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let initialMessage = monitor.statusMessage
+        let repeatMismatch = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [], keyDown: true, isAutoRepeat: true)
+
+        XCTAssertFalse(monitor.handleForTesting(repeatMismatch, type: .keyDown))
+        XCTAssertEqual(monitor.statusMessage, initialMessage)
+    }
+
     func testToggleModeKeyDownHandled() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

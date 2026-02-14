@@ -283,6 +283,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let hasRequired = flags.intersection(requiredModifiers) == requiredModifiers
         let hasForbidden = !flags.intersection(forbiddenModifiers).isEmpty
         let comboMatches = hasRequired && !hasForbidden
+        let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
 
         switch mode {
         case .toggle:
@@ -303,12 +304,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             }
 
             guard comboMatches else {
-                showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
+                // Avoid flashing mismatch hints repeatedly while a key is held.
+                if !isAutoRepeat {
+                    showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
+                }
                 return false
             }
 
             // Prevent key repeat from rapidly toggling recording while the hotkey is held.
-            let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
             if isAutoRepeat {
                 return true
             }
@@ -324,7 +327,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case .hold:
             if type == .keyDown {
                 guard comboMatches else {
-                    showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
+                    if !isAutoRepeat {
+                        showComboMismatchHintIfNeeded(type: type, flags: flags, hasRequired: hasRequired, hasForbidden: hasForbidden)
+                    }
                     return false
                 }
                 if !holdSessionArmed {
