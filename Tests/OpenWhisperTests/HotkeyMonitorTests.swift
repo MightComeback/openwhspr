@@ -1535,6 +1535,16 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testKeypadEnterTriggerWithoutModifiersRemainsUsable() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "keypadenter", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_ANSI_KeypadEnter), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+    }
+
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
         let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
 
