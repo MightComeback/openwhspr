@@ -338,6 +338,20 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command])
                         .disabled(!canInsertNow)
 
+                        if canInsertDirectly, shouldSuggestRetarget {
+                            Button(useCurrentAppButtonTitle()) {
+                                Task { @MainActor in
+                                    refreshInsertTargetSnapshot()
+                                    _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                    refreshInsertTargetSnapshot()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .help("Insert into the current front app instead of the locked target")
+                            .disabled(!canInsertNow)
+                        }
+
                         Spacer()
 
                         if lastClearedTranscription != nil {
