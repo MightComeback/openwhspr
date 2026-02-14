@@ -187,6 +187,39 @@ enum HotkeyDisplay {
         }
     }
 
+    private static func shortcutPrefixBeforeTrailingPlusLooksLikeShortcut(_ value: String) -> Bool {
+        guard value.hasSuffix("+") else { return false }
+
+        let prefix = String(value.dropLast())
+        if prefix.isEmpty { return false }
+
+        let tokenized = prefix
+            .replacingOccurrences(of: "⌘", with: " command ")
+            .replacingOccurrences(of: "⇧", with: " shift ")
+            .replacingOccurrences(of: "⌥", with: " option ")
+            .replacingOccurrences(of: "⌃", with: " control ")
+            .split(whereSeparator: { $0.isWhitespace || $0 == "+" || $0 == "-" || $0 == "_" || $0 == "," })
+            .map(String.init)
+
+        guard !tokenized.isEmpty else { return false }
+
+        let modifierWords: Set<String> = [
+            "cmd", "command", "meta", "super", "win", "windows",
+            "shift", "option", "opt", "alt", "control", "ctrl", "ctl",
+            "caps", "capslock", "fn", "function", "fnkey", "globe", "globekey"
+        ]
+
+        // Keep numpad aliases like "numpad+" and "kp+" untouched.
+        if tokenized.count == 1 {
+            let only = tokenized[0].lowercased()
+            if ["numpad", "keypad", "num", "kp"].contains(only) {
+                return false
+            }
+        }
+
+        return tokenized.contains { modifierWords.contains($0.lowercased()) } || prefix.contains("+")
+    }
+
     private static func canonicalFunctionKeyAlias(_ normalized: String) -> String? {
         // Accept common human-entered variants like "fn key 6" or
         // "function-key-12" once separators have been normalized away.
@@ -238,6 +271,13 @@ enum HotkeyDisplay {
             slashNormalized = trimmed.replacingOccurrences(of: "/", with: " ")
         } else {
             slashNormalized = trimmed
+        }
+
+        // UX: users often paste plus-key shortcuts as "cmd++" or "⌘+".
+        // Preserve a trailing plus as the trigger key instead of treating it
+        // like a malformed combo that collapses to just "command".
+        if slashNormalized.hasSuffix("+"), shortcutPrefixBeforeTrailingPlusLooksLikeShortcut(slashNormalized) {
+            return "+"
         }
 
         switch slashNormalized {
