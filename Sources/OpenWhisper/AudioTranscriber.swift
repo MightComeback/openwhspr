@@ -1010,7 +1010,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         }
 
         if inFlightChunks > 0 {
-            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)\(queuedStartSuffix)"
+            let remainingEstimateSuffix = finalizingRemainingEstimateSuffix(for: inFlightChunks)
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)\(remainingEstimateSuffix)\(queuedStartSuffix)"
             return
         }
 
@@ -1035,6 +1036,26 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         guard !segments.isEmpty else { return "" }
         return " • " + segments.joined(separator: " • ")
+    }
+
+    @MainActor
+    private func finalizingRemainingEstimateSuffix(for inFlightChunks: Int) -> String {
+        guard inFlightChunks > 0 else { return "" }
+
+        let representativeLatency = max(averageChunkLatencySeconds, lastChunkLatencySeconds)
+        guard representativeLatency > 0 else { return "" }
+
+        let remainingSeconds = representativeLatency * Double(inFlightChunks)
+        let roundedSeconds = Int(remainingSeconds.rounded(.up))
+        guard roundedSeconds > 0 else { return "" }
+
+        if roundedSeconds < 60 {
+            return " • ~\(roundedSeconds)s remaining"
+        }
+
+        let minutes = roundedSeconds / 60
+        let seconds = roundedSeconds % 60
+        return String(format: " • ~%d:%02d remaining", minutes, seconds)
     }
 
     @MainActor

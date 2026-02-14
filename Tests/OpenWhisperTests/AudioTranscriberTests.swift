@@ -628,6 +628,42 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testRefreshStreamingStatusShowsFinalizingEstimateFromLatency() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalStatusMessage = transcriber.statusMessage
+            let originalIsRecording = transcriber.isRecording
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalProcessedChunkCount = transcriber.processedChunkCount
+            let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
+            let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
+
+            defer {
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.isRecording = originalIsRecording
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.processedChunkCount = originalProcessedChunkCount
+                transcriber.lastChunkLatencySeconds = originalLastChunkLatency
+                transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
+            }
+
+            transcriber.isRecording = false
+            transcriber.recordingStartedAt = Date()
+            transcriber.pendingChunkCount = 2
+            transcriber.processedChunkCount = 3
+            transcriber.lastChunkLatencySeconds = 0.8
+            transcriber.averageChunkLatencySeconds = 1.2
+
+            transcriber.refreshStreamingStatusForTesting()
+
+            XCTAssertTrue(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
+            XCTAssertTrue(transcriber.statusMessage.contains("~3s remaining"))
+        }
+    }
+
     func testRunInsertionProbeBlockedWhenSampleTextIsEmpty() async {
         let transcriber = AudioTranscriber.shared
 
