@@ -32,6 +32,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @Published var isRunningInsertionProbe: Bool = false
     @Published var lastSuccessfulInsertionAt: Date? = nil
 
+    @MainActor
+    var isFinalizingTranscription: Bool {
+        pendingChunkCount > 0 || pendingSessionFinalize || (!isRecording && recordingStartedAt != nil)
+    }
+
     private var recordingOutputSettings: EffectiveOutputSettings? = nil
     private var insertionTargetApp: NSRunningApplication?
     private var insertionTargetUsesFallbackApp: Bool = false
@@ -581,7 +586,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
-        let isFinalizing = pendingChunkCount > 0 || (!isRecording && recordingStartedAt != nil)
+        let isFinalizing = isFinalizingTranscription
         guard !isFinalizing else {
             let message = finalizingWaitMessage(for: "running an insertion test")
             statusMessage = message

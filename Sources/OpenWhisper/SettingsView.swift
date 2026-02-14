@@ -1294,7 +1294,7 @@ struct SettingsView: View {
     }
 
     private var isTranscriptionFinalizingForInsertion: Bool {
-        transcriber.pendingChunkCount > 0 || (!transcriber.isRecording && transcriber.recordingStartedAt != nil)
+        transcriber.isFinalizingTranscription
     }
 
     private var canCaptureAndRunInsertionTest: Bool {

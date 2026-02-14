@@ -831,6 +831,38 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testRunInsertionProbeBlockedWhilePendingFinalizeFlagSet() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 0
+            transcriber.recordingStartedAt = nil
+            transcriber.setPendingSessionFinalizeForTesting(true)
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
+        }
+    }
+
     func testRunInsertionProbeBlockedWhileFinalizingShowsQueuedStartHint() async {
         let transcriber = AudioTranscriber.shared
 
