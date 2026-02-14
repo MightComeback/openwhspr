@@ -1467,7 +1467,14 @@ struct SettingsView: View {
                 // intended destination app instead of whichever app is
                 // currently frontmost.
                 if transcriber.manualInsertTargetUsesFallbackApp() {
-                    _ = transcriber.focusManualInsertTargetApp()
+                    let focused = transcriber.focusManualInsertTargetApp()
+                    guard focused else {
+                        let reason = "Couldn’t focus the saved destination app. Bring it to front, then run insertion test again."
+                        transcriber.statusMessage = reason
+                        transcriber.lastError = reason
+                        transcriber.lastInsertionProbeMessage = reason
+                        return
+                    }
                 }
 
                 _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
