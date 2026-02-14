@@ -165,6 +165,6 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.displayKey("help"), "Help")
         XCTAssertEqual(HotkeyDisplay.displayKey("section"), "§")
         XCTAssertEqual(HotkeyDisplay.displayKey("fn"), "Fn/Globe")
-        XCTAssertEqual(HotkeyDisplay.displayKey("equals"), "+")
+        XCTAssertEqual(HotkeyDisplay.displayKey("equals"), "=/+")
     }
 }

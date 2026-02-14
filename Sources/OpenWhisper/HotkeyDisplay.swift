@@ -142,7 +142,7 @@ enum HotkeyDisplay {
         case "fn", "function", "globe", "globekey": return "Fn/Globe"
         case "section": return "§"
         case "minus", "hyphen": return "-"
-        case "equals", "equal", "plus": return "+"
+        case "equals", "equal", "plus": return "=/+"
         case "openbracket", "leftbracket": return "["
         case "closebracket", "rightbracket": return "]"
         case "semicolon": return ";"
