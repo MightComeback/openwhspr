@@ -458,7 +458,7 @@ struct SettingsView: View {
                             .buttonStyle(.bordered)
                             .disabled(!canCaptureAndRunInsertionTest)
 
-                            Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
+                            Button(runInsertionTestButtonTitle) {
                                 runInsertionTestUsingAvailableTarget()
                             }
                             .buttonStyle(.bordered)
@@ -529,6 +529,10 @@ struct SettingsView: View {
                             Text(insertionTestDisabledReason)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
+                        } else if showsInsertionTestAutoCaptureHint {
+                            Text("No saved insertion target yet. Run insertion test will first capture your current frontmost app, then run the test.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         } else if let target = insertionTestTargetDisplay {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text("Insertion test target: \(target)")
@@ -1309,6 +1313,26 @@ struct SettingsView: View {
 
     private var canFocusAndRunInsertionTest: Bool {
         canFocusInsertionTarget && canRunInsertionTest
+    }
+
+    private var runInsertionTestButtonTitle: String {
+        if transcriber.isRunningInsertionProbe {
+            return "Running insertion test…"
+        }
+
+        if canRunInsertionTest {
+            return "Run insertion test"
+        }
+
+        if canCaptureAndRunInsertionTest {
+            return "Run insertion test (auto-capture)"
+        }
+
+        return "Run insertion test"
+    }
+
+    private var showsInsertionTestAutoCaptureHint: Bool {
+        !transcriber.isRunningInsertionProbe && !canRunInsertionTest && canCaptureAndRunInsertionTest
     }
 
     private var canFocusInsertionTarget: Bool {
