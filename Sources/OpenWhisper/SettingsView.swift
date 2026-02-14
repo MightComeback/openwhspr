@@ -1093,10 +1093,18 @@ struct SettingsView: View {
     }
 
     private var hotkeyModeTipText: String {
+        let usesEscapeTrigger = effectiveHotkeyRiskContext.key == "escape"
+
         switch currentHotkeyMode {
         case .toggle:
+            if usesEscapeTrigger {
+                return "Tip: toggle mode starts recording on the first press and stops on the next press. Escape quick-cancel is unavailable while Escape is the trigger key."
+            }
             return "Tip: toggle mode starts recording on the first press and stops on the next press. Press Esc while recording to discard."
         case .hold:
+            if usesEscapeTrigger {
+                return "Tip: hold-to-talk records while the combo is pressed and stops on release. Escape quick-cancel is unavailable while Escape is the trigger key."
+            }
             return "Tip: hold-to-talk records while the combo is pressed and stops on release. Press Esc while recording to discard."
         }
     }
