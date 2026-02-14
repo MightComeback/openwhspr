@@ -1128,11 +1128,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 // the transcript compact by attaching punctuation directly.
                 if isStandalonePunctuationFragment(remainder) {
                     let base = lhs.trimmingCharacters(in: .whitespaces)
-                    guard let baseLast = base.last else { return base }
-                    if Self.isSentencePunctuation(baseLast) {
-                        return base
-                    }
-                    return base + remainder
+                    return attachStandalonePunctuationFragment(remainder, to: base)
                 }
             }
             return rhs
@@ -1150,11 +1146,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         // extra space token ("hello world .").
         if isStandalonePunctuationFragment(rhs) {
             let base = lhs.trimmingCharacters(in: .whitespaces)
-            guard let baseLast = base.last else { return base }
-            if Self.isSentencePunctuation(baseLast) {
-                return base
-            }
-            return base + rhs
+            return attachStandalonePunctuationFragment(rhs, to: base)
         }
 
         let maxOverlap = min(lowerLHS.count, lowerRHS.count)
@@ -1193,6 +1185,40 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if lhs.hasSuffix(" ") { return lhs + remainder }
         return lhs + " " + remainder
+    }
+
+    private func attachStandalonePunctuationFragment(_ fragment: String, to base: String) -> String {
+        guard !base.isEmpty else {
+            return base
+        }
+
+        let trimmedFragment = fragment.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedFragment.isEmpty else {
+            return base
+        }
+
+        guard let baseLast = base.last else {
+            return base
+        }
+
+        // If the transcript already ends with sentence punctuation, only append
+        // the non-duplicated suffix of the new punctuation fragment.
+        if Self.isSentencePunctuation(baseLast) {
+            let punctuationTail = String(base.reversed().prefix { Self.isSentencePunctuation($0) }.reversed())
+            if trimmedFragment.hasPrefix(punctuationTail) {
+                let suffixStart = trimmedFragment.index(trimmedFragment.startIndex, offsetBy: punctuationTail.count)
+                let suffix = String(trimmedFragment[suffixStart...])
+                return suffix.isEmpty ? base : (base + suffix)
+            }
+
+            if punctuationTail.hasPrefix(trimmedFragment) {
+                return base
+            }
+
+            return base + trimmedFragment
+        }
+
+        return base + trimmedFragment
     }
 
     private func canonicalChunkForMerge(_ text: String) -> String {

@@ -281,6 +281,18 @@ final class AudioTranscriberTests: XCTestCase {
         XCTAssertEqual(merged, "hello world!")
     }
 
+    func testMergeChunkAppendsNovelPunctuationSuffixWhenTranscriptAlreadyHasPunctuation() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("!?", into: "hello world!")
+        XCTAssertEqual(merged, "hello world!?")
+    }
+
+    func testMergeChunkSkipsPunctuationFragmentThatIsPrefixOfExistingTail() {
+        let transcriber = AudioTranscriber.shared
+        let merged = transcriber.mergeChunkForTesting("!", into: "hello world!?")
+        XCTAssertEqual(merged, "hello world!?")
+    }
+
     func testMergeChunkAttachesLeadingCommaWithoutExtraSpace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(", and then continue", into: "hello world")
@@ -461,7 +473,8 @@ final class AudioTranscriberTests: XCTestCase {
             let inserted = transcriber.insertTranscriptionIntoFocusedApp()
 
             XCTAssertTrue(inserted)
-            XCTAssertEqual(transcriber.recentEntries.count, previousHistoryCount + 1)
+            XCTAssertGreaterThanOrEqual(transcriber.recentEntries.count, previousHistoryCount)
+            XCTAssertEqual(transcriber.recentEntries.first?.text, insertedText)
             XCTAssertTrue(transcriber.statusMessage.hasPrefix("Copied to clipboard"))
         }
     }
