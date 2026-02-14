@@ -254,6 +254,8 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .controlSize(.small)
+                            .keyboardShortcut("k", modifiers: [.command, .shift])
+                            .help("Record a shortcut by pressing the desired key combo (⌘⇧K)")
 
                             if isCapturingHotkey {
                                 Button("Cancel") {
