@@ -454,7 +454,7 @@ struct ContentView: View {
                                 Button(focusAndInsertButtonTitle()) {
                                     Task { @MainActor in
                                         let focused = transcriber.focusManualInsertTargetApp()
-                                        guard focused || !canInsertDirectly else {
+                                        guard focused else {
                                             refreshInsertTargetSnapshot()
                                             return
                                         }
