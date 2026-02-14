@@ -945,12 +945,15 @@ struct ContentView: View {
 
     private var liveLoopLagNotice: String? {
         let pending = transcriber.pendingChunkCount
-        guard pending >= 3 else {
-            return nil
+        let lagWarningThresholdSeconds: TimeInterval = 6
+
+        if let remaining = estimatedFinalizationSeconds,
+           remaining >= lagWarningThresholdSeconds {
+            return "Live loop is falling behind (~\(formatShortDuration(remaining)) queued). Pause briefly to let transcription catch up."
         }
 
-        if let remaining = estimatedFinalizationSeconds {
-            return "Live loop is falling behind (~\(formatShortDuration(remaining)) queued). Pause briefly to let transcription catch up."
+        guard pending >= 3 else {
+            return nil
         }
 
         return "Live loop is falling behind (\(pending) chunks queued). Pause briefly to let transcription catch up."
