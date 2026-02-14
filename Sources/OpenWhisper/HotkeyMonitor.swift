@@ -249,11 +249,11 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return Unmanaged.passUnretained(event)
         }
 
-        // Escape-to-cancel: when recording is active, bare Escape discards
-        // the current session so users can bail without opening the popover.
+        // Escape-to-cancel: when recording is active, Escape discards
+        // the current session so users can bail without opening the popover,
+        // even if modifier keys are still held from the hotkey chord.
         if type == .keyDown,
            CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == CGKeyCode(kVK_Escape),
-           event.flags.intersection([.maskCommand, .maskShift, .maskAlternate, .maskControl]).isEmpty,
            event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
             let shouldCancel = monitor.handleEscapeToCancel()
             if shouldCancel {
