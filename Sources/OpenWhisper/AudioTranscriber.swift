@@ -605,6 +605,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         switch result.outcome {
         case .inserted:
             lastInsertionProbeSucceeded = true
+            AudioFeedback.playInsertedSound()
             if let targetName = result.targetName, !targetName.isEmpty {
                 let message = "Insertion test succeeded in \(targetName)\(trimSuffix)"
                 statusMessage = message
@@ -622,6 +623,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             // probe so call sites can clearly distinguish "copied" from
             // "inserted" behavior.
             lastInsertionProbeSucceeded = false
+            AudioFeedback.playErrorSound()
             if let targetName = result.targetName, !targetName.isEmpty {
                 let message = "Insertion test used clipboard fallback for \(targetName) (Accessibility permission missing)\(trimSuffix)"
                 statusMessage = message
@@ -635,6 +637,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         case .failed:
             lastInsertionProbeSucceeded = false
+            AudioFeedback.playErrorSound()
             if let failure = lastError, !failure.isEmpty {
                 lastInsertionProbeMessage = "Insertion test failed: \(failure)"
             } else {
