@@ -553,7 +553,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 transcription = ""
             }
             return true
-        case .copiedFallbackAccessibilityMissing:
+        case .copiedFallbackAccessibilityMissing, .copiedFallbackNoTargetApp:
             // UX: clipboard fallback still completes the user action (text is
             // ready to paste), so don't leave Diagnostics in an error state.
             appendHistoryEntry(normalized, targetAppName: result.targetName)
@@ -671,6 +671,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             }
             return false
 
+        case .copiedFallbackNoTargetApp:
+            lastInsertionProbeSucceeded = false
+            AudioFeedback.playErrorSound()
+            let message = "Insertion test copied text to clipboard because no destination app was available\(trimSuffix)"
+            statusMessage = message
+            lastInsertionProbeMessage = message
+            return false
+
         case .failed:
             lastInsertionProbeSucceeded = false
             AudioFeedback.playErrorSound()
@@ -702,6 +710,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     private enum ManualInsertOutcome {
         case inserted
         case copiedFallbackAccessibilityMissing
+        case copiedFallbackNoTargetApp
         case failed
     }
 
@@ -745,8 +754,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             switch pasteResult {
             case .noTargetApp:
                 _ = copyToPasteboard(text)
-                lastError = "No target app available for insertion. Copied text to clipboard instead. Switch to the destination app and try again."
+                // Treat clipboard fallback as a successful user outcome: text
+                // is immediately available for a manual paste.
                 statusMessage = clipboardFallbackStatusMessage(targetName: nil)
+                return ManualInsertResult(outcome: .copiedFallbackNoTargetApp, targetName: nil)
             case .activationFailed:
                 _ = copyToPasteboard(text)
                 if let resolvedTargetName, !resolvedTargetName.isEmpty {
