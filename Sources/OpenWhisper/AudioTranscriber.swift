@@ -1918,20 +1918,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let trimmedName = app.localizedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let trimmedBundleIdentifier = app.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        let baseName: String
         if !trimmedName.isEmpty {
-            baseName = trimmedName
-        } else if !trimmedBundleIdentifier.isEmpty {
-            baseName = trimmedBundleIdentifier
-        } else {
-            return nil
+            return trimmedName
         }
 
-        if insertionTargetUsesFallbackApp {
-            return "\(baseName) • recent app"
+        if !trimmedBundleIdentifier.isEmpty {
+            return trimmedBundleIdentifier
         }
 
-        return baseName
+        return nil
     }
 
     private func clipboardFallbackStatusMessage(targetName: String?) -> String {
