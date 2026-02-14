@@ -1398,6 +1398,13 @@ struct SettingsView: View {
     }
 
     private func runInsertionTestFromTextFieldSubmission() {
+        // Return in the sample-text field should be a fast-path action only when
+        // a test can actually run. Avoid surfacing disabling errors while users
+        // are still configuring target capture/permissions.
+        guard canRunInsertionTestWithAutoCapture else {
+            return
+        }
+
         runInsertionTestUsingAvailableTarget()
     }
 
