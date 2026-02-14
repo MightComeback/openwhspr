@@ -153,6 +153,13 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("backquote"), "backtick")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("quote left"), "backtick")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("grave key"), "backtick")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("="), "equals")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("/"), "slash")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("\\"), "backslash")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey(";"), "semicolon")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("["), "openbracket")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("]"), "closebracket")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("`"), "backtick")
     }
 
     func testHotkeyDisplayForKeypadKeys() throws {
