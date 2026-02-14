@@ -255,7 +255,7 @@ struct SettingsView: View {
                             .controlSize(.small)
                             .help("Paste a shortcut like ⌘⇧Space or cmd+shift+space")
 
-                            Button(isCapturingHotkey ? "Press keys…" : "Record shortcut") {
+                            Button(hotkeyCaptureButtonTitle) {
                                 if isCapturingHotkey {
                                     stopHotkeyCapture()
                                 } else {
@@ -1073,6 +1073,14 @@ struct SettingsView: View {
         case .hold:
             return "Tip: hold-to-talk records while the combo is pressed and stops on release. Press Esc while recording to discard."
         }
+    }
+
+    private var hotkeyCaptureButtonTitle: String {
+        guard isCapturingHotkey else {
+            return "Record shortcut"
+        }
+
+        return "Listening… \(hotkeyCaptureSecondsRemaining)s"
     }
 
     private var hotkeyCaptureInstruction: String {
