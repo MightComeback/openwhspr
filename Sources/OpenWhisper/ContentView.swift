@@ -854,8 +854,14 @@ struct ContentView: View {
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let total = Int(max(0, seconds.rounded()))
-        let minutes = total / 60
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
         let remainder = total % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, remainder)
+        }
+
         return String(format: "%d:%02d", minutes, remainder)
     }
 
