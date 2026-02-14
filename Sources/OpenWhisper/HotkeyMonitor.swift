@@ -517,7 +517,15 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             let forbiddenTokenCount = forbiddenHeld.split(separator: "+").count
             let modifierLabel = forbiddenTokenCount > 1 ? "modifiers" : "modifier"
             let verb = forbiddenTokenCount > 1 ? "are" : "is"
-            mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held. Use \(expectedCombo)"
+
+            if !hasRequired {
+                let requiredModifiersSummary = modifierGlyphSummary(from: requiredModifiers)
+                let requiredTokenCount = requiredModifiersSummary.split(separator: "+").count
+                let requiredLabel = requiredTokenCount > 1 ? "modifiers" : "modifier"
+                mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held and missing required \(requiredLabel) \(requiredModifiersSummary). Use \(expectedCombo)"
+            } else {
+                mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held. Use \(expectedCombo)"
+            }
         } else if !hasRequired {
             let requiredModifiersSummary = modifierGlyphSummary(from: requiredModifiers)
             let requiredTokenCount = requiredModifiersSummary.split(separator: "+").count
