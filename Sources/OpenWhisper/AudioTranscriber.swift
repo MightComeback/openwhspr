@@ -576,6 +576,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             return false
         }
 
+        // Probe should validate the current front-app insertion path instead of
+        // reusing a potentially stale frozen destination from a previous insert.
+        refreshFrontmostAppContext()
+        captureInsertionTargetApp()
+
         let previousClipboardItems = NSPasteboard.general.pasteboardItems
         let previousClipboardString = NSPasteboard.general.string(forType: .string)
 
