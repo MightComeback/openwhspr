@@ -1051,25 +1051,35 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let inFlightChunks = pendingChunkCount + (isTranscribing ? 1 : 0)
         let statusSuffix = streamingStatusSuffix()
         let queuedStartSuffix = startRecordingAfterFinalizeRequested ? " • next recording queued" : ""
+        let insertionTargetSuffix = insertionTargetStatusSuffix()
 
         if isRecording {
             if inFlightChunks > 0 {
-                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight\(statusSuffix)"
+                statusMessage = "Listening… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") in flight\(statusSuffix)\(insertionTargetSuffix)"
             } else {
-                statusMessage = "Listening…\(statusSuffix)"
+                statusMessage = "Listening…\(statusSuffix)\(insertionTargetSuffix)"
             }
             return
         }
 
         if inFlightChunks > 0 {
             let remainingEstimateSuffix = finalizingRemainingEstimateSuffix(for: inFlightChunks)
-            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)\(remainingEstimateSuffix)\(queuedStartSuffix)"
+            statusMessage = "Finalizing… \(inFlightChunks) chunk\(inFlightChunks == 1 ? "" : "s") left\(statusSuffix)\(remainingEstimateSuffix)\(queuedStartSuffix)\(insertionTargetSuffix)"
             return
         }
 
         if pendingSessionFinalize {
-            statusMessage = "Finalizing…\(statusSuffix)\(queuedStartSuffix)"
+            statusMessage = "Finalizing…\(statusSuffix)\(queuedStartSuffix)\(insertionTargetSuffix)"
         }
+    }
+
+    @MainActor
+    private func insertionTargetStatusSuffix() -> String {
+        guard let targetName = insertionTargetDisplayName(resolveInsertionTargetApp()), !targetName.isEmpty else {
+            return ""
+        }
+
+        return " • target \(targetName)"
     }
 
     @MainActor
