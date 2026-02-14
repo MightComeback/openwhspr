@@ -42,7 +42,7 @@ enum HotkeyDisplay {
         switch normalized {
         case "spacebar", "spacekey", "␣", "␠", "⎵": return "space"
         case "tabkey", "backtab", "reversetab", "⇥", "⇤": return "tab"
-        case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "returnorenter", "enterorreturn", "returnenter", "enterreturn", "↩", "↵", "⏎", "⌅": return "return"
+        case "enter", "enterkey", "returnkey", "return/enter", "enter/return", "returnorenter", "enterorreturn", "returnenter", "enterreturn", "↩", "↵", "⏎", "⌅", "⌤": return "return"
         case "esc", "esckey", "escapekey", "escape/esc", "esc/escape", "⎋", "␛": return "escape"
         case "del", "deletekey", "backspace", "backspacekey", "delete/backspace", "backspace/delete", "bksp", "⌫": return "delete"
         case "⌦", "␡", "forwarddeletekey", "fwddelete", "fwddel": return "forwarddelete"
@@ -103,7 +103,7 @@ enum HotkeyDisplay {
         case "numpadplus", "numplus", "kpplus": return "keypadplus"
         case "numpadclear", "numclear", "kpclear", "clear": return "keypadclear"
         case "numpaddivide", "numdivide", "kpdivide": return "keypaddivide"
-        case "numpadenter", "numenter", "kpenter", "keypadenterkey", "⌤": return "keypadenter"
+        case "numpadenter", "numenter", "kpenter", "keypadenterkey": return "keypadenter"
         case "numpadminus", "numminus", "kpminus": return "keypadminus"
         case "numpadequals", "numequals", "kpequals": return "keypadequals"
         default: return normalized
