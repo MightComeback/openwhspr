@@ -542,6 +542,22 @@ struct ContentView: View {
                                 .keyboardShortcut("r", modifiers: [.command, .option])
                                 .help("Update Insert target to the current front app (⌘⌥R)")
 
+                                Button("Retarget + Insert") {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                        if canInsertDirectly {
+                                            _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                        } else {
+                                            _ = transcriber.copyTranscriptionToClipboard()
+                                        }
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .font(.caption2)
+                                .disabled(!canInsertNow)
+                                .help("Retarget to the current front app, then insert immediately")
+
                                 Text("⌘⌥↩ inserts into current app")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
@@ -561,6 +577,22 @@ struct ContentView: View {
                                 .font(.caption2)
                                 .keyboardShortcut("r", modifiers: [.command, .option])
                                 .help("Refresh insertion target from your current front app (⌘⌥R)")
+
+                                Button("Retarget + Insert") {
+                                    Task { @MainActor in
+                                        refreshInsertTargetSnapshot()
+                                        if canInsertDirectly {
+                                            _ = transcriber.insertTranscriptionIntoFocusedApp()
+                                        } else {
+                                            _ = transcriber.copyTranscriptionToClipboard()
+                                        }
+                                        refreshInsertTargetSnapshot()
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .font(.caption2)
+                                .disabled(!canInsertNow)
+                                .help("Refresh insertion target, then insert immediately")
                             }
                         }
                     } else {
