@@ -488,6 +488,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
+    func clearManualInsertTarget() {
+        insertionTargetApp = nil
+        insertionTargetUsesFallbackApp = false
+        lastKnownExternalApp = nil
+        statusMessage = "Cleared insertion target. Switch to your destination app and refresh frontmost app."
+        lastError = nil
+    }
+
+    @MainActor
     @discardableResult
     func focusManualInsertTargetApp() -> Bool {
         // Keep an already selected target stable while Settings is frontmost.

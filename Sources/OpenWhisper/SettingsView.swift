@@ -596,6 +596,15 @@ struct SettingsView: View {
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
                                 .disabled(!canFocusInsertionTarget)
+
+                                Button("Clear target") {
+                                    Task { @MainActor in
+                                        transcriber.clearManualInsertTarget()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(!canClearInsertionTarget)
                             }
 
                             if transcriber.manualInsertTargetUsesFallbackApp() {
@@ -1402,6 +1411,13 @@ struct SettingsView: View {
             return false
         }
         guard !isTranscriptionFinalizingForInsertion else {
+            return false
+        }
+        return insertionTestTargetDisplay != nil
+    }
+
+    private var canClearInsertionTarget: Bool {
+        guard !transcriber.isRunningInsertionProbe else {
             return false
         }
         return insertionTestTargetDisplay != nil
