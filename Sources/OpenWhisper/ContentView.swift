@@ -515,7 +515,7 @@ struct ContentView: View {
                         }
 
                         if let targetAge = insertTargetAgeDescription() {
-                            Text("Target captured \(targetAge)")
+                            Text(targetAge)
                                 .font(.caption2)
                                 .foregroundStyle(isInsertTargetStale ? .orange : .secondary)
                         }
@@ -1272,12 +1272,27 @@ struct ContentView: View {
         }
 
         let elapsed = max(0, uiNow.timeIntervalSince(capturedAt))
+        let staleAfter = activeInsertTargetStaleAfterSeconds
+        let remaining = max(0, staleAfter - elapsed)
 
+        let ageLabel: String
         if elapsed < 1 {
-            return "just now"
+            ageLabel = "just now"
+        } else {
+            ageLabel = "\(formatShortDuration(elapsed)) ago"
         }
 
-        return "\(formatShortDuration(elapsed)) ago"
+        if isInsertTargetStale {
+            return "Target captured \(ageLabel) • stale"
+        }
+
+        // Front-app insertion UX: show when the target snapshot will become
+        // stale so users can retarget proactively before Command+Return.
+        if remaining <= 10 {
+            return "Target captured \(ageLabel) • stale in ~\(formatShortDuration(remaining))"
+        }
+
+        return "Target captured \(ageLabel)"
     }
 
     @ViewBuilder
