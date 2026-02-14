@@ -927,4 +927,16 @@ final class AudioTranscriberTests: XCTestCase {
         let result = transcriber.normalizeWhitespace(in: "hello\n\n\n\nworld")
         XCTAssertEqual(result, "hello\n\nworld")
     }
+
+    func testNormalizeWhitespaceCollapsesSpacedAsciiApostrophesInContractions() async throws {
+        let transcriber = AudioTranscriber.shared
+        let result = transcriber.normalizeWhitespace(in: "don ' t stop")
+        XCTAssertEqual(result, "don't stop")
+    }
+
+    func testNormalizeWhitespaceCollapsesSpacedCurlyApostrophesInContractions() async throws {
+        let transcriber = AudioTranscriber.shared
+        let result = transcriber.normalizeWhitespace(in: "we ’ re live")
+        XCTAssertEqual(result, "we're live")
+    }
 }

@@ -1592,6 +1592,12 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         output = replaceRegex(pattern: " *\\n *", in: output, with: "\n")
         output = replaceRegex(pattern: "\\n{3,}", in: output, with: "\n\n")
         output = replaceRegexTemplate(pattern: "\\s+([,.;:!?])", in: output, withTemplate: "$1")
+
+        // Whisper occasionally emits spaced apostrophes in contractions
+        // (e.g. "don ' t" or "we ’ re"). Collapse them so insertion output
+        // reads naturally without requiring manual cleanup.
+        output = replaceRegexTemplate(pattern: "([\\p{L}])\\s+['’]\\s*([\\p{L}])", in: output, withTemplate: "$1'$2")
+
         return output
     }
 
