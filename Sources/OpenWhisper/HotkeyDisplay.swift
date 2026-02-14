@@ -62,7 +62,7 @@ enum HotkeyDisplay {
         case "quote", "\"": return "apostrophe"
         case "dot", ">": return "period"
         case "forwardslash", "?": return "slash"
-        case "grave", "graveaccent", "tilde", "~": return "backtick"
+        case "grave", "graveaccent", "gravekey", "backquote", "backquotekey", "backtickkey", "quoteleft", "tilde", "~": return "backtick"
         case ":": return "semicolon"
         case "<": return "comma"
         case "|": return "backslash"

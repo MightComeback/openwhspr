@@ -67,6 +67,8 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("ctrlaltdelete"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("return or enter"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("enter-or-return"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("backquote"))
+        XCTAssertTrue(HotkeyDisplay.isSupportedKey("quote left"))
         XCTAssertFalse(HotkeyDisplay.isSupportedKey(""))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("capslock"))
         XCTAssertTrue(HotkeyDisplay.isSupportedKey("caps lock"))
@@ -146,6 +148,9 @@ final class OpenWhisperTests: XCTestCase {
         XCTAssertEqual(HotkeyDisplay.canonicalKey("ctrlaltdelete"), "delete")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("return or enter"), "return")
         XCTAssertEqual(HotkeyDisplay.canonicalKey("enter-or-return"), "return")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("backquote"), "backtick")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("quote left"), "backtick")
+        XCTAssertEqual(HotkeyDisplay.canonicalKey("grave key"), "backtick")
     }
 
     func testHotkeyDisplayForKeypadKeys() throws {
