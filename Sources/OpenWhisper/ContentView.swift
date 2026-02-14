@@ -219,6 +219,12 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(.orange)
                     }
+
+                    if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
+                        Text("Tip: press Esc anytime to discard this recording.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding(8)
                 .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
