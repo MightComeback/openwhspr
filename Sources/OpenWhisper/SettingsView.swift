@@ -1448,10 +1448,10 @@ struct SettingsView: View {
             }
 
             if canCaptureAndRunInsertionTest {
-                let captured = transcriber.captureProfileForFrontmostApp()
-                guard captured else {
-                    return
-                }
+                // Auto-capture for insertion tests should only refresh the
+                // runtime insertion target. Avoid creating/editing a profile
+                // unless the user explicitly presses “Capture profile…”.
+                transcriber.retargetManualInsertTarget()
 
                 _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
                 return
