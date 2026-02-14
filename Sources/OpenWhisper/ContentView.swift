@@ -33,6 +33,7 @@ struct ContentView: View {
     @State private var recordingPulse: Bool = false
 
     private let insertTargetStaleAfterSeconds: TimeInterval = 90
+    private let fallbackInsertTargetStaleAfterSeconds: TimeInterval = 30
 
     private let permissionTimer = Timer.publish(every: 1.5, on: .main, in: .common).autoconnect()
     private let recordingMetricsTimer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
@@ -564,7 +565,7 @@ struct ContentView: View {
                             }
                         } else if isInsertTargetStale {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text("Insert target snapshot is getting stale.")
+                                Text(insertTargetUsesFallback ? "Recent-app insert target is getting stale quickly." : "Insert target snapshot is getting stale.")
                                     .font(.caption2)
                                     .foregroundStyle(.orange)
 
@@ -1222,12 +1223,16 @@ struct ContentView: View {
         return isInsertTargetStale
     }
 
+    private var activeInsertTargetStaleAfterSeconds: TimeInterval {
+        insertTargetUsesFallback ? fallbackInsertTargetStaleAfterSeconds : insertTargetStaleAfterSeconds
+    }
+
     private var isInsertTargetStale: Bool {
         guard let capturedAt = insertTargetCapturedAt else {
             return false
         }
 
-        return uiNow.timeIntervalSince(capturedAt) >= insertTargetStaleAfterSeconds
+        return uiNow.timeIntervalSince(capturedAt) >= activeInsertTargetStaleAfterSeconds
     }
 
     private func currentExternalFrontBundleIdentifier() -> String? {
