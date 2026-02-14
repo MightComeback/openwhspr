@@ -1837,6 +1837,12 @@ struct SettingsView: View {
             return
         }
 
+        // Ignore key-repeat events while recording a shortcut so holding a key
+        // doesn't accidentally re-capture or override the first intentional press.
+        if event.isARepeat {
+            return
+        }
+
         if shouldIgnoreCaptureActivationEvent(event) {
             return
         }
