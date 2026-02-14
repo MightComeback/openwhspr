@@ -349,7 +349,7 @@ struct ContentView: View {
                         .keyboardShortcut(.return, modifiers: [.command])
                         .disabled(!canInsertNow)
 
-                        if canInsertDirectly, shouldSuggestRetarget {
+                        if canInsertDirectly, shouldShowUseCurrentAppQuickAction {
                             Button(useCurrentAppButtonTitle()) {
                                 Task { @MainActor in
                                     refreshInsertTargetSnapshot(forceRetarget: true)
@@ -1273,6 +1273,10 @@ struct ContentView: View {
         }
 
         return isInsertTargetStale
+    }
+
+    private var shouldShowUseCurrentAppQuickAction: Bool {
+        shouldSuggestRetarget || isInsertTargetStale
     }
 
     private var shouldAutoRefreshInsertTargetBeforePrimaryInsert: Bool {
