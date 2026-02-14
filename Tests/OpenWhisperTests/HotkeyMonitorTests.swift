@@ -54,6 +54,8 @@ final class HotkeyMonitorTests: XCTestCase {
     func testComboMismatchMessageIncludesForbiddenAndMissingRequiredModifiers() {
         let defaults = makeDefaults()
         defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
         defaults.set(true, forKey: AppDefaults.Keys.hotkeyForbiddenControl)
         defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
         defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
@@ -66,6 +68,26 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertEqual(
             monitor.statusMessage,
             "Hotkey not triggered: forbidden modifier ⌃ is held and missing required modifier ⌘. Use Toggle • ⌘+Space"
+        )
+    }
+
+    func testComboMismatchMessageIncludesOnlyMissingRequiredModifiers() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyForbiddenControl)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_Space), flags: [.maskShift, .maskControl], keyDown: true)
+        XCTAssertFalse(monitor.handleForTesting(event, type: .keyDown))
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey not triggered: forbidden modifier ⌃ is held and missing required modifier ⌘. Use Toggle • ⌘+⇧+Space"
         )
     }
 

@@ -511,6 +511,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         let expectedCombo = currentComboSummary()
         let pressedModifiers = modifierGlyphSummary(from: flags)
         let forbiddenHeld = modifierGlyphSummary(from: flags.intersection(forbiddenModifiers))
+        let missingRequiredSummary = missingRequiredModifierGlyphSummary(from: flags)
 
         let mismatchMessage: String
         if hasForbidden, !forbiddenHeld.isEmpty {
@@ -519,22 +520,20 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             let verb = forbiddenTokenCount > 1 ? "are" : "is"
 
             if !hasRequired {
-                let requiredModifiersSummary = modifierGlyphSummary(from: requiredModifiers)
-                let requiredTokenCount = requiredModifiersSummary.split(separator: "+").count
+                let requiredTokenCount = missingRequiredSummary.split(separator: "+").count
                 let requiredLabel = requiredTokenCount > 1 ? "modifiers" : "modifier"
-                mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held and missing required \(requiredLabel) \(requiredModifiersSummary). Use \(expectedCombo)"
+                mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held and missing required \(requiredLabel) \(missingRequiredSummary). Use \(expectedCombo)"
             } else {
                 mismatchMessage = "Hotkey not triggered: forbidden \(modifierLabel) \(forbiddenHeld) \(verb) held. Use \(expectedCombo)"
             }
         } else if !hasRequired {
-            let requiredModifiersSummary = modifierGlyphSummary(from: requiredModifiers)
-            let requiredTokenCount = requiredModifiersSummary.split(separator: "+").count
+            let requiredTokenCount = missingRequiredSummary.split(separator: "+").count
             let requiredLabel = requiredTokenCount > 1 ? "modifiers" : "modifier"
 
             if pressedModifiers.isEmpty {
-                mismatchMessage = "Hotkey not triggered: missing required \(requiredLabel) \(requiredModifiersSummary). Use \(expectedCombo)"
+                mismatchMessage = "Hotkey not triggered: missing required \(requiredLabel) \(missingRequiredSummary). Use \(expectedCombo)"
             } else {
-                mismatchMessage = "Hotkey not triggered: missing required \(requiredLabel) \(requiredModifiersSummary); held \(pressedModifiers). Use \(expectedCombo)"
+                mismatchMessage = "Hotkey not triggered: missing required \(requiredLabel) \(missingRequiredSummary); held \(pressedModifiers). Use \(expectedCombo)"
             }
         } else {
             mismatchMessage = "Hotkey not triggered: held \(pressedModifiers). Use \(expectedCombo)"
@@ -569,6 +568,15 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return glyphs.joined(separator: "+")
     }
 
+    private func missingRequiredModifierGlyphSummary(from flags: CGEventFlags) -> String {
+        let missingRequiredFlags = requiredModifiers.subtracting(flags)
+        let summary = modifierGlyphSummary(from: missingRequiredFlags)
+        if !summary.isEmpty {
+            return summary
+        }
+        return modifierGlyphSummary(from: requiredModifiers)
+    }
+
     private func holdActiveStatusMessage() -> String {
         if let transcriber, !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
             if transcriber.isStartAfterFinalizeQueued {
@@ -591,15 +599,15 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         if !hasRequired {
-            let required = modifierGlyphSummary(from: requiredModifiers)
-            let requiredTokenCount = required.split(separator: "+").count
+            let missingRequired = missingRequiredModifierGlyphSummary(from: flags)
+            let requiredTokenCount = missingRequired.split(separator: "+").count
             let requiredLabel = requiredTokenCount > 1 ? "modifiers" : "modifier"
             let held = modifierGlyphSummary(from: flags)
 
             if held.isEmpty {
-                return "Hold released: missing required \(requiredLabel) \(required); hold to record with \(expectedCombo)"
+                return "Hold released: missing required \(requiredLabel) \(missingRequired); hold to record with \(expectedCombo)"
             }
-            return "Hold released: missing required \(requiredLabel) \(required); held \(held). Hold to record with \(expectedCombo)"
+            return "Hold released: missing required \(requiredLabel) \(missingRequired); held \(held). Hold to record with \(expectedCombo)"
         }
 
         return "Hold released: modifier combo changed — hold to record (\(expectedCombo))"
