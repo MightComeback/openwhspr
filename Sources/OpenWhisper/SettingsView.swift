@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
     @State private var hotkeyCaptureSuccessMessage: String?
+    @State private var hotkeyApplyMessage: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
     private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
     private let hotkeyCaptureTimeoutSeconds: Int = 8
@@ -216,6 +217,7 @@ struct SettingsView: View {
                                 .frame(width: 120)
                                 .onChange(of: hotkeyKeyDraft) { _, newValue in
                                     hotkeyKeyDraft = sanitizeHotkeyDraftValue(newValue)
+                                    hotkeyApplyMessage = nil
                                 }
                                 .onSubmit {
                                     applyHotkeyKeyDraft()
@@ -310,6 +312,12 @@ struct SettingsView: View {
                             Text("Preview: \(preview)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        if let hotkeyApplyMessage {
+                            Text(hotkeyApplyMessage)
+                                .font(.caption)
+                                .foregroundStyle(.green)
                         }
 
                         if let modifierPreview = hotkeyDraftModifierOverrideSummary {
@@ -1556,6 +1564,7 @@ struct SettingsView: View {
 
     private func applyHotkeyKeyDraft() {
         hotkeyCaptureSuccessMessage = nil
+        hotkeyApplyMessage = nil
 
         guard let parsed = parseHotkeyDraft(hotkeyKeyDraft) else {
             return
@@ -1582,6 +1591,7 @@ struct SettingsView: View {
         }
 
         hotkeyKey = sanitized
+        hotkeyApplyMessage = "Applied: \(hotkeySummary())"
     }
 
     private func pasteHotkeyComboFromClipboard() {
@@ -1628,6 +1638,7 @@ struct SettingsView: View {
         stopHotkeyCapture()
         hotkeyCaptureError = nil
         hotkeyCaptureSuccessMessage = nil
+        hotkeyApplyMessage = nil
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = hotkeyCaptureTimeoutSeconds
 
