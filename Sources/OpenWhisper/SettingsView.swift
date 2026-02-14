@@ -1280,6 +1280,9 @@ struct SettingsView: View {
         guard !transcriber.isRunningInsertionProbe else {
             return false
         }
+        guard insertionTestTargetDisplay != nil else {
+            return false
+        }
         return hasInsertionProbeSampleText
     }
 
