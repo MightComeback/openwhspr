@@ -2014,7 +2014,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             // that are slow to surface across Spaces/Mission Control transitions.
             ([.activateAllWindows], 0.75),
             ([.activateAllWindows], 1.0),
-            ([.activateAllWindows], 1.3)
+            ([.activateAllWindows], 1.3),
+            // Extra long-tail retry for apps that only surface after delayed
+            // Space switches or first-launch warmup.
+            ([.activateAllWindows], 1.6)
         ]
 
         for step in activationPlan {
