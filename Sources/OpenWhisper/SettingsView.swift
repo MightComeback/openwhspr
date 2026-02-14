@@ -1600,6 +1600,18 @@ struct SettingsView: View {
             return "⌘+P opens Print in most apps and is a brutal accidental trigger."
         }
 
+        if key == "r" && modifiers == Set([.command]) {
+            return "⌘+R refreshes/reloads in browsers and many apps, so it’s a noisy dictation trigger."
+        }
+
+        if key == "o" && modifiers == Set([.command]) {
+            return "⌘+O opens files/documents in many apps and will interrupt normal workflow."
+        }
+
+        if key == "l" && modifiers == Set([.command]) {
+            return "⌘+L often focuses location/search fields (especially in browsers), making it a disruptive dictation hotkey."
+        }
+
         return nil
     }
 
