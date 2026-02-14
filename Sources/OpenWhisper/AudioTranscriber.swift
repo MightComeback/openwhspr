@@ -760,6 +760,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
                 // Treat clipboard fallback as a successful user outcome: text
                 // is immediately available for a manual paste.
                 statusMessage = clipboardFallbackStatusMessage(targetName: nil)
+                // Keep Diagnostics clean on expected environment fallback.
+                lastError = nil
                 return ManualInsertResult(outcome: .copiedFallbackNoTargetApp, targetName: nil)
             case .activationFailed:
                 _ = copyToPasteboard(text)
