@@ -1849,9 +1849,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func resolveInsertionTargetApp() -> NSRunningApplication? {
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+
+        // Settings and diagnostics often bring OpenWhisper itself to front.
+        // Never treat the app itself as an insertion destination.
+        if insertionTargetApp?.processIdentifier == ownPID {
+            insertionTargetApp = nil
+            insertionTargetUsesFallbackApp = false
+        }
+
         if insertionTargetApp?.isTerminated != false,
            let frontmost = NSWorkspace.shared.frontmostApplication,
-           frontmost.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+           frontmost.processIdentifier != ownPID {
             // Prefer the currently frontmost external app over stale fallback
             // context when the original target has exited.
             insertionTargetApp = frontmost
@@ -1861,13 +1870,15 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
         if insertionTargetApp?.isTerminated != false,
            let fallback = lastKnownExternalApp,
-           fallback.isTerminated == false {
+           fallback.isTerminated == false,
+           fallback.processIdentifier != ownPID {
             insertionTargetApp = fallback
             insertionTargetUsesFallbackApp = true
         }
 
         guard let targetApp = insertionTargetApp,
-              targetApp.isTerminated == false else {
+              targetApp.isTerminated == false,
+              targetApp.processIdentifier != ownPID else {
             insertionTargetUsesFallbackApp = false
             return nil
         }
