@@ -670,6 +670,8 @@ struct ContentView: View {
                                 Image(systemName: "arrow.uturn.backward.circle")
                             }
                             .buttonStyle(.borderless)
+                            .help("Restore this transcript into the editor")
+                            .disabled(transcriber.isRecording || transcriber.pendingChunkCount > 0)
                         }
                         .padding(6)
                         .background(.quaternary.opacity(0.2), in: RoundedRectangle(cornerRadius: 6))
