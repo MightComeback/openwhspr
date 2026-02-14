@@ -1015,6 +1015,9 @@ struct ContentView: View {
     private func insertButtonTitle() -> String {
         if canInsertDirectly {
             guard let target = insertTargetAppName, !target.isEmpty else {
+                if let liveFrontApp = currentExternalFrontAppName(), !liveFrontApp.isEmpty {
+                    return "Insert → \(abbreviatedAppName(liveFrontApp))"
+                }
                 return "Insert → Last App"
             }
 
@@ -1058,6 +1061,9 @@ struct ContentView: View {
         }
 
         guard let target = insertTargetAppName, !target.isEmpty else {
+            if let liveFrontApp = currentExternalFrontAppName(), !liveFrontApp.isEmpty {
+                return "Insert into \(liveFrontApp)"
+            }
             return "Insert into the last active app"
         }
 
