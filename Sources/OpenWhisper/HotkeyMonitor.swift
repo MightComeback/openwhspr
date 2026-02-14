@@ -694,7 +694,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         [
             "cmd", "command", "meta", "super", "win", "windows",
             "shift",
-            "ctrl", "control",
+            "ctrl", "control", "ctl",
             "opt", "option", "alt",
             "fn", "function", "globe"
         ]
