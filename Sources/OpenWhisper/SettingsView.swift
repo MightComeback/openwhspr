@@ -492,6 +492,8 @@ struct SettingsView: View {
                                 }
                             }
                             .buttonStyle(.bordered)
+                            .keyboardShortcut(.return, modifiers: [.command, .shift])
+                            .help("Capture target app and run insertion test with ⌘⇧↩")
                             .disabled(!canCaptureAndRunInsertionTest)
 
                             Button(runInsertionTestButtonTitle) {
