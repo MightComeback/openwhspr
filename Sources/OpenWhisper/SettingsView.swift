@@ -1640,7 +1640,11 @@ struct SettingsView: View {
                     hotkeyCaptureSecondsRemaining -= 1
 
                     if hotkeyCaptureSecondsRemaining <= 0 {
-                        hotkeyCaptureError = "Hotkey capture timed out. Click Record shortcut and try again."
+                        if inputMonitoringAuthorized {
+                            hotkeyCaptureError = "Hotkey capture timed out. Click Record shortcut and try again."
+                        } else {
+                            hotkeyCaptureError = "Hotkey capture timed out. Input Monitoring permission is still missing, so capture only works while OpenWhisper stays focused."
+                        }
                         stopHotkeyCapture(clearError: false)
                     }
                 }
