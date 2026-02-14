@@ -809,6 +809,17 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return (eventKeyCode == CGKeyCode(kVK_ANSI_KeypadEnter) || eventKeyCode == CGKeyCode(kVK_Return))
         }
 
+        // UX: Apple keyboard layouts vary between Backspace/Delete and
+        // Forward Delete availability. Treat them as equivalent trigger keys
+        // so a configured delete hotkey follows user intent across devices.
+        if triggerKeyToken == "delete" || triggerKeyToken == "del" || triggerKeyToken == "backspace" || triggerKeyToken == "bksp" {
+            return (eventKeyCode == CGKeyCode(kVK_Delete) || eventKeyCode == CGKeyCode(kVK_ForwardDelete))
+        }
+
+        if triggerKeyToken == "forwarddelete" || triggerKeyToken == "fwddelete" || triggerKeyToken == "fwddel" {
+            return (eventKeyCode == CGKeyCode(kVK_ForwardDelete) || eventKeyCode == CGKeyCode(kVK_Delete))
+        }
+
         return false
     }
 
