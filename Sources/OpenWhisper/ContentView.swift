@@ -939,15 +939,22 @@ struct ContentView: View {
     }
 
     private func startStopButtonHelpText() -> String {
-        guard !microphoneAuthorized,
-              !transcriber.isRecording,
-              transcriber.pendingChunkCount == 0 else {
-            return transcriber.isRecording
-                ? "Stop recording"
-                : "Start recording"
+        if transcriber.isRecording {
+            return "Stop recording"
         }
 
-        return "Microphone permission is required before recording can start"
+        if transcriber.pendingChunkCount > 0 {
+            if transcriber.isStartAfterFinalizeQueued {
+                return "Cancel queued recording start while finalization finishes"
+            }
+            return "Queue the next recording to start after finalization"
+        }
+
+        if !microphoneAuthorized {
+            return "Microphone permission is required before recording can start"
+        }
+
+        return "Start recording"
     }
 
     private func startStopButtonTitle() -> String {
