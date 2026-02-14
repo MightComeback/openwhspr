@@ -150,7 +150,7 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("\(transcriber.processedChunkCount) processed • \(transcriber.pendingChunkCount) pending")
+                        Text("\(transcriber.processedChunkCount) processed • \(transcriber.pendingChunkCount) pending • \(transcriber.inFlightChunkCount) in flight")
                             .font(.caption2)
                     }
 

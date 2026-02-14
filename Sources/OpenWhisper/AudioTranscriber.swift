@@ -1348,6 +1348,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         startRecordingAfterFinalizeRequested
     }
 
+    @MainActor
+    var inFlightChunkCount: Int {
+        pendingChunkCount + (isTranscribing ? 1 : 0)
+    }
+
     var hasActiveSessionForHotkeyCancel: Bool {
         isRecording || pendingChunkCount > 0 || pendingSessionFinalize
     }
