@@ -1524,7 +1524,7 @@ final class HotkeyMonitorTests: XCTestCase {
 
         XCTAssertEqual(
             monitor.missingPermissionStatusMessage(["Accessibility"]),
-            "Hotkey disabled: missing Accessibility permission. Open System Settings → Privacy & Security → Accessibility and enable OpenWhisper."
+            "Hotkey disabled: missing Accessibility permission. Open System Settings → Privacy & Security → Accessibility and enable OpenWhisper. Configured hotkey: Toggle • ⌘+⇧+Space."
         )
     }
 
@@ -1533,7 +1533,7 @@ final class HotkeyMonitorTests: XCTestCase {
 
         XCTAssertEqual(
             monitor.missingPermissionStatusMessage(["Accessibility", "Input Monitoring"]),
-            "Hotkey disabled: missing Accessibility and Input Monitoring permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections."
+            "Hotkey disabled: missing Accessibility and Input Monitoring permission. Open System Settings → Privacy & Security and enable OpenWhisper in both sections. Configured hotkey: Toggle • ⌘+⇧+Space."
         )
     }
 }
