@@ -677,6 +677,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             let message = "Insertion test copied text to clipboard because no destination app was available\(trimSuffix)"
             statusMessage = message
             lastInsertionProbeMessage = message
+            // Keep probe diagnostics clean: clipboard fallback here is an
+            // expected environment state, not a stale insertion failure.
+            lastError = nil
             return false
 
         case .failed:
