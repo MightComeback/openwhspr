@@ -1492,6 +1492,14 @@ struct SettingsView: View {
             return "⌘+` is reserved for cycling windows in the front app on macOS."
         }
 
+        if key == "section" && modifiers == Set([.command]) {
+            return "⌘+§ usually cycles windows in the front app on ISO keyboards and can steal your dictation hotkey."
+        }
+
+        if key == "section" && modifiers == Set([.command, .shift]) {
+            return "⌘+⇧+§ usually cycles windows in reverse on ISO keyboards and can steal your dictation hotkey."
+        }
+
         if key == "comma" && modifiers == Set([.command]) {
             return "⌘+, usually opens app settings/preferences and is a frustrating dictation trigger."
         }
