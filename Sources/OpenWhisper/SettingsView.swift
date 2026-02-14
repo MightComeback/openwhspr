@@ -289,7 +289,7 @@ struct SettingsView: View {
                             }
                             .controlSize(.small)
 
-                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function/globe, left/right/up/down, f1-f24, keypad1/numpad1, keypadcomma, keypadclear/clear, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
+                            Text("Examples: space/spacebar, tab, return/enter, esc, del/delete/backspace, forwarddelete, insert/ins, fn/function/globe, section/§, left/right/up/down, f1-f24, keypad1/numpad1, keypadcomma, keypadclear/clear, keypadenter, a, 1, minus, slash. You can also paste combos like cmd+shift+space, cmd shift space, or cmd-shift-space.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1238,7 +1238,7 @@ struct SettingsView: View {
             ),
             (
                 title: "Punctuation",
-                keys: ["minus", "equals", "openbracket", "closebracket", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "backtick"]
+                keys: ["minus", "equals", "openbracket", "closebracket", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "backtick", "section"]
             ),
             (
                 title: "Keypad",
