@@ -694,7 +694,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         switch normalized {
-        case "escape", "tab", "return", "enter", "keypadenter", "numpadenter", "space", "insert", "ins", "help", "delete", "del", "backspace", "bksp", "forwarddelete", "fwddelete", "fwddel", "left", "right", "up", "down", "home", "end", "pageup", "pagedown", "fn", "function", "globe", "globekey", "caps", "capslock":
+        case "escape", "tab", "return", "enter", "keypadenter", "numpadenter", "space", "insert", "ins", "help", "delete", "del", "backspace", "bksp", "forwarddelete", "fwddelete", "fwddel", "left", "right", "up", "down", "home", "end", "pageup", "pagedown", "fn", "function", "globe", "globekey", "caps", "capslock", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadcomma", "numpadcomma", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadminus", "numpadminus", "keypadequals", "numpadequals", "clear", "numlock":
             return true
         default:
             return false

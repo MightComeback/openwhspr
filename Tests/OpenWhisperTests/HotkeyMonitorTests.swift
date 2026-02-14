@@ -1648,6 +1648,17 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
     }
 
+    func testNumpadPlusTriggerWithoutModifiersRemainsUsableAndNotFlaggedUnsafe() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        monitor.updateConfig(required: [], forbidden: [], key: "num+", mode: .toggle)
+
+        let event = makeEvent(keyCode: CGKeyCode(kVK_ANSI_KeypadPlus), flags: [], keyDown: true)
+        XCTAssertTrue(monitor.handleForTesting(event, type: .keyDown))
+        XCTAssertFalse(monitor.statusMessage.contains("trigger key"))
+    }
+
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
         let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
 
