@@ -694,7 +694,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
 
         switch normalized {
-        case "escape", "tab", "return", "enter", "keypadenter", "numpadenter", "space", "insert", "ins", "help", "delete", "del", "backspace", "bksp", "forwarddelete", "fwddelete", "fwddel", "left", "right", "up", "down", "home", "end", "pageup", "pagedown", "fn", "function", "globe", "globekey", "caps", "capslock", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadcomma", "numpadcomma", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadminus", "numpadminus", "keypadequals", "numpadequals", "clear", "numlock":
+        case "escape", "tab", "return", "enter", "keypadenter", "numpadenter", "space", "insert", "ins", "help", "eject", "delete", "del", "backspace", "bksp", "forwarddelete", "fwddelete", "fwddel", "left", "right", "up", "down", "home", "end", "pageup", "pagedown", "fn", "function", "globe", "globekey", "caps", "capslock", "keypad0", "numpad0", "keypad1", "numpad1", "keypad2", "numpad2", "keypad3", "numpad3", "keypad4", "numpad4", "keypad5", "numpad5", "keypad6", "numpad6", "keypad7", "numpad7", "keypad8", "numpad8", "keypad9", "numpad9", "keypaddecimal", "numpaddecimal", "keypadcomma", "numpadcomma", "keypadmultiply", "numpadmultiply", "keypadplus", "numpadplus", "keypadclear", "numpadclear", "keypaddivide", "numpaddivide", "keypadminus", "numpadminus", "keypadequals", "numpadequals", "clear", "numlock":
             return true
         default:
             return false
@@ -900,6 +900,9 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         case "delete", "del", "backspace", "bksp": return CGKeyCode(kVK_Delete)
         case "forwarddelete", "fwddelete", "fwddel": return CGKeyCode(kVK_ForwardDelete)
         case "insert", "ins", "help": return CGKeyCode(kVK_Help)
+        // Carbon doesn't expose kVK_Eject in all SDKs. Use the stable
+        // Events.h virtual keycode value for the Eject key.
+        case "eject": return CGKeyCode(0x92)
         case "caps", "capslock": return CGKeyCode(kVK_CapsLock)
         case "fn", "function", "globe", "globekey": return CGKeyCode(kVK_Function)
         case "section", "paragraph", "§", "±": return CGKeyCode(kVK_ISO_Section)
