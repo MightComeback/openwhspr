@@ -451,12 +451,10 @@ struct SettingsView: View {
                             .disabled(!canCaptureAndRunInsertionTest)
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Run insertion test") {
-                                Task { @MainActor in
-                                    _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
-                                }
+                                runInsertionTestUsingAvailableTarget()
                             }
                             .buttonStyle(.bordered)
-                            .disabled(!canRunInsertionTest)
+                            .disabled(!canRunInsertionTestWithAutoCapture)
 
                             Button(transcriber.isRunningInsertionProbe ? "Running insertion test…" : "Focus target + test") {
                                 Task { @MainActor in
@@ -519,7 +517,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
-                        if !canRunInsertionTest {
+                        if !canRunInsertionTestWithAutoCapture {
                             Text(insertionTestDisabledReason)
                                 .font(.caption)
                                 .foregroundStyle(.orange)
@@ -1297,6 +1295,10 @@ struct SettingsView: View {
         return hasInsertionProbeSampleText
     }
 
+    private var canRunInsertionTestWithAutoCapture: Bool {
+        canRunInsertionTest || canCaptureAndRunInsertionTest
+    }
+
     private var canFocusAndRunInsertionTest: Bool {
         canFocusInsertionTarget && canRunInsertionTest
     }
@@ -1312,6 +1314,10 @@ struct SettingsView: View {
     }
 
     private func runInsertionTestFromTextFieldSubmission() {
+        runInsertionTestUsingAvailableTarget()
+    }
+
+    private func runInsertionTestUsingAvailableTarget() {
         guard !transcriber.isRunningInsertionProbe else {
             return
         }
