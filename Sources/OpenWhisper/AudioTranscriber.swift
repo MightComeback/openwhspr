@@ -648,9 +648,9 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             lastInsertionProbeSucceeded = false
             AudioFeedback.playErrorSound()
             if let failure = lastError, !failure.isEmpty {
-                lastInsertionProbeMessage = "Insertion test failed: \(failure)"
+                lastInsertionProbeMessage = "Insertion test failed: \(failure)\(trimSuffix)"
             } else {
-                lastInsertionProbeMessage = "Insertion test failed"
+                lastInsertionProbeMessage = "Insertion test failed\(trimSuffix)"
             }
             return false
         }
