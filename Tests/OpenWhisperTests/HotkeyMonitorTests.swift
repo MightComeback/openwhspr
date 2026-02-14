@@ -126,6 +126,25 @@ final class HotkeyMonitorTests: XCTestCase {
         XCTAssertEqual(monitor.statusMessage, initialMessage)
     }
 
+    func testTemporaryStatusResetDelayGrowsForLongerGuidanceMessages() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        let shortDelay = monitor.temporaryStatusResetDelayNanosecondsForTesting(message: "Short")
+        let longDelay = monitor.temporaryStatusResetDelayNanosecondsForTesting(message: String(repeating: "A", count: 140))
+
+        XCTAssertGreaterThan(longDelay, shortDelay)
+    }
+
+    func testTemporaryStatusResetDelayHasUpperBound() {
+        let defaults = makeDefaults()
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+
+        let cappedDelay = monitor.temporaryStatusResetDelayNanosecondsForTesting(message: String(repeating: "A", count: 1_200))
+
+        XCTAssertEqual(cappedDelay, 3_400_000_000)
+    }
+
     func testToggleModeKeyDownHandled() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

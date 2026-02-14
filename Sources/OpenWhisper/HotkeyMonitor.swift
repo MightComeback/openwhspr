@@ -563,14 +563,28 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         guard isListening else { return }
 
         comboMismatchResetTask?.cancel()
+        let delayNanoseconds = temporaryStatusResetDelayNanoseconds(for: message)
         comboMismatchResetTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            try? await Task.sleep(nanoseconds: delayNanoseconds)
             guard let self, !Task.isCancelled else { return }
 
             if self.statusMessage == message {
                 self.refreshStatusFromRuntimeState()
             }
         }
+    }
+
+    private func temporaryStatusResetDelayNanoseconds(for message: String) -> UInt64 {
+        // Longer guidance messages need slightly more dwell time so users can
+        // actually read them before status snaps back to standby text.
+        let baseSeconds = 1.2
+        let additionalSeconds = min(2.2, Double(message.count) * 0.015)
+        let totalSeconds = min(3.4, baseSeconds + additionalSeconds)
+        return UInt64(totalSeconds * 1_000_000_000)
+    }
+
+    func temporaryStatusResetDelayNanosecondsForTesting(message: String) -> UInt64 {
+        temporaryStatusResetDelayNanoseconds(for: message)
     }
 
     private func modifierGlyphSummary(from flags: CGEventFlags) -> String {
