@@ -475,6 +475,9 @@ struct SettingsView: View {
 
                             TextField("OpenWhisper insertion test", text: $insertionProbeSampleText)
                                 .textFieldStyle(.roundedBorder)
+                                .onChange(of: insertionProbeSampleText) { _, _ in
+                                    enforceInsertionProbeSampleTextLimit()
+                                }
                                 .onSubmit {
                                     runInsertionTestFromTextFieldSubmission()
                                 }
@@ -900,6 +903,7 @@ struct SettingsView: View {
         .onAppear {
             hotkeyKeyDraft = hotkeyKey
             launchAtLogin = LaunchAtLogin.isEnabled
+            enforceInsertionProbeSampleTextLimit()
             refreshPermissionState()
             Task { @MainActor in
                 transcriber.refreshFrontmostAppContext()
@@ -1248,6 +1252,13 @@ struct SettingsView: View {
 
     private var insertionProbeSampleTextTrimmed: String {
         insertionProbeSampleText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func enforceInsertionProbeSampleTextLimit() {
+        let limited = String(insertionProbeSampleText.prefix(insertionProbeMaxCharacters))
+        if insertionProbeSampleText != limited {
+            insertionProbeSampleText = limited
+        }
     }
 
     private var insertionProbeSampleTextForRun: String {
