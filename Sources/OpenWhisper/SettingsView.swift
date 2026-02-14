@@ -157,6 +157,21 @@ struct SettingsView: View {
                             }
                         }
 
+                        if let escapeConflictWarning = hotkeyEscapeCancelConflictWarning {
+                            HStack(alignment: .center, spacing: 10) {
+                                Label(escapeConflictWarning, systemImage: "exclamationmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+
+                                Button("Use Space key") {
+                                    hotkeyKey = "space"
+                                    hotkeyKeyDraft = "space"
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                        }
+
                         HStack(spacing: 10) {
                             Button(currentHotkeyMode == .toggle ? "Preset: Toggle ✓" : "Preset: Toggle") {
                                 applyHotkeyPreset(.toggle)
@@ -1476,6 +1491,15 @@ struct SettingsView: View {
             return false
         }
         return showsHighRiskHotkeyWarning
+    }
+
+    private var hotkeyEscapeCancelConflictWarning: String? {
+        let context = effectiveHotkeyRiskContext
+        guard context.key == "escape" else {
+            return nil
+        }
+
+        return "Esc is also used to discard an active recording. Using Esc as the trigger key disables that quick-cancel behavior."
     }
 
     private var hotkeySystemConflictWarning: String? {
