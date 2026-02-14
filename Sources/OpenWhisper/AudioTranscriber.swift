@@ -1990,10 +1990,24 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     @discardableResult
     private func pasteIntoFocusedApp() -> PasteAttemptResult {
+        if let targetApp = resolveInsertionTargetApp() {
+            return attemptPasteIntoTargetApp(targetApp)
+        }
+
+        // Front-app insertion can race right after users switch focus from
+        // Settings/Popover back to the destination app. Do one forced recapture
+        // pass before declaring "no target app".
+        captureInsertionTargetApp(forceRefresh: true)
         guard let targetApp = resolveInsertionTargetApp() else {
             return .noTargetApp
         }
 
+        return attemptPasteIntoTargetApp(targetApp)
+    }
+
+    @MainActor
+    @discardableResult
+    private func attemptPasteIntoTargetApp(_ targetApp: NSRunningApplication) -> PasteAttemptResult {
         guard bringAppToFrontForInsertion(targetApp) else {
             return .activationFailed
         }
