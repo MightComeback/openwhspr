@@ -348,7 +348,7 @@ struct ContentView: View {
                         if canInsertDirectly, shouldSuggestRetarget {
                             Button(useCurrentAppButtonTitle()) {
                                 Task { @MainActor in
-                                    refreshInsertTargetSnapshot()
+                                    refreshInsertTargetSnapshot(forceRetarget: true)
                                     _ = transcriber.insertTranscriptionIntoFocusedApp()
                                     refreshInsertTargetSnapshot()
                                 }
@@ -394,7 +394,7 @@ struct ContentView: View {
                             HStack {
                                 Button(retargetAndInsertButtonTitle()) {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                         if canInsertDirectly {
                                             _ = transcriber.insertTranscriptionIntoFocusedApp()
                                         } else {
@@ -411,7 +411,7 @@ struct ContentView: View {
 
                                 Button(useCurrentAppButtonTitle()) {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                         if canInsertDirectly {
                                             _ = transcriber.insertTranscriptionIntoFocusedApp()
                                         } else {
@@ -430,7 +430,7 @@ struct ContentView: View {
                             HStack {
                                 Button(retargetButtonTitle()) {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -541,7 +541,7 @@ struct ContentView: View {
 
                                 Button("Retarget now") {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                     }
                                 }
                                 .buttonStyle(.borderless)
@@ -551,7 +551,7 @@ struct ContentView: View {
 
                                 Button("Retarget + Insert") {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                         if canInsertDirectly {
                                             _ = transcriber.insertTranscriptionIntoFocusedApp()
                                         } else {
@@ -577,7 +577,7 @@ struct ContentView: View {
 
                                 Button("Retarget now") {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                     }
                                 }
                                 .buttonStyle(.borderless)
@@ -587,7 +587,7 @@ struct ContentView: View {
 
                                 Button("Retarget + Insert") {
                                     Task { @MainActor in
-                                        refreshInsertTargetSnapshot()
+                                        refreshInsertTargetSnapshot(forceRetarget: true)
                                         if canInsertDirectly {
                                             _ = transcriber.insertTranscriptionIntoFocusedApp()
                                         } else {
@@ -763,7 +763,7 @@ struct ContentView: View {
             if isRecording {
                 lastClearedTranscription = nil
                 Task { @MainActor in
-                    refreshInsertTargetSnapshot()
+                    refreshInsertTargetSnapshot(forceRetarget: true)
                 }
             }
         }
@@ -818,8 +818,8 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func refreshInsertTargetSnapshot() {
-        let snapshot = transcriber.manualInsertTargetSnapshot()
+    private func refreshInsertTargetSnapshot(forceRetarget: Bool = false) {
+        let snapshot = transcriber.manualInsertTargetSnapshot(forceRefresh: forceRetarget)
         insertTargetAppName = snapshot.appName
         insertTargetBundleIdentifier = snapshot.bundleIdentifier
         insertTargetDisplay = snapshot.display

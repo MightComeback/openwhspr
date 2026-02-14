@@ -157,7 +157,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    private func captureInsertionTargetApp() {
+    private func captureInsertionTargetApp(forceRefresh: Bool = false) {
+        if !forceRefresh,
+           let existingTarget = insertionTargetApp,
+           existingTarget.isTerminated == false,
+           existingTarget.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            return
+        }
+
         if let app = NSWorkspace.shared.frontmostApplication,
            app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             insertionTargetApp = app
@@ -411,8 +418,8 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     @MainActor
-    func manualInsertTargetSnapshot() -> ManualInsertTargetSnapshot {
-        captureInsertionTargetApp()
+    func manualInsertTargetSnapshot(forceRefresh: Bool = false) -> ManualInsertTargetSnapshot {
+        captureInsertionTargetApp(forceRefresh: forceRefresh)
 
         guard let app = resolveInsertionTargetApp() else {
             return ManualInsertTargetSnapshot(
@@ -473,6 +480,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @MainActor
     func manualInsertTargetUsesFallbackApp() -> Bool {
         manualInsertTargetSnapshot().usesFallbackApp
+    }
+
+    @MainActor
+    func retargetManualInsertTarget() {
+        captureInsertionTargetApp(forceRefresh: true)
     }
 
     @MainActor
