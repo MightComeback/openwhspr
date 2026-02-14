@@ -607,6 +607,12 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(transcriber.lastInsertionProbeSucceeded == true ? Color.secondary : Color.orange)
                     }
+
+                    if let successfulInsertDescription = lastSuccessfulInsertDescription() {
+                        Text(successfulInsertDescription)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -719,7 +725,9 @@ struct ContentView: View {
             uiNow = now
         }
         .onReceive(insertTargetStatusTimer) { now in
-            guard hasTranscriptionText, insertTargetCapturedAt != nil else {
+            let shouldRefreshInsertTargetClock = hasTranscriptionText && insertTargetCapturedAt != nil
+            let shouldRefreshLastInsertClock = transcriber.lastSuccessfulInsertionAt != nil
+            guard shouldRefreshInsertTargetClock || shouldRefreshLastInsertClock else {
                 return
             }
             uiNow = now
@@ -1293,6 +1301,19 @@ struct ContentView: View {
         }
 
         return "Target captured \(ageLabel)"
+    }
+
+    private func lastSuccessfulInsertDescription() -> String? {
+        guard let insertedAt = transcriber.lastSuccessfulInsertionAt else {
+            return nil
+        }
+
+        let elapsed = max(0, uiNow.timeIntervalSince(insertedAt))
+        if elapsed < 1 {
+            return "Last insert succeeded just now"
+        }
+
+        return "Last insert succeeded \(formatShortDuration(elapsed)) ago"
     }
 
     @ViewBuilder
