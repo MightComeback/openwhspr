@@ -438,6 +438,49 @@ final class AudioTranscriberTests: XCTestCase {
         }
     }
 
+    func testInsertTranscriptionBlockedWhileFinalizingShowsQueuedStartHint() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+            let originalTranscription = transcriber.transcription
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                    transcriber.toggleRecording()
+                }
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+                transcriber.transcription = originalTranscription
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 1
+            transcriber.recordingStartedAt = Date()
+            transcriber.setPendingSessionFinalizeForTesting(false)
+            transcriber.transcription = "hello world"
+
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.toggleRecording()
+            }
+            transcriber.toggleRecording()
+
+            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+            XCTAssertFalse(inserted)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
+        }
+    }
+
     func testInsertTranscriptionReturnsSuccessWhenAccessibilityFallbackCopiesText() async {
         let transcriber = AudioTranscriber.shared
 
@@ -785,6 +828,44 @@ final class AudioTranscriberTests: XCTestCase {
             XCTAssertFalse(success)
             XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
             XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
+        }
+    }
+
+    func testRunInsertionProbeBlockedWhileFinalizingShowsQueuedStartHint() async {
+        let transcriber = AudioTranscriber.shared
+
+        await MainActor.run {
+            let originalIsRecording = transcriber.isRecording
+            let originalPendingChunkCount = transcriber.pendingChunkCount
+            let originalRecordingStartedAt = transcriber.recordingStartedAt
+            let originalStatusMessage = transcriber.statusMessage
+            let originalLastError = transcriber.lastError
+
+            defer {
+                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                    transcriber.toggleRecording()
+                }
+                transcriber.isRecording = originalIsRecording
+                transcriber.pendingChunkCount = originalPendingChunkCount
+                transcriber.recordingStartedAt = originalRecordingStartedAt
+                transcriber.statusMessage = originalStatusMessage
+                transcriber.lastError = originalLastError
+            }
+
+            transcriber.isRecording = false
+            transcriber.pendingChunkCount = 2
+            transcriber.recordingStartedAt = Date()
+
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.toggleRecording()
+            }
+            transcriber.toggleRecording()
+
+            let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+            XCTAssertFalse(success)
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
         }
     }
 

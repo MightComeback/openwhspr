@@ -668,13 +668,18 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
 
     @MainActor
     private func finalizingWaitMessage(for action: String) -> String {
-        let base = "Wait for live transcription to finish finalizing before \(action)."
-        guard pendingChunkCount > 0 else {
-            return base
+        var message = "Wait for live transcription to finish finalizing before \(action)."
+
+        if pendingChunkCount > 0 {
+            let noun = pendingChunkCount == 1 ? "chunk" : "chunks"
+            message += " (\(pendingChunkCount) \(noun) pending.)"
         }
 
-        let noun = pendingChunkCount == 1 ? "chunk" : "chunks"
-        return "\(base) (\(pendingChunkCount) \(noun) pending.)"
+        if startRecordingAfterFinalizeRequested {
+            message += " Next recording is already queued."
+        }
+
+        return message
     }
 
     private enum ManualInsertOutcome {
