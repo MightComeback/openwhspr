@@ -859,6 +859,24 @@ final class HotkeyMonitorTests: XCTestCase {
         )
     }
 
+    func testOutOfRangeFnAliasShowsGuidanceMessage() {
+        let defaults = makeDefaults()
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenCommand)
+        defaults.set(false, forKey: AppDefaults.Keys.hotkeyForbiddenShift)
+        defaults.set("fn25", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
+        monitor.reloadConfig()
+
+        XCTAssertEqual(
+            monitor.statusMessage,
+            "Hotkey disabled: function key ‘F25’ is out of range. Use F1 through F24."
+        )
+    }
+
     func testFunctionKeyHotkeyMatchesConfiguredFKey() {
         let defaults = makeDefaults()
         defaults.set(false, forKey: AppDefaults.Keys.hotkeyRequiredCommand)

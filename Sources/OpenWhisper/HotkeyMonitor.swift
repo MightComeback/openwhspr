@@ -703,13 +703,31 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
 
     private func normalizedOutOfRangeFunctionKeyInput(_ raw: String) -> String? {
         let normalized = HotkeyDisplay.canonicalKey(raw)
-        guard normalized.hasPrefix("f") else { return nil }
 
-        let numberToken = String(normalized.dropFirst())
-        guard let functionNumber = Int(numberToken) else { return nil }
-        guard !(1...24).contains(functionNumber) else { return nil }
+        if let functionNumber = parseFunctionKeyNumber(normalized), !(1...24).contains(functionNumber) {
+            return "F\(functionNumber)"
+        }
 
-        return "F\(functionNumber)"
+        return nil
+    }
+
+    private func parseFunctionKeyNumber(_ token: String) -> Int? {
+        let prefixes = ["functionkey", "fnkey", "fkey", "fn", "function", "f"]
+
+        for prefix in prefixes {
+            guard token.hasPrefix(prefix), token.count > prefix.count else {
+                continue
+            }
+
+            let suffix = String(token.dropFirst(prefix.count))
+            guard let value = Int(suffix) else {
+                continue
+            }
+
+            return value
+        }
+
+        return nil
     }
 
     private func looksLikeModifierOnlyInput(_ raw: String) -> Bool {
