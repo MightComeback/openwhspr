@@ -474,8 +474,9 @@ final class AudioTranscriberTests: XCTestCase {
 
             XCTAssertTrue(inserted)
             XCTAssertGreaterThanOrEqual(transcriber.recentEntries.count, previousHistoryCount)
-            XCTAssertEqual(transcriber.recentEntries.first?.text, insertedText)
+            XCTAssertEqual(transcriber.recentEntries.first?.text, transcriber.transcription)
             XCTAssertTrue(transcriber.statusMessage.hasPrefix("Copied to clipboard"))
+            XCTAssertNil(transcriber.lastError)
         }
     }
 

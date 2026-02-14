@@ -526,11 +526,20 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let result = performManualInsert(text: normalized)
 
         switch result.outcome {
-        case .inserted, .copiedFallbackAccessibilityMissing:
+        case .inserted:
             appendHistoryEntry(normalized, targetAppName: result.targetName)
             if settings.clearAfterInsert {
                 transcription = ""
             }
+            return true
+        case .copiedFallbackAccessibilityMissing:
+            // UX: clipboard fallback still completes the user action (text is
+            // ready to paste), so don't leave Diagnostics in an error state.
+            appendHistoryEntry(normalized, targetAppName: result.targetName)
+            if settings.clearAfterInsert {
+                transcription = ""
+            }
+            lastError = nil
             return true
         case .failed:
             return false
