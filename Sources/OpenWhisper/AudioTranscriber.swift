@@ -1906,6 +1906,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             insertionTargetUsesFallbackApp = false
         }
 
+        // If a fallback target has become the live frontmost app again,
+        // promote it back to a normal target so UI labels stop showing
+        // “recent app” during active insertion.
+        if insertionTargetUsesFallbackApp,
+           let capturedTarget = insertionTargetApp,
+           capturedTarget.isTerminated == false,
+           let frontmost = NSWorkspace.shared.frontmostApplication,
+           frontmost.processIdentifier == capturedTarget.processIdentifier,
+           frontmost.processIdentifier != ownPID {
+            insertionTargetUsesFallbackApp = false
+            lastKnownExternalApp = frontmost
+        }
+
         if insertionTargetApp?.isTerminated != false,
            let frontmost = NSWorkspace.shared.frontmostApplication,
            frontmost.processIdentifier != ownPID {
