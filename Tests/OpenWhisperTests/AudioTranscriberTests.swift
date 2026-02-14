@@ -433,8 +433,8 @@ final class AudioTranscriberTests: XCTestCase {
 
             let inserted = transcriber.insertTranscriptionIntoFocusedApp()
             XCTAssertFalse(inserted)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text.")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text.")
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
         }
     }
 
@@ -858,8 +858,8 @@ final class AudioTranscriberTests: XCTestCase {
             let success = transcriber.runInsertionProbe(sampleText: "probe")
 
             XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
+            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
+            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
         }
     }
 

@@ -706,6 +706,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         if pendingChunkCount > 0 {
             let noun = pendingChunkCount == 1 ? "chunk" : "chunks"
             message += " (\(pendingChunkCount) \(noun) pending.)"
+        } else if pendingSessionFinalize {
+            // No queued chunks yet, but the recorder is still flushing the
+            // final tail into the live-transcription pipeline.
+            message += " (Preparing final chunk.)"
         }
 
         if startRecordingAfterFinalizeRequested {
