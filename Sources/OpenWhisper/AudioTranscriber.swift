@@ -587,11 +587,19 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     @discardableResult
     func runInsertionProbe(sampleText: String = "OpenWhisper insertion test") -> Bool {
         let trimmedSample = sampleText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedSample.isEmpty else {
-            let message = "Insertion test text is empty. Enter sample text and try again."
+
+        @inline(__always)
+        func failProbeStart(message: String) -> Bool {
             statusMessage = message
             lastError = message
+            lastInsertionProbeSucceeded = false
+            lastInsertionProbeDate = Date()
+            lastInsertionProbeMessage = message
             return false
+        }
+
+        guard !trimmedSample.isEmpty else {
+            return failProbeStart(message: "Insertion test text is empty. Enter sample text and try again.")
         }
 
         let maxProbeCharacters = Self.insertionProbeMaxCharacters
@@ -599,25 +607,16 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         let wasTrimmed = probe.count < trimmedSample.count
 
         guard !isRunningInsertionProbe else {
-            let message = "Insertion test already running."
-            statusMessage = message
-            lastError = message
-            return false
+            return failProbeStart(message: "Insertion test already running.")
         }
 
         guard !isRecording else {
-            let message = "Stop recording before running an insertion test."
-            statusMessage = message
-            lastError = message
-            return false
+            return failProbeStart(message: "Stop recording before running an insertion test.")
         }
 
         let isFinalizing = isFinalizingTranscription
         guard !isFinalizing else {
-            let message = finalizingWaitMessage(for: "running an insertion test")
-            statusMessage = message
-            lastError = message
-            return false
+            return failProbeStart(message: finalizingWaitMessage(for: "running an insertion test"))
         }
 
         // Preserve an already selected insertion target when one exists.
