@@ -1366,16 +1366,20 @@ struct SettingsView: View {
                 return
             }
 
-            guard canCaptureAndRunInsertionTest else {
+            if canCaptureAndRunInsertionTest {
+                let captured = transcriber.captureProfileForFrontmostApp()
+                guard captured else {
+                    return
+                }
+
+                _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
                 return
             }
 
-            let captured = transcriber.captureProfileForFrontmostApp()
-            guard captured else {
-                return
-            }
-
-            _ = transcriber.runInsertionProbe(sampleText: insertionProbeSampleTextForRun)
+            let reason = insertionTestDisabledReason
+            transcriber.statusMessage = reason
+            transcriber.lastError = reason
+            transcriber.lastInsertionProbeMessage = reason
         }
     }
 
