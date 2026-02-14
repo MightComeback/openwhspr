@@ -1320,6 +1320,10 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         startRecordingAfterFinalizeRequested
     }
 
+    var hasActiveSessionForHotkeyCancel: Bool {
+        isRecording || pendingChunkCount > 0 || pendingSessionFinalize
+    }
+
     @MainActor
     var startRecordingAfterFinalizeRequestedForTesting: Bool {
         startRecordingAfterFinalizeRequested

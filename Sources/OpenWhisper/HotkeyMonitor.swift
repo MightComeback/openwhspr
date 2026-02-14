@@ -412,9 +412,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             return true
         }
 
-        let isActive = transcriber.isRecording || transcriber.pendingChunkCount > 0
-
-        guard isActive else { return false }
+        guard transcriber.hasActiveSessionForHotkeyCancel else { return false }
 
         // In hold mode, also disarm the hold session.
         if mode == .hold {
