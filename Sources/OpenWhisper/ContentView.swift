@@ -100,6 +100,7 @@ struct ContentView: View {
                     Button("Discard") {
                         Task { @MainActor in
                             transcriber.cancelRecording()
+                            hotkeyMonitor.refreshStatusFromRuntimeState()
                         }
                     }
                     .buttonStyle(.bordered)
@@ -111,6 +112,7 @@ struct ContentView: View {
                 Button(startStopButtonTitle()) {
                     Task { @MainActor in
                         transcriber.toggleRecording()
+                        hotkeyMonitor.refreshStatusFromRuntimeState()
                     }
                 }
                 .buttonStyle(.borderedProminent)
