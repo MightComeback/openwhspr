@@ -228,7 +228,17 @@ enum HotkeyDisplay {
             .replacingOccurrences(of: "\u{FE0E}", with: "")
             .replacingOccurrences(of: "\u{FE0F}", with: "")
 
-        switch trimmed {
+        let slashNormalized: String
+        if trimmed.contains("/"), !trimmed.hasSuffix("/") {
+            // Support pasted slash-separated shortcut notations like
+            // "command/shift/space" while preserving literal slash triggers
+            // such as "command+shift+/" and named keys like "numpad/".
+            slashNormalized = trimmed.replacingOccurrences(of: "/", with: " ")
+        } else {
+            slashNormalized = trimmed
+        }
+
+        switch slashNormalized {
         case "⌘": return "command"
         case "⇧": return "shift"
         case "⌥": return "option"
@@ -237,7 +247,7 @@ enum HotkeyDisplay {
         default: break
         }
 
-        switch trimmed {
+        switch slashNormalized {
         case "numpad +", "keypad +": return "numpad+"
         case "numpad -", "keypad -": return "numpad-"
         case "numpad *", "keypad *", "numpad x", "keypad x": return "numpad*"
@@ -248,13 +258,13 @@ enum HotkeyDisplay {
         default: break
         }
 
-        guard trimmed.count > 1 else {
-            return trimmed
+        guard slashNormalized.count > 1 else {
+            return slashNormalized
         }
 
         // Common keypad shorthand like "num+" / "kp*" should map to
         // supported keypad trigger keys instead of being split apart.
-        let compact = trimmed
+        let compact = slashNormalized
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: "_", with: "")
@@ -307,7 +317,7 @@ enum HotkeyDisplay {
 
         // Users also paste symbol-only shortcuts like "⌘⇧space".
         // Expand common modifier glyphs into tokenizable words first.
-        let expanded = trimmed
+        let expanded = slashNormalized
             .replacingOccurrences(of: "⌘", with: " command ")
             .replacingOccurrences(of: "⇧", with: " shift ")
             .replacingOccurrences(of: "⌥", with: " option ")
@@ -351,11 +361,11 @@ enum HotkeyDisplay {
         }
 
         // Fallback for classic + separated combo pastes.
-        let comboTail = trimmed
+        let comboTail = slashNormalized
             .split(omittingEmptySubsequences: true, whereSeparator: { $0 == "+" || $0 == "," })
             .last
             .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-        let candidate = (comboTail?.isEmpty == false) ? comboTail! : trimmed
+        let candidate = (comboTail?.isEmpty == false) ? comboTail! : slashNormalized
 
         let separators = CharacterSet(charactersIn: " -_,")
         let collapsed = candidate.components(separatedBy: separators).joined()
