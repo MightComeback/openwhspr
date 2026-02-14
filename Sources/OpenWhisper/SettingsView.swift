@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
     @State private var hotkeyCaptureError: String?
     @State private var hotkeyCaptureSuccessMessage: String?
+    @State private var hotkeyCaptureSuccessResetTask: Task<Void, Never>?
     @State private var hotkeyApplyMessage: String?
     @AppStorage(AppDefaults.Keys.insertionProbeSampleText) private var insertionProbeSampleText: String = "OpenWhisper insertion test"
     private let insertionProbeMaxCharacters: Int = AudioTranscriber.insertionProbeMaxCharacters
@@ -933,6 +934,8 @@ struct SettingsView: View {
         }
         .onDisappear {
             stopHotkeyCapture()
+            hotkeyCaptureSuccessResetTask?.cancel()
+            hotkeyCaptureSuccessResetTask = nil
         }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView(transcriber: transcriber)
@@ -1694,6 +1697,8 @@ struct SettingsView: View {
         stopHotkeyCapture()
         hotkeyCaptureError = nil
         hotkeyCaptureSuccessMessage = nil
+        hotkeyCaptureSuccessResetTask?.cancel()
+        hotkeyCaptureSuccessResetTask = nil
         hotkeyApplyMessage = nil
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = hotkeyCaptureTimeoutSeconds
@@ -1760,6 +1765,18 @@ struct SettingsView: View {
         isCapturingHotkey = false
     }
 
+    private func scheduleHotkeyCaptureSuccessReset() {
+        hotkeyCaptureSuccessResetTask?.cancel()
+        hotkeyCaptureSuccessResetTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            guard !Task.isCancelled else {
+                return
+            }
+            hotkeyCaptureSuccessMessage = nil
+            hotkeyCaptureSuccessResetTask = nil
+        }
+    }
+
     private func captureHotkey(from event: NSEvent) {
         guard isCapturingHotkey else {
             return
@@ -1819,6 +1836,7 @@ struct SettingsView: View {
         forbiddenCapsLock = !requiredCapsLock && forbiddenCapsLock
 
         hotkeyCaptureSuccessMessage = "Captured: \(hotkeySummary())"
+        scheduleHotkeyCaptureSuccessReset()
         stopHotkeyCapture()
     }
 
