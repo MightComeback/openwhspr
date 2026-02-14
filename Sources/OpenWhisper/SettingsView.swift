@@ -572,9 +572,15 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         } else if showsInsertionTestAutoCaptureHint {
-                            Text("No saved insertion target yet. Run insertion test will first capture your current frontmost app, then run the test.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let targetName = insertionTestAutoCaptureTargetName, !targetName.isEmpty {
+                                Text("No saved insertion target yet. Run insertion test will first capture \(targetName), then run the test.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("No saved insertion target yet. Run insertion test will first capture your current frontmost app, then run the test.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         } else if let target = insertionTestTargetDisplay {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text("Insertion test target: \(target)")
@@ -1388,6 +1394,15 @@ struct SettingsView: View {
         canFocusInsertionTarget && canRunInsertionTest
     }
 
+    private var insertionTestAutoCaptureTargetName: String? {
+        guard !canRunInsertionTest,
+              canCaptureAndRunInsertionTest,
+              let candidate = transcriber.profileCaptureCandidate() else {
+            return nil
+        }
+        return candidate.appName
+    }
+
     private var runInsertionTestButtonTitle: String {
         if transcriber.isRunningInsertionProbe {
             return "Running insertion test…"
@@ -1395,6 +1410,10 @@ struct SettingsView: View {
 
         if canRunInsertionTest {
             return "Run insertion test"
+        }
+
+        if let targetName = insertionTestAutoCaptureTargetName, !targetName.isEmpty {
+            return "Run insertion test (capture \(targetName))"
         }
 
         if canCaptureAndRunInsertionTest {
