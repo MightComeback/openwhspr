@@ -1736,8 +1736,10 @@ struct SettingsView: View {
             return nil
         }
 
-        hotkeyCaptureGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
-            captureHotkey(from: event)
+        if inputMonitoringAuthorized {
+            hotkeyCaptureGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
+                captureHotkey(from: event)
+            }
         }
 
         hotkeyCaptureTimeoutTask?.cancel()
