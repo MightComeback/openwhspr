@@ -2198,7 +2198,10 @@ struct SettingsView: View {
 
     private func parseModifierToken(_ token: String) -> ParsedModifier? {
         switch token {
-        case "cmd", "command", "meta", "super", "win", "windows", "⌘", "@": return .command
+        // Common cross-platform docs often use "CommandOrControl"
+        // (or compact aliases like "cmdorctrl"). On macOS this should map
+        // to Command so pasted shortcuts apply without manual cleanup.
+        case "cmd", "command", "meta", "super", "win", "windows", "commandorcontrol", "controlorcommand", "cmdorctrl", "ctrlorcmd", "⌘", "@": return .command
         case "shift", "⇧", "$": return .shift
         case "opt", "option", "alt", "⌥", "~": return .option
         case "ctrl", "control", "ctl", "⌃", "^": return .control
