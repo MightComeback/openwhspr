@@ -442,6 +442,18 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         setStatus(active: true, message: standbyStatusMessage())
     }
 
+    /// Best-effort auto-resume used by Settings polling: when permissions are
+    /// granted after launch (or after a temporary tap stop), bring hotkey
+    /// listening back without forcing users to press “Restart monitor”.
+    func resumeIfPossible() {
+        guard !isListening else { return }
+        guard eventTap == nil else { return }
+        guard hasValidTriggerKey else { return }
+        guard hasSafeModifierConfig() else { return }
+        guard Self.missingHotkeyPermissionNames().isEmpty else { return }
+        start()
+    }
+
     var holdSessionArmedForTesting: Bool {
         holdSessionArmed
     }

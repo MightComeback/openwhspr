@@ -919,12 +919,14 @@ struct SettingsView: View {
             launchAtLogin = LaunchAtLogin.isEnabled
             enforceInsertionProbeSampleTextLimit()
             refreshPermissionState()
+            hotkeyMonitor.resumeIfPossible()
             Task { @MainActor in
                 transcriber.refreshFrontmostAppContext()
             }
         }
         .onReceive(permissionTimer) { _ in
             refreshPermissionState()
+            hotkeyMonitor.resumeIfPossible()
             Task { @MainActor in
                 transcriber.refreshFrontmostAppContext()
             }
