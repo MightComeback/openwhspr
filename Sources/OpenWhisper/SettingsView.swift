@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var hotkeyCaptureGlobalMonitor: Any?
     @State private var hotkeyCaptureTimeoutTask: Task<Void, Never>?
     @State private var hotkeyCaptureSecondsRemaining: Int = 0
+    @State private var hotkeyCaptureStartedAt: Date = .distantPast
     @State private var hotkeyCaptureError: String?
     @State private var hotkeyCaptureSuccessMessage: String?
     @State private var hotkeyCaptureSuccessResetTask: Task<Void, Never>?
@@ -1702,6 +1703,7 @@ struct SettingsView: View {
         hotkeyApplyMessage = nil
         isCapturingHotkey = true
         hotkeyCaptureSecondsRemaining = hotkeyCaptureTimeoutSeconds
+        hotkeyCaptureStartedAt = Date()
 
         if !inputMonitoringAuthorized {
             hotkeyCaptureError = "Input Monitoring permission is missing. Capture works only while OpenWhisper is focused."
@@ -1782,6 +1784,10 @@ struct SettingsView: View {
             return
         }
 
+        if shouldIgnoreCaptureActivationEvent(event) {
+            return
+        }
+
         if isModifierOnlyHotkeyEvent(event) {
             hotkeyCaptureError = "Press one non-modifier key while holding modifiers (for example: ⌘+⇧+Space)."
             return
@@ -1838,6 +1844,24 @@ struct SettingsView: View {
         hotkeyCaptureSuccessMessage = "Captured: \(hotkeySummary())"
         scheduleHotkeyCaptureSuccessReset()
         stopHotkeyCapture()
+    }
+
+    private func shouldIgnoreCaptureActivationEvent(_ event: NSEvent) -> Bool {
+        // UX: avoid accidentally capturing the same shortcut used to start
+        // recording (⌘+⇧+K) when users trigger capture from the keyboard.
+        // Ignore only immediately after capture starts so intentional uses of
+        // that combo can still be recorded by pressing it again.
+        let elapsed = Date().timeIntervalSince(hotkeyCaptureStartedAt)
+        guard elapsed <= 0.35 else {
+            return false
+        }
+
+        guard let key = hotkeyKeyName(from: event), key == "k" else {
+            return false
+        }
+
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        return modifiers == [.command, .shift]
     }
 
     private func isModifierOnlyHotkeyEvent(_ event: NSEvent) -> Bool {
