@@ -837,18 +837,7 @@ struct ContentView: View {
     }
 
     private func statusTitle() -> String {
-        if transcriber.isRecording {
-            let duration = recordingDuration()
-            if duration >= 1 {
-                return "Recording • \(formatDuration(duration))"
-            }
-            return "Recording"
-        }
-        if transcriber.pendingChunkCount > 0 {
-            let chunks = transcriber.pendingChunkCount
-            return "Finalizing • \(chunks) chunk\(chunks == 1 ? "" : "s")"
-        }
-        return "Ready"
+        ViewHelpers.statusTitle(isRecording: transcriber.isRecording, recordingDuration: recordingDuration(), pendingChunkCount: transcriber.pendingChunkCount)
     }
 
     private func recordingDuration() -> TimeInterval {
@@ -857,27 +846,11 @@ struct ContentView: View {
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
-        let total = Int(max(0, seconds.rounded()))
-        let hours = total / 3600
-        let minutes = (total % 3600) / 60
-        let remainder = total % 60
-
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, remainder)
-        }
-
-        return String(format: "%d:%02d", minutes, remainder)
+        ViewHelpers.formatDuration(seconds)
     }
 
     private func formatShortDuration(_ seconds: TimeInterval) -> String {
-        let rounded = Int(max(0, seconds.rounded()))
-        if rounded < 60 {
-            return "\(rounded)s"
-        }
-
-        let minutes = rounded / 60
-        let remainder = rounded % 60
-        return "\(minutes)m \(remainder)s"
+        ViewHelpers.formatShortDuration(seconds)
     }
 
     private var liveWordsPerMinute: Int? {
@@ -917,50 +890,26 @@ struct ContentView: View {
     }
 
     private var finalizationProgress: Double? {
-        let pending = transcriber.pendingChunkCount
-
-        guard !transcriber.isRecording,
-              pending > 0,
-              let initialPending = finalizationInitialPendingChunks,
-              initialPending > 0 else {
-            return nil
-        }
-
-        let completed = max(0, initialPending - pending)
-        let rawProgress = Double(completed) / Double(initialPending)
-        return min(max(rawProgress, 0), 1)
+        ViewHelpers.finalizationProgress(
+            pendingChunkCount: transcriber.pendingChunkCount,
+            initialPendingChunks: finalizationInitialPendingChunks,
+            isRecording: transcriber.isRecording
+        )
     }
 
     private var estimatedFinalizationSeconds: TimeInterval? {
-        guard transcriber.pendingChunkCount > 0 else {
-            return nil
-        }
-
-        let latency = transcriber.averageChunkLatencySeconds > 0
-            ? transcriber.averageChunkLatencySeconds
-            : transcriber.lastChunkLatencySeconds
-
-        guard latency > 0 else {
-            return nil
-        }
-
-        return Double(transcriber.pendingChunkCount) * latency
+        ViewHelpers.estimatedFinalizationSeconds(
+            pendingChunkCount: transcriber.pendingChunkCount,
+            averageChunkLatency: transcriber.averageChunkLatencySeconds,
+            lastChunkLatency: transcriber.lastChunkLatencySeconds
+        )
     }
 
     private var liveLoopLagNotice: String? {
-        let pending = transcriber.pendingChunkCount
-        let lagWarningThresholdSeconds: TimeInterval = 6
-
-        if let remaining = estimatedFinalizationSeconds,
-           remaining >= lagWarningThresholdSeconds {
-            return "Live loop is falling behind (~\(formatShortDuration(remaining)) queued). Pause briefly to let transcription catch up."
-        }
-
-        guard pending >= 3 else {
-            return nil
-        }
-
-        return "Live loop is falling behind (\(pending) chunks queued). Pause briefly to let transcription catch up."
+        ViewHelpers.liveLoopLagNotice(
+            pendingChunkCount: transcriber.pendingChunkCount,
+            estimatedFinalizationSeconds: estimatedFinalizationSeconds
+        )
     }
 
     private func hotkeySummary() -> String {
@@ -981,32 +930,20 @@ struct ContentView: View {
     }
 
     private func startStopButtonHelpText() -> String {
-        if transcriber.isRecording {
-            return "Stop recording"
-        }
-
-        if transcriber.pendingChunkCount > 0 {
-            if transcriber.isStartAfterFinalizeQueued {
-                return "Cancel queued recording start while finalization finishes"
-            }
-            return "Queue the next recording to start after finalization"
-        }
-
-        if !microphoneAuthorized {
-            return "Microphone permission is required before recording can start"
-        }
-
-        return "Start recording"
+        ViewHelpers.startStopButtonHelpText(
+            isRecording: transcriber.isRecording,
+            pendingChunkCount: transcriber.pendingChunkCount,
+            isStartAfterFinalizeQueued: transcriber.isStartAfterFinalizeQueued,
+            microphoneAuthorized: microphoneAuthorized
+        )
     }
 
     private func startStopButtonTitle() -> String {
-        if transcriber.isRecording {
-            return "Stop"
-        }
-        if transcriber.pendingChunkCount > 0 {
-            return transcriber.isStartAfterFinalizeQueued ? "Cancel queued start" : "Queue start"
-        }
-        return "Start"
+        ViewHelpers.startStopButtonTitle(
+            isRecording: transcriber.isRecording,
+            pendingChunkCount: transcriber.pendingChunkCount,
+            isStartAfterFinalizeQueued: transcriber.isStartAfterFinalizeQueued
+        )
     }
 
     private var canInsertDirectly: Bool {
@@ -1041,19 +978,12 @@ struct ContentView: View {
     }
 
     private var insertActionDisabledReason: String? {
-        if !hasTranscriptionText {
-            return "No transcription to insert yet"
-        }
-
-        if transcriber.isRunningInsertionProbe {
-            return "Wait for the insertion probe to finish"
-        }
-
-        if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
-            return "Stop recording and wait for pending chunks"
-        }
-
-        return nil
+        ViewHelpers.insertActionDisabledReason(
+            hasTranscriptionText: hasTranscriptionText,
+            isRunningInsertionProbe: transcriber.isRunningInsertionProbe,
+            isRecording: transcriber.isRecording,
+            pendingChunkCount: transcriber.pendingChunkCount
+        )
     }
 
     private func insertButtonTitle() -> String {
@@ -1326,54 +1256,20 @@ struct ContentView: View {
     }
 
     private func abbreviatedAppName(_ name: String, maxCharacters: Int = 18) -> String {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count > maxCharacters else { return trimmed }
-
-        let prefixLength = max(1, maxCharacters - 1)
-        let endIndex = trimmed.index(trimmed.startIndex, offsetBy: prefixLength)
-        return String(trimmed[..<endIndex]) + "…"
+        ViewHelpers.abbreviatedAppName(name, maxCharacters: maxCharacters)
     }
 
     private func insertTargetAgeDescription() -> String? {
-        guard let capturedAt = insertTargetCapturedAt else {
-            return nil
-        }
-
-        let elapsed = max(0, uiNow.timeIntervalSince(capturedAt))
-        let staleAfter = activeInsertTargetStaleAfterSeconds
-        let remaining = max(0, staleAfter - elapsed)
-
-        let ageLabel: String
-        if elapsed < 1 {
-            ageLabel = "just now"
-        } else {
-            ageLabel = "\(formatShortDuration(elapsed)) ago"
-        }
-
-        if isInsertTargetStale {
-            return "Target captured \(ageLabel) • stale"
-        }
-
-        // Front-app insertion UX: show when the target snapshot will become
-        // stale so users can retarget proactively before Command+Return.
-        if remaining <= 10 {
-            return "Target captured \(ageLabel) • stale in ~\(formatShortDuration(remaining))"
-        }
-
-        return "Target captured \(ageLabel)"
+        ViewHelpers.insertTargetAgeDescription(
+            capturedAt: insertTargetCapturedAt,
+            now: uiNow,
+            staleAfterSeconds: activeInsertTargetStaleAfterSeconds,
+            isStale: isInsertTargetStale
+        )
     }
 
     private func lastSuccessfulInsertDescription() -> String? {
-        guard let insertedAt = transcriber.lastSuccessfulInsertionAt else {
-            return nil
-        }
-
-        let elapsed = max(0, uiNow.timeIntervalSince(insertedAt))
-        if elapsed < 1 {
-            return "Last insert succeeded just now"
-        }
-
-        return "Last insert succeeded \(formatShortDuration(elapsed)) ago"
+        ViewHelpers.lastSuccessfulInsertDescription(insertedAt: transcriber.lastSuccessfulInsertionAt, now: uiNow)
     }
 
     @ViewBuilder
@@ -1414,20 +1310,7 @@ struct ContentView: View {
     }
 
     private func historyEntryStats(_ entry: TranscriptionEntry) -> String {
-        let text = entry.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
-        var parts = ["\(words)w"]
-        if let duration = entry.durationSeconds, duration > 0 {
-            let total = Int(duration.rounded())
-            if total < 60 {
-                parts.append("\(total)s")
-            } else {
-                let minutes = total / 60
-                let seconds = total % 60
-                parts.append(String(format: "%d:%02d", minutes, seconds))
-            }
-        }
-        return parts.joined(separator: " · ")
+        ViewHelpers.historyEntryStats(text: entry.text, durationSeconds: entry.durationSeconds)
     }
 
     private func openSystemSettingsPane(_ paneURL: String) {

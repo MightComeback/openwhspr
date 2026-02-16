@@ -394,6 +394,188 @@ struct ViewHelpersTests {
         #expect(result?.requiredModifiers == Set([.command]))
     }
 
+    // MARK: - insertActionDisabledReason
+
+    @Test("insertActionDisabledReason: no text")
+    func insertDisabledNoText() {
+        #expect(ViewHelpers.insertActionDisabledReason(hasTranscriptionText: false, isRunningInsertionProbe: false, isRecording: false, pendingChunkCount: 0) == "No transcription to insert yet")
+    }
+
+    @Test("insertActionDisabledReason: probe running")
+    func insertDisabledProbe() {
+        #expect(ViewHelpers.insertActionDisabledReason(hasTranscriptionText: true, isRunningInsertionProbe: true, isRecording: false, pendingChunkCount: 0) == "Wait for the insertion probe to finish")
+    }
+
+    @Test("insertActionDisabledReason: recording")
+    func insertDisabledRecording() {
+        #expect(ViewHelpers.insertActionDisabledReason(hasTranscriptionText: true, isRunningInsertionProbe: false, isRecording: true, pendingChunkCount: 0) == "Stop recording and wait for pending chunks")
+    }
+
+    @Test("insertActionDisabledReason: pending chunks")
+    func insertDisabledPending() {
+        #expect(ViewHelpers.insertActionDisabledReason(hasTranscriptionText: true, isRunningInsertionProbe: false, isRecording: false, pendingChunkCount: 3) == "Stop recording and wait for pending chunks")
+    }
+
+    @Test("insertActionDisabledReason: ready")
+    func insertReady() {
+        #expect(ViewHelpers.insertActionDisabledReason(hasTranscriptionText: true, isRunningInsertionProbe: false, isRecording: false, pendingChunkCount: 0) == nil)
+    }
+
+    // MARK: - startStopButtonTitle
+
+    @Test("startStopButtonTitle: recording")
+    func startStopRecording() {
+        #expect(ViewHelpers.startStopButtonTitle(isRecording: true, pendingChunkCount: 0, isStartAfterFinalizeQueued: false) == "Stop")
+    }
+
+    @Test("startStopButtonTitle: pending not queued")
+    func startStopPending() {
+        #expect(ViewHelpers.startStopButtonTitle(isRecording: false, pendingChunkCount: 3, isStartAfterFinalizeQueued: false) == "Queue start")
+    }
+
+    @Test("startStopButtonTitle: pending queued")
+    func startStopQueued() {
+        #expect(ViewHelpers.startStopButtonTitle(isRecording: false, pendingChunkCount: 3, isStartAfterFinalizeQueued: true) == "Cancel queued start")
+    }
+
+    @Test("startStopButtonTitle: idle")
+    func startStopIdle() {
+        #expect(ViewHelpers.startStopButtonTitle(isRecording: false, pendingChunkCount: 0, isStartAfterFinalizeQueued: false) == "Start")
+    }
+
+    // MARK: - startStopButtonHelpText
+
+    @Test("startStopButtonHelpText: recording")
+    func startStopHelpRecording() {
+        #expect(ViewHelpers.startStopButtonHelpText(isRecording: true, pendingChunkCount: 0, isStartAfterFinalizeQueued: false, microphoneAuthorized: true) == "Stop recording")
+    }
+
+    @Test("startStopButtonHelpText: pending queued")
+    func startStopHelpQueued() {
+        #expect(ViewHelpers.startStopButtonHelpText(isRecording: false, pendingChunkCount: 2, isStartAfterFinalizeQueued: true, microphoneAuthorized: true) == "Cancel queued recording start while finalization finishes")
+    }
+
+    @Test("startStopButtonHelpText: pending not queued")
+    func startStopHelpPending() {
+        #expect(ViewHelpers.startStopButtonHelpText(isRecording: false, pendingChunkCount: 2, isStartAfterFinalizeQueued: false, microphoneAuthorized: true) == "Queue the next recording to start after finalization")
+    }
+
+    @Test("startStopButtonHelpText: no mic")
+    func startStopHelpNoMic() {
+        #expect(ViewHelpers.startStopButtonHelpText(isRecording: false, pendingChunkCount: 0, isStartAfterFinalizeQueued: false, microphoneAuthorized: false) == "Microphone permission is required before recording can start")
+    }
+
+    @Test("startStopButtonHelpText: ready")
+    func startStopHelpReady() {
+        #expect(ViewHelpers.startStopButtonHelpText(isRecording: false, pendingChunkCount: 0, isStartAfterFinalizeQueued: false, microphoneAuthorized: true) == "Start recording")
+    }
+
+    // MARK: - estimatedFinalizationSeconds
+
+    @Test("estimatedFinalizationSeconds: no pending")
+    func estFinNoPending() {
+        #expect(ViewHelpers.estimatedFinalizationSeconds(pendingChunkCount: 0, averageChunkLatency: 1.0, lastChunkLatency: 1.0) == nil)
+    }
+
+    @Test("estimatedFinalizationSeconds: uses average latency")
+    func estFinAvgLatency() {
+        #expect(ViewHelpers.estimatedFinalizationSeconds(pendingChunkCount: 5, averageChunkLatency: 2.0, lastChunkLatency: 1.0) == 10.0)
+    }
+
+    @Test("estimatedFinalizationSeconds: falls back to last latency")
+    func estFinLastLatency() {
+        #expect(ViewHelpers.estimatedFinalizationSeconds(pendingChunkCount: 3, averageChunkLatency: 0, lastChunkLatency: 1.5) == 4.5)
+    }
+
+    @Test("estimatedFinalizationSeconds: no latency data")
+    func estFinNoLatency() {
+        #expect(ViewHelpers.estimatedFinalizationSeconds(pendingChunkCount: 3, averageChunkLatency: 0, lastChunkLatency: 0) == nil)
+    }
+
+    // MARK: - liveLoopLagNotice
+
+    @Test("liveLoopLagNotice: no lag")
+    func lagNoticeNone() {
+        #expect(ViewHelpers.liveLoopLagNotice(pendingChunkCount: 1, estimatedFinalizationSeconds: 2.0) == nil)
+    }
+
+    @Test("liveLoopLagNotice: high estimated time")
+    func lagNoticeHighEst() {
+        let notice = ViewHelpers.liveLoopLagNotice(pendingChunkCount: 5, estimatedFinalizationSeconds: 10.0)
+        #expect(notice?.contains("falling behind") == true)
+        #expect(notice?.contains("10s") == true)
+    }
+
+    @Test("liveLoopLagNotice: many chunks no estimate")
+    func lagNoticeManyChunks() {
+        let notice = ViewHelpers.liveLoopLagNotice(pendingChunkCount: 5, estimatedFinalizationSeconds: nil)
+        #expect(notice?.contains("5 chunks queued") == true)
+    }
+
+    @Test("liveLoopLagNotice: few chunks no estimate")
+    func lagNoticeFewChunks() {
+        #expect(ViewHelpers.liveLoopLagNotice(pendingChunkCount: 2, estimatedFinalizationSeconds: nil) == nil)
+    }
+
+    // MARK: - insertTargetAgeDescription
+
+    @Test("insertTargetAgeDescription: nil capturedAt")
+    func targetAgeNil() {
+        #expect(ViewHelpers.insertTargetAgeDescription(capturedAt: nil, now: Date(), staleAfterSeconds: 90, isStale: false) == nil)
+    }
+
+    @Test("insertTargetAgeDescription: just now")
+    func targetAgeJustNow() {
+        let now = Date()
+        let result = ViewHelpers.insertTargetAgeDescription(capturedAt: now, now: now, staleAfterSeconds: 90, isStale: false)
+        #expect(result == "Target captured just now")
+    }
+
+    @Test("insertTargetAgeDescription: stale")
+    func targetAgeStale() {
+        let now = Date()
+        let capturedAt = now.addingTimeInterval(-100)
+        let result = ViewHelpers.insertTargetAgeDescription(capturedAt: capturedAt, now: now, staleAfterSeconds: 90, isStale: true)
+        #expect(result?.contains("stale") == true)
+        #expect(result?.contains("ago") == true)
+    }
+
+    @Test("insertTargetAgeDescription: near stale threshold")
+    func targetAgeNearStale() {
+        let now = Date()
+        let capturedAt = now.addingTimeInterval(-85)
+        let result = ViewHelpers.insertTargetAgeDescription(capturedAt: capturedAt, now: now, staleAfterSeconds: 90, isStale: false)
+        #expect(result?.contains("stale in") == true)
+    }
+
+    @Test("insertTargetAgeDescription: fresh")
+    func targetAgeFresh() {
+        let now = Date()
+        let capturedAt = now.addingTimeInterval(-10)
+        let result = ViewHelpers.insertTargetAgeDescription(capturedAt: capturedAt, now: now, staleAfterSeconds: 90, isStale: false)
+        #expect(result == "Target captured 10s ago")
+    }
+
+    // MARK: - lastSuccessfulInsertDescription
+
+    @Test("lastSuccessfulInsertDescription: nil")
+    func lastInsertNil() {
+        #expect(ViewHelpers.lastSuccessfulInsertDescription(insertedAt: nil, now: Date()) == nil)
+    }
+
+    @Test("lastSuccessfulInsertDescription: just now")
+    func lastInsertJustNow() {
+        let now = Date()
+        #expect(ViewHelpers.lastSuccessfulInsertDescription(insertedAt: now, now: now) == "Last insert succeeded just now")
+    }
+
+    @Test("lastSuccessfulInsertDescription: ago")
+    func lastInsertAgo() {
+        let now = Date()
+        let result = ViewHelpers.lastSuccessfulInsertDescription(insertedAt: now.addingTimeInterval(-30), now: now)
+        #expect(result == "Last insert succeeded 30s ago")
+    }
+
     // MARK: - parseHotkeyTokens
 
     @Test("parseHotkeyTokens: empty returns nil")

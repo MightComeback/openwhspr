@@ -391,6 +391,139 @@ enum ViewHelpers {
         )
     }
 
+    // MARK: - Insert action disabled reason
+
+    /// Returns the reason the insert action is disabled, or nil if it can proceed.
+    static func insertActionDisabledReason(
+        hasTranscriptionText: Bool,
+        isRunningInsertionProbe: Bool,
+        isRecording: Bool,
+        pendingChunkCount: Int
+    ) -> String? {
+        if !hasTranscriptionText {
+            return "No transcription to insert yet"
+        }
+        if isRunningInsertionProbe {
+            return "Wait for the insertion probe to finish"
+        }
+        if isRecording || pendingChunkCount > 0 {
+            return "Stop recording and wait for pending chunks"
+        }
+        return nil
+    }
+
+    // MARK: - Start/Stop button
+
+    /// Returns the start/stop button title.
+    static func startStopButtonTitle(
+        isRecording: Bool,
+        pendingChunkCount: Int,
+        isStartAfterFinalizeQueued: Bool
+    ) -> String {
+        if isRecording { return "Stop" }
+        if pendingChunkCount > 0 {
+            return isStartAfterFinalizeQueued ? "Cancel queued start" : "Queue start"
+        }
+        return "Start"
+    }
+
+    /// Returns the start/stop button help text.
+    static func startStopButtonHelpText(
+        isRecording: Bool,
+        pendingChunkCount: Int,
+        isStartAfterFinalizeQueued: Bool,
+        microphoneAuthorized: Bool
+    ) -> String {
+        if isRecording { return "Stop recording" }
+        if pendingChunkCount > 0 {
+            if isStartAfterFinalizeQueued {
+                return "Cancel queued recording start while finalization finishes"
+            }
+            return "Queue the next recording to start after finalization"
+        }
+        if !microphoneAuthorized {
+            return "Microphone permission is required before recording can start"
+        }
+        return "Start recording"
+    }
+
+    // MARK: - Estimated finalization
+
+    /// Estimates seconds remaining for finalization.
+    static func estimatedFinalizationSeconds(
+        pendingChunkCount: Int,
+        averageChunkLatency: Double,
+        lastChunkLatency: Double
+    ) -> TimeInterval? {
+        guard pendingChunkCount > 0 else { return nil }
+        let latency = averageChunkLatency > 0 ? averageChunkLatency : lastChunkLatency
+        guard latency > 0 else { return nil }
+        return Double(pendingChunkCount) * latency
+    }
+
+    // MARK: - Live loop lag notice
+
+    /// Returns a lag notice string if the live loop is falling behind, else nil.
+    static func liveLoopLagNotice(
+        pendingChunkCount: Int,
+        estimatedFinalizationSeconds: TimeInterval?
+    ) -> String? {
+        let lagWarningThresholdSeconds: TimeInterval = 6
+
+        if let remaining = estimatedFinalizationSeconds,
+           remaining >= lagWarningThresholdSeconds {
+            return "Live loop is falling behind (~\(formatShortDuration(remaining)) queued). Pause briefly to let transcription catch up."
+        }
+
+        guard pendingChunkCount >= 3 else { return nil }
+
+        return "Live loop is falling behind (\(pendingChunkCount) chunks queued). Pause briefly to let transcription catch up."
+    }
+
+    // MARK: - Insert target age description
+
+    /// Returns a human-readable description of how old the insert target is.
+    static func insertTargetAgeDescription(
+        capturedAt: Date?,
+        now: Date,
+        staleAfterSeconds: TimeInterval,
+        isStale: Bool
+    ) -> String? {
+        guard let capturedAt else { return nil }
+
+        let elapsed = max(0, now.timeIntervalSince(capturedAt))
+        let remaining = max(0, staleAfterSeconds - elapsed)
+
+        let ageLabel: String
+        if elapsed < 1 {
+            ageLabel = "just now"
+        } else {
+            ageLabel = "\(formatShortDuration(elapsed)) ago"
+        }
+
+        if isStale {
+            return "Target captured \(ageLabel) • stale"
+        }
+
+        if remaining <= 10 {
+            return "Target captured \(ageLabel) • stale in ~\(formatShortDuration(remaining))"
+        }
+
+        return "Target captured \(ageLabel)"
+    }
+
+    // MARK: - Last successful insert description
+
+    /// Returns a human-readable description of the last successful insert time.
+    static func lastSuccessfulInsertDescription(insertedAt: Date?, now: Date) -> String? {
+        guard let insertedAt else { return nil }
+        let elapsed = max(0, now.timeIntervalSince(insertedAt))
+        if elapsed < 1 {
+            return "Last insert succeeded just now"
+        }
+        return "Last insert succeeded \(formatShortDuration(elapsed)) ago"
+    }
+
     /// Sanitizes a raw key value to its canonical form.
     static func sanitizeKeyValue(_ raw: String) -> String {
         let normalized = raw
