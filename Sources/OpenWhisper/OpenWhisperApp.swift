@@ -19,63 +19,40 @@ private struct MenuBarLabel: View {
 
     private var isShowingInsertionFlash: Bool {
         _ = tick
-        guard let insertedAt = transcriber.lastSuccessfulInsertionAt else { return false }
-        return Date().timeIntervalSince(insertedAt) < insertionFlashDuration
+        return ViewHelpers.isInsertionFlashVisible(
+            insertedAt: transcriber.lastSuccessfulInsertionAt,
+            now: Date(),
+            flashDuration: insertionFlashDuration
+        )
     }
 
     private var iconName: String {
-        if isShowingInsertionFlash {
-            return "checkmark.circle.fill"
-        }
-        if transcriber.isRecording {
-            return "waveform.circle.fill"
-        }
-        if transcriber.pendingChunkCount > 0 {
-            return "ellipsis.circle"
-        }
-        if !transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "doc.text"
-        }
-        return "mic"
+        ViewHelpers.menuBarIconName(
+            isRecording: transcriber.isRecording,
+            pendingChunkCount: transcriber.pendingChunkCount,
+            hasTranscriptionText: !transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            isShowingInsertionFlash: isShowingInsertionFlash
+        )
     }
 
     private var durationLabel: String? {
         _ = tick
 
-        if isShowingInsertionFlash {
-            return "Inserted"
-        }
+        let elapsed: Int? = {
+            guard transcriber.isRecording, let startedAt = transcriber.recordingStartedAt else { return nil }
+            return max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
+        }()
 
-        if transcriber.isRecording,
-           let startedAt = transcriber.recordingStartedAt {
-            let elapsed = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
-            let minutes = elapsed / 60
-            let seconds = elapsed % 60
-            return String(format: "%d:%02d", minutes, seconds)
-        }
-
-        if !transcriber.isRecording, transcriber.pendingChunkCount > 0 {
-            let pending = transcriber.pendingChunkCount
-            let queuedStartSuffix = transcriber.isStartAfterFinalizeQueued ? "→●" : ""
-            let latency = transcriber.averageChunkLatencySeconds > 0
-                ? transcriber.averageChunkLatencySeconds
-                : transcriber.lastChunkLatencySeconds
-            if latency > 0 {
-                let remaining = Int((Double(pending) * latency).rounded())
-                return "\(pending)⏳\(remaining)s\(queuedStartSuffix)"
-            }
-            return "\(pending) left\(queuedStartSuffix)"
-        }
-
-        // Show word count when transcription text is ready to insert/copy,
-        // so users can confirm at a glance that text is waiting.
-        let text = transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !text.isEmpty {
-            let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
-            return "\(words)w"
-        }
-
-        return nil
+        return ViewHelpers.menuBarDurationLabel(
+            isRecording: transcriber.isRecording,
+            pendingChunkCount: transcriber.pendingChunkCount,
+            recordingElapsedSeconds: elapsed,
+            isStartAfterFinalizeQueued: transcriber.isStartAfterFinalizeQueued,
+            averageChunkLatency: transcriber.averageChunkLatencySeconds,
+            lastChunkLatency: transcriber.lastChunkLatencySeconds,
+            transcriptionWordCount: ViewHelpers.transcriptionWordCount(transcriber.transcription),
+            isShowingInsertionFlash: isShowingInsertionFlash
+        )
     }
 
     var body: some View {

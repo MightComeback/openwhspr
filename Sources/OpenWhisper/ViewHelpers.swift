@@ -733,4 +733,91 @@ enum ViewHelpers {
         }
         return "No destination app is available for insertion yet. Switch to your target app, then refresh."
     }
+
+    // MARK: - Menu bar label logic
+
+    /// The SF Symbol name for the menu bar icon.
+    static func menuBarIconName(
+        isRecording: Bool,
+        pendingChunkCount: Int,
+        hasTranscriptionText: Bool,
+        isShowingInsertionFlash: Bool
+    ) -> String {
+        if isShowingInsertionFlash {
+            return "checkmark.circle.fill"
+        }
+        if isRecording {
+            return "waveform.circle.fill"
+        }
+        if pendingChunkCount > 0 {
+            return "ellipsis.circle"
+        }
+        if hasTranscriptionText {
+            return "doc.text"
+        }
+        return "mic"
+    }
+
+    /// The text label shown next to the menu bar icon, or `nil` for the default "OpenWhisper" label.
+    static func menuBarDurationLabel(
+        isRecording: Bool,
+        pendingChunkCount: Int,
+        recordingElapsedSeconds: Int?,
+        isStartAfterFinalizeQueued: Bool,
+        averageChunkLatency: TimeInterval,
+        lastChunkLatency: TimeInterval,
+        transcriptionWordCount: Int,
+        isShowingInsertionFlash: Bool
+    ) -> String? {
+        if isShowingInsertionFlash {
+            return "Inserted"
+        }
+
+        if isRecording, let elapsed = recordingElapsedSeconds {
+            let minutes = elapsed / 60
+            let seconds = elapsed % 60
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+
+        if !isRecording, pendingChunkCount > 0 {
+            let queuedStartSuffix = isStartAfterFinalizeQueued ? "→●" : ""
+            let latency = averageChunkLatency > 0 ? averageChunkLatency : lastChunkLatency
+            if latency > 0 {
+                let remaining = Int((Double(pendingChunkCount) * latency).rounded())
+                return "\(pendingChunkCount)⏳\(remaining)s\(queuedStartSuffix)"
+            }
+            return "\(pendingChunkCount) left\(queuedStartSuffix)"
+        }
+
+        if transcriptionWordCount > 0 {
+            return "\(transcriptionWordCount)w"
+        }
+
+        return nil
+    }
+
+    /// Whether the insertion flash should still be visible.
+    static func isInsertionFlashVisible(
+        insertedAt: Date?,
+        now: Date,
+        flashDuration: TimeInterval = 3
+    ) -> Bool {
+        guard let insertedAt else { return false }
+        return now.timeIntervalSince(insertedAt) < flashDuration
+    }
+
+    /// Compute transcription word count from trimmed text.
+    static func transcriptionWordCount(_ text: String) -> Int {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return 0 }
+        return trimmed.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
+    }
+
+    /// Compute transcription stats string (e.g. "5w · 23c").
+    static func transcriptionStats(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let words = trimmed.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
+        let chars = trimmed.count
+        return "\(words)w · \(chars)c"
+    }
 }

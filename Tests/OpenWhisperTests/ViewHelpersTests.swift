@@ -633,6 +633,149 @@ struct ViewHelpersTests {
         #expect(ViewHelpers.looksLikeModifierComboInput("f12") == false)
     }
 
+    // MARK: - menuBarIconName
+
+    @Test("menuBarIconName: insertion flash")
+    func iconNameFlash() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: false, pendingChunkCount: 0, hasTranscriptionText: false, isShowingInsertionFlash: true) == "checkmark.circle.fill")
+    }
+
+    @Test("menuBarIconName: recording")
+    func iconNameRecording() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: true, pendingChunkCount: 0, hasTranscriptionText: false, isShowingInsertionFlash: false) == "waveform.circle.fill")
+    }
+
+    @Test("menuBarIconName: pending chunks")
+    func iconNamePending() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: false, pendingChunkCount: 3, hasTranscriptionText: false, isShowingInsertionFlash: false) == "ellipsis.circle")
+    }
+
+    @Test("menuBarIconName: has transcription")
+    func iconNameTranscription() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: false, pendingChunkCount: 0, hasTranscriptionText: true, isShowingInsertionFlash: false) == "doc.text")
+    }
+
+    @Test("menuBarIconName: idle")
+    func iconNameIdle() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: false, pendingChunkCount: 0, hasTranscriptionText: false, isShowingInsertionFlash: false) == "mic")
+    }
+
+    @Test("menuBarIconName: flash takes priority over recording")
+    func iconNameFlashPriority() {
+        #expect(ViewHelpers.menuBarIconName(isRecording: true, pendingChunkCount: 5, hasTranscriptionText: true, isShowingInsertionFlash: true) == "checkmark.circle.fill")
+    }
+
+    // MARK: - menuBarDurationLabel
+
+    @Test("menuBarDurationLabel: insertion flash")
+    func durationLabelFlash() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 0, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: true) == "Inserted")
+    }
+
+    @Test("menuBarDurationLabel: recording with elapsed time")
+    func durationLabelRecording() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: true, pendingChunkCount: 0, recordingElapsedSeconds: 125, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: false) == "2:05")
+    }
+
+    @Test("menuBarDurationLabel: recording zero seconds")
+    func durationLabelRecordingZero() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: true, pendingChunkCount: 0, recordingElapsedSeconds: 0, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: false) == "0:00")
+    }
+
+    @Test("menuBarDurationLabel: pending with average latency")
+    func durationLabelPendingAvgLatency() {
+        let result = ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 5, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 2.0, lastChunkLatency: 1.0, transcriptionWordCount: 0, isShowingInsertionFlash: false)
+        #expect(result == "5⏳10s")
+    }
+
+    @Test("menuBarDurationLabel: pending with last latency fallback")
+    func durationLabelPendingLastLatency() {
+        let result = ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 3, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 1.5, transcriptionWordCount: 0, isShowingInsertionFlash: false)
+        #expect(result == "3⏳5s")
+    }
+
+    @Test("menuBarDurationLabel: pending no latency")
+    func durationLabelPendingNoLatency() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 2, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: false) == "2 left")
+    }
+
+    @Test("menuBarDurationLabel: pending with queued start suffix")
+    func durationLabelPendingQueued() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 2, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: true, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: false) == "2 left→●")
+    }
+
+    @Test("menuBarDurationLabel: word count when idle with text")
+    func durationLabelWordCount() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 0, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 5, isShowingInsertionFlash: false) == "5w")
+    }
+
+    @Test("menuBarDurationLabel: nil when idle no text")
+    func durationLabelNil() {
+        #expect(ViewHelpers.menuBarDurationLabel(isRecording: false, pendingChunkCount: 0, recordingElapsedSeconds: nil, isStartAfterFinalizeQueued: false, averageChunkLatency: 0, lastChunkLatency: 0, transcriptionWordCount: 0, isShowingInsertionFlash: false) == nil)
+    }
+
+    // MARK: - isInsertionFlashVisible
+
+    @Test("isInsertionFlashVisible: nil insertedAt")
+    func flashVisibleNil() {
+        #expect(ViewHelpers.isInsertionFlashVisible(insertedAt: nil, now: Date()) == false)
+    }
+
+    @Test("isInsertionFlashVisible: within duration")
+    func flashVisibleWithin() {
+        let now = Date()
+        #expect(ViewHelpers.isInsertionFlashVisible(insertedAt: now.addingTimeInterval(-1), now: now) == true)
+    }
+
+    @Test("isInsertionFlashVisible: expired")
+    func flashVisibleExpired() {
+        let now = Date()
+        #expect(ViewHelpers.isInsertionFlashVisible(insertedAt: now.addingTimeInterval(-5), now: now) == false)
+    }
+
+    @Test("isInsertionFlashVisible: custom duration")
+    func flashVisibleCustom() {
+        let now = Date()
+        #expect(ViewHelpers.isInsertionFlashVisible(insertedAt: now.addingTimeInterval(-4), now: now, flashDuration: 5) == true)
+        #expect(ViewHelpers.isInsertionFlashVisible(insertedAt: now.addingTimeInterval(-6), now: now, flashDuration: 5) == false)
+    }
+
+    // MARK: - transcriptionWordCount
+
+    @Test("transcriptionWordCount: empty")
+    func wordCountEmpty() {
+        #expect(ViewHelpers.transcriptionWordCount("") == 0)
+        #expect(ViewHelpers.transcriptionWordCount("   ") == 0)
+    }
+
+    @Test("transcriptionWordCount: basic")
+    func wordCountBasic() {
+        #expect(ViewHelpers.transcriptionWordCount("hello world") == 2)
+        #expect(ViewHelpers.transcriptionWordCount("one two three four") == 4)
+    }
+
+    @Test("transcriptionWordCount: with punctuation")
+    func wordCountPunctuation() {
+        #expect(ViewHelpers.transcriptionWordCount("hello, world!") == 2)
+    }
+
+    // MARK: - transcriptionStats
+
+    @Test("transcriptionStats: basic")
+    func statsBasic() {
+        #expect(ViewHelpers.transcriptionStats("hello world") == "2w · 11c")
+    }
+
+    @Test("transcriptionStats: empty")
+    func statsEmpty() {
+        #expect(ViewHelpers.transcriptionStats("") == "0w · 0c")
+    }
+
+    @Test("transcriptionStats: with whitespace padding")
+    func statsWhitespace() {
+        #expect(ViewHelpers.transcriptionStats("  hi  ") == "1w · 2c")
+    }
+
     // MARK: - shouldAutoApplySafeCaptureModifiers
 
     @Test("shouldAutoApplySafeCaptureModifiers: single character keys need modifiers")
