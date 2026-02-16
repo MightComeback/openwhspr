@@ -2,13 +2,14 @@ import Testing
 import Foundation
 @testable import OpenWhisper
 
-@Suite("AudioFeedback")
+@Suite("AudioFeedback", .serialized)
 struct AudioFeedbackTests {
 
     @Test("isEnabled reads from UserDefaults")
-    func isEnabledReadsDefaults() {
+    @MainActor func isEnabledReadsDefaults() {
         let key = AppDefaults.Keys.audioFeedbackEnabled
         UserDefaults.standard.set(true, forKey: key)
+        #expect(UserDefaults.standard.bool(forKey: key) == true)
         #expect(AudioFeedback.isEnabled == true)
         UserDefaults.standard.set(false, forKey: key)
         #expect(AudioFeedback.isEnabled == false)
