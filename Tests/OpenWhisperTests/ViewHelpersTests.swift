@@ -1449,4 +1449,235 @@ struct ViewHelpersTests {
         let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: nil)
         #expect(result == "Insert into the last active app")
     }
+
+    // MARK: - canRetargetInsertTarget
+
+    @Test("canRetarget: true when idle")
+    func canRetargetIdle() {
+        #expect(ViewHelpers.canRetargetInsertTarget(isRecording: false, pendingChunkCount: 0))
+    }
+
+    @Test("canRetarget: false when recording")
+    func canRetargetRecording() {
+        #expect(!ViewHelpers.canRetargetInsertTarget(isRecording: true, pendingChunkCount: 0))
+    }
+
+    @Test("canRetarget: false when pending chunks")
+    func canRetargetPending() {
+        #expect(!ViewHelpers.canRetargetInsertTarget(isRecording: false, pendingChunkCount: 2))
+    }
+
+    @Test("canRetarget: false when both recording and pending")
+    func canRetargetBoth() {
+        #expect(!ViewHelpers.canRetargetInsertTarget(isRecording: true, pendingChunkCount: 1))
+    }
+
+    // MARK: - hasResolvableInsertTarget
+
+    @Test("hasResolvable: true for non-empty name")
+    func hasResolvableTrue() {
+        #expect(ViewHelpers.hasResolvableInsertTarget(insertTargetAppName: "Safari"))
+    }
+
+    @Test("hasResolvable: false for nil")
+    func hasResolvableNil() {
+        #expect(!ViewHelpers.hasResolvableInsertTarget(insertTargetAppName: nil))
+    }
+
+    @Test("hasResolvable: false for empty string")
+    func hasResolvableEmpty() {
+        #expect(!ViewHelpers.hasResolvableInsertTarget(insertTargetAppName: ""))
+    }
+
+    @Test("hasResolvable: false for whitespace-only")
+    func hasResolvableWhitespace() {
+        #expect(!ViewHelpers.hasResolvableInsertTarget(insertTargetAppName: "   "))
+    }
+
+    // MARK: - retargetButtonTitle
+
+    @Test("retargetTitle: nil target")
+    func retargetTitleNil() {
+        #expect(ViewHelpers.retargetButtonTitle(insertTargetAppName: nil, insertTargetUsesFallback: false) == "Retarget")
+    }
+
+    @Test("retargetTitle: empty target")
+    func retargetTitleEmpty() {
+        #expect(ViewHelpers.retargetButtonTitle(insertTargetAppName: "", insertTargetUsesFallback: false) == "Retarget")
+    }
+
+    @Test("retargetTitle: named target")
+    func retargetTitleNamed() {
+        let result = ViewHelpers.retargetButtonTitle(insertTargetAppName: "Safari", insertTargetUsesFallback: false)
+        #expect(result == "Retarget → Safari")
+    }
+
+    @Test("retargetTitle: fallback target")
+    func retargetTitleFallback() {
+        let result = ViewHelpers.retargetButtonTitle(insertTargetAppName: "Safari", insertTargetUsesFallback: true)
+        #expect(result == "Retarget → Safari (recent)")
+    }
+
+    // MARK: - retargetButtonHelpText
+
+    @Test("retargetHelp: recording")
+    func retargetHelpRecording() {
+        #expect(ViewHelpers.retargetButtonHelpText(isRecording: true, pendingChunkCount: 0) == "Finish recording before retargeting insertion")
+    }
+
+    @Test("retargetHelp: pending chunks")
+    func retargetHelpPending() {
+        #expect(ViewHelpers.retargetButtonHelpText(isRecording: false, pendingChunkCount: 1) == "Wait for finalization before retargeting insertion")
+    }
+
+    @Test("retargetHelp: idle")
+    func retargetHelpIdle() {
+        #expect(ViewHelpers.retargetButtonHelpText(isRecording: false, pendingChunkCount: 0) == "Refresh insertion target from your current front app")
+    }
+
+    // MARK: - useCurrentAppButtonTitle
+
+    @Test("useCurrentTitle: can insert with front app")
+    func useCurrentTitleInsertFront() {
+        #expect(ViewHelpers.useCurrentAppButtonTitle(canInsertDirectly: true, currentFrontAppName: "Notes") == "Use Current → Notes")
+    }
+
+    @Test("useCurrentTitle: can insert no front app")
+    func useCurrentTitleInsertNoFront() {
+        #expect(ViewHelpers.useCurrentAppButtonTitle(canInsertDirectly: true, currentFrontAppName: nil) == "Use Current App")
+    }
+
+    @Test("useCurrentTitle: cannot insert")
+    func useCurrentTitleCopy() {
+        #expect(ViewHelpers.useCurrentAppButtonTitle(canInsertDirectly: false, currentFrontAppName: "Notes") == "Use Current + Copy")
+    }
+
+    // MARK: - useCurrentAppButtonHelpText
+
+    @Test("useCurrentHelp: disabled reason")
+    func useCurrentHelpDisabled() {
+        #expect(ViewHelpers.useCurrentAppButtonHelpText(insertActionDisabledReason: "Record first", canInsertDirectly: true) == "Record first before using current app")
+    }
+
+    @Test("useCurrentHelp: can insert")
+    func useCurrentHelpInsert() {
+        #expect(ViewHelpers.useCurrentAppButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true) == "Retarget to the current front app and insert immediately")
+    }
+
+    @Test("useCurrentHelp: copy fallback")
+    func useCurrentHelpCopy() {
+        #expect(ViewHelpers.useCurrentAppButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: false) == "Retarget to the current front app and copy to clipboard")
+    }
+
+    // MARK: - retargetAndInsertButtonTitle
+
+    @Test("retargetInsertTitle: can insert with front app")
+    func retargetInsertTitleFront() {
+        #expect(ViewHelpers.retargetAndInsertButtonTitle(canInsertDirectly: true, currentFrontAppName: "Notes") == "Retarget + Insert → Notes")
+    }
+
+    @Test("retargetInsertTitle: can insert no front app")
+    func retargetInsertTitleNoFront() {
+        #expect(ViewHelpers.retargetAndInsertButtonTitle(canInsertDirectly: true, currentFrontAppName: nil) == "Retarget + Insert → Current App")
+    }
+
+    @Test("retargetInsertTitle: cannot insert")
+    func retargetInsertTitleCopy() {
+        #expect(ViewHelpers.retargetAndInsertButtonTitle(canInsertDirectly: false, currentFrontAppName: nil) == "Retarget + Copy → Clipboard")
+    }
+
+    // MARK: - retargetAndInsertHelpText
+
+    @Test("retargetInsertHelp: disabled reason")
+    func retargetInsertHelpDisabled() {
+        #expect(ViewHelpers.retargetAndInsertHelpText(insertActionDisabledReason: "Wait", canInsertDirectly: true) == "Wait before retargeting and inserting")
+    }
+
+    @Test("retargetInsertHelp: cannot insert")
+    func retargetInsertHelpCopy() {
+        #expect(ViewHelpers.retargetAndInsertHelpText(insertActionDisabledReason: nil, canInsertDirectly: false) == "Refresh target app, then copy transcription to clipboard")
+    }
+
+    @Test("retargetInsertHelp: can insert")
+    func retargetInsertHelpInsert() {
+        #expect(ViewHelpers.retargetAndInsertHelpText(insertActionDisabledReason: nil, canInsertDirectly: true) == "Refresh target app from the current front app, then insert")
+    }
+
+    // MARK: - focusTargetButtonTitle
+
+    @Test("focusTargetTitle: nil target")
+    func focusTargetTitleNil() {
+        #expect(ViewHelpers.focusTargetButtonTitle(insertTargetAppName: nil) == "Focus Target")
+    }
+
+    @Test("focusTargetTitle: empty target")
+    func focusTargetTitleEmpty() {
+        #expect(ViewHelpers.focusTargetButtonTitle(insertTargetAppName: "") == "Focus Target")
+    }
+
+    @Test("focusTargetTitle: named target")
+    func focusTargetTitleNamed() {
+        #expect(ViewHelpers.focusTargetButtonTitle(insertTargetAppName: "Safari") == "Focus → Safari")
+    }
+
+    // MARK: - focusTargetButtonHelpText
+
+    @Test("focusTargetHelp: recording")
+    func focusTargetHelpRecording() {
+        #expect(ViewHelpers.focusTargetButtonHelpText(isRecording: true, pendingChunkCount: 0, insertTargetAppName: "Safari") == "Wait for recording/finalization to finish before focusing the target app")
+    }
+
+    @Test("focusTargetHelp: pending")
+    func focusTargetHelpPending() {
+        #expect(ViewHelpers.focusTargetButtonHelpText(isRecording: false, pendingChunkCount: 1, insertTargetAppName: "Safari") == "Wait for recording/finalization to finish before focusing the target app")
+    }
+
+    @Test("focusTargetHelp: idle with target")
+    func focusTargetHelpIdleTarget() {
+        #expect(ViewHelpers.focusTargetButtonHelpText(isRecording: false, pendingChunkCount: 0, insertTargetAppName: "Safari") == "Bring Safari to the front before inserting")
+    }
+
+    @Test("focusTargetHelp: idle no target")
+    func focusTargetHelpIdleNoTarget() {
+        #expect(ViewHelpers.focusTargetButtonHelpText(isRecording: false, pendingChunkCount: 0, insertTargetAppName: nil) == "No insertion target yet. Switch to your destination app, then click Retarget.")
+    }
+
+    // MARK: - focusAndInsertButtonTitle
+
+    @Test("focusInsertTitle: can insert with target")
+    func focusInsertTitleTarget() {
+        #expect(ViewHelpers.focusAndInsertButtonTitle(canInsertDirectly: true, insertTargetAppName: "Notes") == "Focus + Insert → Notes")
+    }
+
+    @Test("focusInsertTitle: can insert no target")
+    func focusInsertTitleNoTarget() {
+        #expect(ViewHelpers.focusAndInsertButtonTitle(canInsertDirectly: true, insertTargetAppName: nil) == "Focus + Insert")
+    }
+
+    @Test("focusInsertTitle: cannot insert")
+    func focusInsertTitleCopy() {
+        #expect(ViewHelpers.focusAndInsertButtonTitle(canInsertDirectly: false, insertTargetAppName: "Notes") == "Focus + Copy")
+    }
+
+    // MARK: - focusAndInsertButtonHelpText
+
+    @Test("focusInsertHelp: disabled reason")
+    func focusInsertHelpDisabled() {
+        #expect(ViewHelpers.focusAndInsertButtonHelpText(insertActionDisabledReason: "Wait", hasResolvableInsertTarget: true, canInsertDirectly: true) == "Wait before focusing and inserting")
+    }
+
+    @Test("focusInsertHelp: no resolvable target")
+    func focusInsertHelpNoTarget() {
+        #expect(ViewHelpers.focusAndInsertButtonHelpText(insertActionDisabledReason: nil, hasResolvableInsertTarget: false, canInsertDirectly: true) == "No insertion target yet. Switch to your destination app, then click Retarget.")
+    }
+
+    @Test("focusInsertHelp: can insert")
+    func focusInsertHelpInsert() {
+        #expect(ViewHelpers.focusAndInsertButtonHelpText(insertActionDisabledReason: nil, hasResolvableInsertTarget: true, canInsertDirectly: true) == "Focus the saved insert target and insert immediately")
+    }
+
+    @Test("focusInsertHelp: copy fallback")
+    func focusInsertHelpCopy() {
+        #expect(ViewHelpers.focusAndInsertButtonHelpText(insertActionDisabledReason: nil, hasResolvableInsertTarget: true, canInsertDirectly: false) == "Focus the saved insert target and copy to clipboard")
+    }
 }
