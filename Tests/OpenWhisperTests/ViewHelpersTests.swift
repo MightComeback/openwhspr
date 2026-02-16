@@ -819,4 +819,367 @@ struct ViewHelpersTests {
         #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "minus") == true)
         #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "comma") == true)
     }
+
+    // MARK: - isHighRiskHotkey
+
+    @Test("isHighRiskHotkey: with modifiers is never high risk")
+    func highRiskWithModifiers() {
+        #expect(!ViewHelpers.isHighRiskHotkey(requiredModifiers: [.command], key: "a"))
+        #expect(!ViewHelpers.isHighRiskHotkey(requiredModifiers: [.shift], key: "space"))
+    }
+
+    @Test("isHighRiskHotkey: single char without modifiers is high risk")
+    func highRiskSingleChar() {
+        #expect(ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: "a"))
+        #expect(ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: "z"))
+        #expect(ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: "5"))
+    }
+
+    @Test("isHighRiskHotkey: named dangerous keys without modifiers")
+    func highRiskNamedKeys() {
+        for key in ["space", "tab", "return", "delete", "forwarddelete", "escape",
+                     "fn", "left", "right", "up", "down", "home", "end", "pageup", "pagedown"] {
+            #expect(ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: key), "Expected \(key) to be high risk")
+        }
+    }
+
+    @Test("isHighRiskHotkey: function keys without modifiers are not high risk")
+    func highRiskFunctionKeys() {
+        #expect(!ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: "f1"))
+        #expect(!ViewHelpers.isHighRiskHotkey(requiredModifiers: [], key: "f12"))
+    }
+
+    // MARK: - showsHoldModeAccidentalTriggerWarning
+
+    @Test("holdModeWarning: shows for hold mode with high risk key")
+    func holdModeWarningShown() {
+        #expect(ViewHelpers.showsHoldModeAccidentalTriggerWarning(
+            hotkeyModeRaw: HotkeyMode.hold.rawValue, requiredModifiers: [], key: "space"))
+    }
+
+    @Test("holdModeWarning: hidden for toggle mode")
+    func holdModeWarningToggle() {
+        #expect(!ViewHelpers.showsHoldModeAccidentalTriggerWarning(
+            hotkeyModeRaw: HotkeyMode.toggle.rawValue, requiredModifiers: [], key: "space"))
+    }
+
+    @Test("holdModeWarning: hidden when not high risk")
+    func holdModeWarningNotHighRisk() {
+        #expect(!ViewHelpers.showsHoldModeAccidentalTriggerWarning(
+            hotkeyModeRaw: HotkeyMode.hold.rawValue, requiredModifiers: [.command], key: "space"))
+    }
+
+    // MARK: - hotkeyEscapeCancelConflictWarning
+
+    @Test("escapeConflict: returns warning for escape key")
+    func escapeConflictWarning() {
+        let result = ViewHelpers.hotkeyEscapeCancelConflictWarning(key: "escape")
+        #expect(result != nil)
+        #expect(result!.contains("discard"))
+    }
+
+    @Test("escapeConflict: nil for other keys")
+    func escapeConflictNil() {
+        #expect(ViewHelpers.hotkeyEscapeCancelConflictWarning(key: "space") == nil)
+        #expect(ViewHelpers.hotkeyEscapeCancelConflictWarning(key: "f1") == nil)
+    }
+
+    // MARK: - hotkeySystemConflictWarning
+
+    @Test("systemConflict: cmd+space warns about Spotlight")
+    func systemConflictCmdSpace() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command], key: "space")
+        #expect(result != nil)
+        #expect(result!.contains("Spotlight"))
+    }
+
+    @Test("systemConflict: ctrl+space warns about input source")
+    func systemConflictCtrlSpace() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.control], key: "space")
+        #expect(result != nil)
+        #expect(result!.contains("input source"))
+    }
+
+    @Test("systemConflict: cmd+q warns about quitting")
+    func systemConflictCmdQ() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command], key: "q")
+        #expect(result != nil)
+        #expect(result!.contains("quits"))
+    }
+
+    @Test("systemConflict: cmd+tab warns about app switching")
+    func systemConflictCmdTab() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command], key: "tab")
+        #expect(result != nil)
+        #expect(result!.contains("app switching"))
+    }
+
+    @Test("systemConflict: cmd+shift+3 warns about screenshot")
+    func systemConflictCmdShift3() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command, .shift], key: "3")
+        #expect(result != nil)
+        #expect(result!.contains("screenshot"))
+    }
+
+    @Test("systemConflict: safe combo returns nil")
+    func systemConflictSafe() {
+        #expect(ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command, .shift], key: "space") == nil)
+        #expect(ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command, .shift], key: "d") == nil)
+    }
+
+    @Test("systemConflict: cmd+c warns about copy")
+    func systemConflictCmdC() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command], key: "c")
+        #expect(result != nil)
+        #expect(result!.contains("copies"))
+    }
+
+    @Test("systemConflict: fn alone warns")
+    func systemConflictFnAlone() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [], key: "fn")
+        #expect(result != nil)
+        #expect(result!.contains("Fn/Globe"))
+    }
+
+    @Test("systemConflict: cmd+option+esc warns about force quit")
+    func systemConflictForceQuit() {
+        let result = ViewHelpers.hotkeySystemConflictWarning(requiredModifiers: [.command, .option], key: "escape")
+        #expect(result != nil)
+        #expect(result!.contains("Force Quit"))
+    }
+
+    // MARK: - insertionTestDisabledReason
+
+    @Test("insertionTestDisabled: recording")
+    func insertionTestRecording() {
+        let r = ViewHelpers.insertionTestDisabledReason(
+            isRecording: true, isFinalizingTranscription: false,
+            isRunningInsertionProbe: false, hasInsertionProbeSampleText: true, hasInsertionTarget: true)
+        #expect(r.contains("Stop recording"))
+    }
+
+    @Test("insertionTestDisabled: finalizing")
+    func insertionTestFinalizing() {
+        let r = ViewHelpers.insertionTestDisabledReason(
+            isRecording: false, isFinalizingTranscription: true,
+            isRunningInsertionProbe: false, hasInsertionProbeSampleText: true, hasInsertionTarget: true)
+        #expect(r.contains("finalizing"))
+    }
+
+    @Test("insertionTestDisabled: already running")
+    func insertionTestAlreadyRunning() {
+        let r = ViewHelpers.insertionTestDisabledReason(
+            isRecording: false, isFinalizingTranscription: false,
+            isRunningInsertionProbe: true, hasInsertionProbeSampleText: true, hasInsertionTarget: true)
+        #expect(r.contains("already running"))
+    }
+
+    @Test("insertionTestDisabled: empty sample text")
+    func insertionTestEmptyText() {
+        let r = ViewHelpers.insertionTestDisabledReason(
+            isRecording: false, isFinalizingTranscription: false,
+            isRunningInsertionProbe: false, hasInsertionProbeSampleText: false, hasInsertionTarget: true)
+        #expect(r.contains("empty"))
+    }
+
+    @Test("insertionTestDisabled: no target")
+    func insertionTestNoTarget() {
+        let r = ViewHelpers.insertionTestDisabledReason(
+            isRecording: false, isFinalizingTranscription: false,
+            isRunningInsertionProbe: false, hasInsertionProbeSampleText: true, hasInsertionTarget: false)
+        #expect(r.contains("No destination"))
+    }
+
+    // MARK: - hotkeyModeTipText
+
+    @Test("modeTip: toggle without escape")
+    func modeTipToggle() {
+        let tip = ViewHelpers.hotkeyModeTipText(mode: .toggle, usesEscapeTrigger: false)
+        #expect(tip.contains("toggle"))
+        #expect(tip.contains("Esc"))
+    }
+
+    @Test("modeTip: toggle with escape trigger")
+    func modeTipToggleEscape() {
+        let tip = ViewHelpers.hotkeyModeTipText(mode: .toggle, usesEscapeTrigger: true)
+        #expect(tip.contains("unavailable"))
+    }
+
+    @Test("modeTip: hold without escape")
+    func modeTipHold() {
+        let tip = ViewHelpers.hotkeyModeTipText(mode: .hold, usesEscapeTrigger: false)
+        #expect(tip.contains("hold"))
+        #expect(tip.contains("release"))
+    }
+
+    @Test("modeTip: hold with escape trigger")
+    func modeTipHoldEscape() {
+        let tip = ViewHelpers.hotkeyModeTipText(mode: .hold, usesEscapeTrigger: true)
+        #expect(tip.contains("unavailable"))
+    }
+
+    // MARK: - hotkeyCaptureButtonTitle
+
+    @Test("captureButtonTitle: not capturing")
+    func captureButtonNotCapturing() {
+        #expect(ViewHelpers.hotkeyCaptureButtonTitle(isCapturing: false, secondsRemaining: 5) == "Record shortcut")
+    }
+
+    @Test("captureButtonTitle: capturing")
+    func captureButtonCapturing() {
+        let title = ViewHelpers.hotkeyCaptureButtonTitle(isCapturing: true, secondsRemaining: 3)
+        #expect(title == "Listening… 3s")
+    }
+
+    // MARK: - hotkeyCaptureInstruction
+
+    @Test("captureInstruction: with input monitoring")
+    func captureInstructionWithMonitoring() {
+        let text = ViewHelpers.hotkeyCaptureInstruction(inputMonitoringAuthorized: true, secondsRemaining: 5)
+        #expect(text.contains("even if another app"))
+        #expect(text.contains("5s left"))
+    }
+
+    @Test("captureInstruction: without input monitoring")
+    func captureInstructionNoMonitoring() {
+        let text = ViewHelpers.hotkeyCaptureInstruction(inputMonitoringAuthorized: false, secondsRemaining: 8)
+        #expect(text.contains("Input Monitoring is missing"))
+        #expect(text.contains("8s left"))
+    }
+
+    // MARK: - hotkeyCaptureProgress
+
+    @Test("captureProgress: normal")
+    func captureProgressNormal() {
+        #expect(ViewHelpers.hotkeyCaptureProgress(secondsRemaining: 5, totalSeconds: 10) == 0.5)
+    }
+
+    @Test("captureProgress: zero total")
+    func captureProgressZeroTotal() {
+        #expect(ViewHelpers.hotkeyCaptureProgress(secondsRemaining: 5, totalSeconds: 0) == 0)
+    }
+
+    @Test("captureProgress: clamps to 0-1")
+    func captureProgressClamps() {
+        #expect(ViewHelpers.hotkeyCaptureProgress(secondsRemaining: 15, totalSeconds: 10) == 1)
+        #expect(ViewHelpers.hotkeyCaptureProgress(secondsRemaining: -1, totalSeconds: 10) == 0)
+    }
+
+    // MARK: - hotkeyDraftValidationMessage
+
+    @Test("draftValidation: empty draft")
+    func draftValidationEmpty() {
+        let msg = ViewHelpers.hotkeyDraftValidationMessage(draft: "", isSupportedKey: false)
+        #expect(msg != nil)
+        #expect(msg!.contains("Enter one trigger key"))
+    }
+
+    @Test("draftValidation: supported key returns nil")
+    func draftValidationSupported() {
+        #expect(ViewHelpers.hotkeyDraftValidationMessage(draft: "space", isSupportedKey: true) == nil)
+    }
+
+    @Test("draftValidation: unsupported key")
+    func draftValidationUnsupported() {
+        let msg = ViewHelpers.hotkeyDraftValidationMessage(draft: "xyz", isSupportedKey: false)
+        #expect(msg != nil)
+        #expect(msg!.contains("Unsupported key"))
+    }
+
+    // MARK: - hasHotkeyDraftChangesToApply
+
+    @Test("draftChanges: same key no changes")
+    func draftChangesNoChange() {
+        #expect(!ViewHelpers.hasHotkeyDraftChangesToApply(draft: "space", currentKey: "space", currentModifiers: [.command]))
+    }
+
+    @Test("draftChanges: different key has changes")
+    func draftChangesDifferentKey() {
+        #expect(ViewHelpers.hasHotkeyDraftChangesToApply(draft: "f6", currentKey: "space", currentModifiers: [.command]))
+    }
+
+    @Test("draftChanges: unparseable draft returns false")
+    func draftChangesUnparseable() {
+        #expect(!ViewHelpers.hasHotkeyDraftChangesToApply(draft: "", currentKey: "space", currentModifiers: []))
+    }
+
+    @Test("draftChanges: different modifiers detected")
+    func draftChangesDifferentModifiers() {
+        #expect(ViewHelpers.hasHotkeyDraftChangesToApply(draft: "cmd+shift+space", currentKey: "space", currentModifiers: [.command]))
+    }
+
+    // MARK: - canonicalHotkeyDraftPreview
+
+    @Test("draftPreview: valid draft shows preview")
+    func draftPreviewValid() {
+        let preview = ViewHelpers.canonicalHotkeyDraftPreview(draft: "space", currentModifiers: [.command, .shift])
+        #expect(preview != nil)
+        #expect(preview!.contains("⌘"))
+        #expect(preview!.contains("⇧"))
+    }
+
+    @Test("draftPreview: unparseable draft returns nil")
+    func draftPreviewNil() {
+        #expect(ViewHelpers.canonicalHotkeyDraftPreview(draft: "", currentModifiers: []) == nil)
+    }
+
+    // MARK: - hotkeyDraftModifierOverrideSummary
+
+    @Test("modifierOverride: no override returns nil")
+    func modifierOverrideNone() {
+        #expect(ViewHelpers.hotkeyDraftModifierOverrideSummary(draft: "space", currentModifiers: [.command]) == nil)
+    }
+
+    @Test("modifierOverride: with override shows new modifiers")
+    func modifierOverridePresent() {
+        let summary = ViewHelpers.hotkeyDraftModifierOverrideSummary(draft: "cmd+shift+space", currentModifiers: [.command])
+        #expect(summary != nil)
+        #expect(summary!.contains("⇧ Shift"))
+    }
+
+    // MARK: - hotkeyDraftNonConfigurableModifierNotice
+
+    @Test("nonConfigurableNotice: nil for normal draft")
+    func nonConfigurableNil() {
+        #expect(ViewHelpers.hotkeyDraftNonConfigurableModifierNotice(draft: "space") == nil)
+    }
+
+    @Test("nonConfigurableNotice: shows for fn/globe with modifier")
+    func nonConfigurableShown() {
+        let notice = ViewHelpers.hotkeyDraftNonConfigurableModifierNotice(draft: "fn+cmd+space")
+        #expect(notice != nil)
+        #expect(notice!.contains("Fn/Globe"))
+    }
+
+    @Test("nonConfigurableNotice: fn alone without configurable modifier returns nil")
+    func nonConfigurableFnAlone() {
+        // fn+space doesn't look like a modifier combo (fn isn't a configurable modifier),
+        // so parseHotkeyDraft takes the whole-key path and doesn't set the flag
+        #expect(ViewHelpers.hotkeyDraftNonConfigurableModifierNotice(draft: "fn+space") == nil)
+    }
+
+    // MARK: - hotkeyMissingPermissionSummary
+
+    @Test("missingPermissions: none missing returns nil")
+    func missingPermissionsNone() {
+        #expect(ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: true, inputMonitoringAuthorized: true) == nil)
+    }
+
+    @Test("missingPermissions: accessibility missing")
+    func missingPermissionsAccessibility() {
+        let result = ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: false, inputMonitoringAuthorized: true)
+        #expect(result == "Accessibility")
+    }
+
+    @Test("missingPermissions: input monitoring missing")
+    func missingPermissionsInput() {
+        let result = ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: true, inputMonitoringAuthorized: false)
+        #expect(result == "Input Monitoring")
+    }
+
+    @Test("missingPermissions: both missing")
+    func missingPermissionsBoth() {
+        let result = ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: false, inputMonitoringAuthorized: false)
+        #expect(result == "Accessibility + Input Monitoring")
+    }
 }
