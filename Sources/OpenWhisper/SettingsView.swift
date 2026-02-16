@@ -1834,24 +1834,7 @@ struct SettingsView: View {
     }
 
     private func shouldAutoApplySafeCaptureModifiers(for key: String) -> Bool {
-        // Preserve no-modifier intent for keys that are typically safe to hit
-        // directly (function row, arrows, etc.). For letter/number typing keys,
-        // auto-add ⌘+⇧ so captured shortcuts stay usable immediately.
-        if key.count == 1 {
-            return true
-        }
-
-        switch key {
-        case "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12",
-             "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24",
-             "escape", "tab", "return", "enter", "keypadenter", "numpadenter", "space", "insert", "ins", "help",
-             "delete", "del", "backspace", "bksp", "forwarddelete", "fwddelete", "fwddel",
-             "left", "right", "up", "down", "home", "end", "pageup", "pagedown",
-             "fn", "function", "globe", "globekey", "caps", "capslock":
-            return false
-        default:
-            return true
-        }
+        ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: key)
     }
 
     private func startHotkeyCapture() {

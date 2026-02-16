@@ -632,4 +632,48 @@ struct ViewHelpersTests {
         #expect(ViewHelpers.looksLikeModifierComboInput("space") == false)
         #expect(ViewHelpers.looksLikeModifierComboInput("f12") == false)
     }
+
+    // MARK: - shouldAutoApplySafeCaptureModifiers
+
+    @Test("shouldAutoApplySafeCaptureModifiers: single character keys need modifiers")
+    func safeModifiersSingleChar() {
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "a") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "z") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "1") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "/") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: ".") == true)
+    }
+
+    @Test("shouldAutoApplySafeCaptureModifiers: function keys do not need modifiers")
+    func safeModifiersFunctionKeys() {
+        for i in 1...24 {
+            #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "f\(i)") == false)
+        }
+    }
+
+    @Test("shouldAutoApplySafeCaptureModifiers: navigation keys do not need modifiers")
+    func safeModifiersNavKeys() {
+        let navKeys = ["escape", "tab", "return", "enter", "space", "delete", "forwarddelete",
+                       "left", "right", "up", "down", "home", "end", "pageup", "pagedown"]
+        for key in navKeys {
+            #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: key) == false)
+        }
+    }
+
+    @Test("shouldAutoApplySafeCaptureModifiers: special keys do not need modifiers")
+    func safeModifiersSpecialKeys() {
+        let specialKeys = ["keypadenter", "numpadenter", "insert", "ins", "help",
+                           "del", "backspace", "bksp", "fwddelete", "fwddel",
+                           "fn", "function", "globe", "globekey", "caps", "capslock"]
+        for key in specialKeys {
+            #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: key) == false)
+        }
+    }
+
+    @Test("shouldAutoApplySafeCaptureModifiers: multi-char unknown keys need modifiers")
+    func safeModifiersUnknownMultiChar() {
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "plus") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "minus") == true)
+        #expect(ViewHelpers.shouldAutoApplySafeCaptureModifiers(for: "comma") == true)
+    }
 }
