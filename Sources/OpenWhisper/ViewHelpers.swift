@@ -555,4 +555,182 @@ enum ViewHelpers {
         if normalized == " " { return "space" }
         return HotkeyDisplay.canonicalKey(normalized)
     }
+
+    // MARK: - Hotkey risk / conflict warnings (extracted from SettingsView)
+
+    /// Returns `true` when the hotkey combo has no required modifiers and uses a
+    /// character or common navigation key, making accidental activation likely.
+    static func isHighRiskHotkey(requiredModifiers: Set<ParsedModifier>, key: String) -> Bool {
+        guard requiredModifiers.isEmpty else { return false }
+
+        if key.count == 1 { return true }
+
+        switch key {
+        case "space", "tab", "return", "delete", "forwarddelete", "escape",
+             "fn", "left", "right", "up", "down", "home", "end", "pageup", "pagedown":
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Returns `true` when Hold mode is active and the hotkey is high-risk.
+    static func showsHoldModeAccidentalTriggerWarning(hotkeyModeRaw: String, requiredModifiers: Set<ParsedModifier>, key: String) -> Bool {
+        guard hotkeyModeRaw == HotkeyMode.hold.rawValue else { return false }
+        return isHighRiskHotkey(requiredModifiers: requiredModifiers, key: key)
+    }
+
+    /// Returns a warning if Escape is the trigger key (conflicts with discard).
+    static func hotkeyEscapeCancelConflictWarning(key: String) -> String? {
+        guard key == "escape" else { return nil }
+        return "Esc is also used to discard an active recording. Using Esc as the trigger key disables that quick-cancel behavior."
+    }
+
+    /// Returns a human-readable warning when the chosen hotkey combo conflicts
+    /// with a well-known macOS or app shortcut, or `nil` when no conflict is known.
+    static func hotkeySystemConflictWarning(requiredModifiers: Set<ParsedModifier>, key: String) -> String? {
+        let modifiers = requiredModifiers
+
+        if key == "space" && modifiers == Set([.command]) {
+            return "⌘+Space usually opens Spotlight and can block your hotkey."
+        }
+        if key == "space" && modifiers == Set([.control]) {
+            return "⌃+Space is often used for input source switching on macOS."
+        }
+        if key == "space" && modifiers == Set([.control, .option]) {
+            return "⌃+⌥+Space is commonly bound to previous input source on macOS and can steal your hotkey press."
+        }
+        if key == "space" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+Space usually opens the emoji/symbol picker on macOS and can block dictation trigger behavior."
+        }
+        if key == "space" && modifiers == Set([.command, .option]) {
+            return "⌥+⌘+Space usually opens Finder search on macOS, so it's unreliable for dictation triggering."
+        }
+        if key == "space" && modifiers == Set([.command, .option, .control]) {
+            return "⌃+⌥+⌘+Space is commonly used by app launchers/snippet tools and often gets intercepted before OpenWhisper."
+        }
+        if key == "f" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+F toggles full-screen in many macOS apps and is a bad dictation hotkey."
+        }
+        if key == "tab" && modifiers == Set([.command]) {
+            return "⌘+Tab is reserved for app switching and won't behave as a reliable dictation hotkey."
+        }
+        if key == "fn" && modifiers.isEmpty {
+            return "Fn/Globe alone is usually reserved by macOS (emoji picker, dictation, or input switching) and is unreliable as a trigger key."
+        }
+        if key == "tab" && modifiers == Set([.command, .shift]) {
+            return "⌘+⇧+Tab is reserved for reverse app switching on macOS."
+        }
+        if ["3", "4", "5", "6"].contains(key),
+           modifiers.contains(.command),
+           modifiers.contains(.shift),
+           modifiers.isSubset(of: Set([.command, .shift, .control])) {
+            switch key {
+            case "3": return "⌘+⇧+3 is reserved for macOS screenshots (entire screen), so it will conflict with dictation trigger behavior."
+            case "4": return "⌘+⇧+4 is reserved for macOS screenshots (selection/window), so it will conflict with dictation trigger behavior."
+            case "5": return "⌘+⇧+5 opens the macOS screenshot/recording panel and is a bad dictation hotkey choice."
+            default: return "⌘+⇧+6 toggles floating thumbnail behavior in the macOS screenshot tool and can conflict with dictation hotkeys."
+            }
+        }
+        if key == "backtick" && modifiers == Set([.command]) {
+            return "⌘+` is reserved for cycling windows in the front app on macOS."
+        }
+        if key == "section" && modifiers == Set([.command]) {
+            return "⌘+§ usually cycles windows in the front app on ISO keyboards and can steal your dictation hotkey."
+        }
+        if key == "section" && modifiers == Set([.command, .shift]) {
+            return "⌘+⇧+§ usually cycles windows in reverse on ISO keyboards and can steal your dictation hotkey."
+        }
+        if key == "comma" && modifiers == Set([.command]) {
+            return "⌘+, usually opens app settings/preferences and is a frustrating dictation trigger."
+        }
+        if key == "period" && modifiers == Set([.command]) {
+            return "⌘+. is commonly used as Cancel/Stop in macOS apps and is easy to trigger accidentally."
+        }
+        if key == "escape" && modifiers == Set([.command, .option]) {
+            return "⌥+⌘+Esc opens Force Quit on macOS, so it's a terrible hotkey choice."
+        }
+        if key == "h" && modifiers == Set([.command]) {
+            return "⌘+H hides the current app on macOS and makes a poor dictation hotkey."
+        }
+        if key == "c" && modifiers == Set([.command]) {
+            return "⌘+C copies selected text in most apps, so it collides with normal editing constantly."
+        }
+        if key == "v" && modifiers == Set([.command]) {
+            return "⌘+V pastes in most apps and will fight your normal editing flow."
+        }
+        if key == "x" && modifiers == Set([.command]) {
+            return "⌘+X cuts selected text in most apps and is a risky dictation trigger."
+        }
+        if key == "a" && modifiers == Set([.command]) {
+            return "⌘+A selects all text in most apps and is too disruptive for dictation."
+        }
+        if key == "z" && modifiers == Set([.command]) {
+            return "⌘+Z is undo in most apps and will cause accidental reversions while typing."
+        }
+        if key == "m" && modifiers == Set([.command]) {
+            return "⌘+M minimizes the front window on macOS and can interrupt your flow."
+        }
+        if key == "return" && modifiers == Set([.command]) {
+            return "⌘+Return often sends messages/submits forms in chat and email apps, so it's risky for dictation."
+        }
+        if key == "q" && modifiers == Set([.command]) {
+            return "⌘+Q quits the current app on macOS and is a brutal hotkey choice for dictation."
+        }
+        if key == "q" && modifiers == Set([.command, .control]) {
+            return "⌃+⌘+Q locks your Mac on macOS and is an awful choice for a dictation hotkey."
+        }
+        if key == "w" && modifiers == Set([.command]) {
+            return "⌘+W closes the current window/tab on macOS and can kill focus mid-dictation."
+        }
+        if key == "s" && modifiers == Set([.command]) {
+            return "⌘+S saves in most apps and will trigger constantly during normal editing."
+        }
+        if key == "f" && modifiers == Set([.command]) {
+            return "⌘+F opens Find in most apps and is a noisy dictation trigger."
+        }
+        if key == "n" && modifiers == Set([.command]) {
+            return "⌘+N creates a new document/window in many apps and is too disruptive for dictation."
+        }
+        if key == "t" && modifiers == Set([.command]) {
+            return "⌘+T opens a new tab in many apps and browsers, so it collides with normal workflow."
+        }
+        if key == "p" && modifiers == Set([.command]) {
+            return "⌘+P opens Print in most apps and is a brutal accidental trigger."
+        }
+        if key == "r" && modifiers == Set([.command]) {
+            return "⌘+R refreshes/reloads in browsers and many apps, so it's a noisy dictation trigger."
+        }
+        if key == "o" && modifiers == Set([.command]) {
+            return "⌘+O opens files/documents in many apps and will interrupt normal workflow."
+        }
+        if key == "l" && modifiers == Set([.command]) {
+            return "⌘+L often focuses location/search fields (especially in browsers), making it a disruptive dictation hotkey."
+        }
+
+        return nil
+    }
+
+    /// Returns a human-readable reason why the insertion test is disabled.
+    static func insertionTestDisabledReason(
+        isRecording: Bool,
+        isFinalizingTranscription: Bool,
+        isRunningInsertionProbe: Bool,
+        hasInsertionProbeSampleText: Bool,
+        hasInsertionTarget: Bool
+    ) -> String {
+        if isRecording {
+            return "Stop recording before running an insertion test."
+        }
+        if isFinalizingTranscription {
+            return "Wait for live transcription to finish finalizing before running an insertion test."
+        }
+        if isRunningInsertionProbe {
+            return "Insertion test is already running."
+        }
+        if !hasInsertionProbeSampleText {
+            return "Insertion test text is empty. Enter a short phrase first."
+        }
+        return "No destination app is available for insertion yet. Switch to your target app, then refresh."
+    }
 }
