@@ -889,6 +889,82 @@ enum ViewHelpers {
         return max(0, now.timeIntervalSince(startedAt))
     }
 
+    // MARK: - Front-app filtering
+
+    /// Filters a raw frontmost bundle identifier, returning `nil` when blank or
+    /// matching the host app's own bundle id.
+    static func currentExternalFrontBundleIdentifier(_ candidate: String, ownBundleIdentifier: String?) -> String? {
+        let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if let own = ownBundleIdentifier,
+           trimmed.caseInsensitiveCompare(own) == .orderedSame {
+            return nil
+        }
+        return trimmed
+    }
+
+    /// Filters a raw frontmost app name, returning `nil` when blank, "Unknown App",
+    /// or matching the host app name ("OpenWhisper").
+    static func currentExternalFrontAppName(_ candidate: String) -> String? {
+        let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard trimmed.caseInsensitiveCompare("Unknown App") != .orderedSame else { return nil }
+        guard trimmed.caseInsensitiveCompare("OpenWhisper") != .orderedSame else { return nil }
+        return trimmed
+    }
+
+    /// Updates the finalization progress baseline.
+    ///
+    /// Returns the new value for `finalizationInitialPendingChunks`.
+    static func refreshFinalizationProgressBaseline(
+        isRecording: Bool,
+        pendingChunks: Int,
+        currentBaseline: Int?
+    ) -> Int? {
+        if isRecording { return nil }
+        guard pendingChunks > 0 else { return nil }
+        if let current = currentBaseline {
+            return max(current, pendingChunks)
+        }
+        return pendingChunks
+    }
+
+    /// Whether recording can be toggled given the current state.
+    static func canToggleRecording(isRecording: Bool, pendingChunkCount: Int, microphoneAuthorized: Bool) -> Bool {
+        if isRecording || pendingChunkCount > 0 { return true }
+        return microphoneAuthorized
+    }
+
+    /// Whether the insert target is currently stale.
+    static func isInsertTargetStale(capturedAt: Date?, now: Date, staleAfterSeconds: TimeInterval) -> Bool {
+        guard let capturedAt else { return false }
+        return now.timeIntervalSince(capturedAt) >= staleAfterSeconds
+    }
+
+    /// The active staleness threshold based on whether the target is a fallback.
+    static func activeInsertTargetStaleAfterSeconds(
+        usesFallback: Bool,
+        normalTimeout: TimeInterval = 90,
+        fallbackTimeout: TimeInterval = 30
+    ) -> TimeInterval {
+        usesFallback ? fallbackTimeout : normalTimeout
+    }
+
+    /// Whether the insert target is locked (compound condition).
+    static func isInsertTargetLocked(
+        hasTranscriptionText: Bool,
+        canInsertNow: Bool,
+        canInsertDirectly: Bool,
+        hasResolvableInsertTarget: Bool
+    ) -> Bool {
+        hasTranscriptionText && canInsertNow && canInsertDirectly && hasResolvableInsertTarget
+    }
+
+    /// Whether to show the "use current app" quick action.
+    static func shouldShowUseCurrentAppQuickAction(shouldSuggestRetarget: Bool, isInsertTargetStale: Bool) -> Bool {
+        shouldSuggestRetarget || isInsertTargetStale
+    }
+
     // MARK: - SettingsView extracted logic
 
     /// Tip text for the current hotkey mode.

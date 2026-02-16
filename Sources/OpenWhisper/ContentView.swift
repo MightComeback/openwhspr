@@ -872,21 +872,11 @@ struct ContentView: View {
     }
 
     private func refreshFinalizationProgressBaseline(pendingChunks: Int) {
-        if transcriber.isRecording {
-            finalizationInitialPendingChunks = nil
-            return
-        }
-
-        guard pendingChunks > 0 else {
-            finalizationInitialPendingChunks = nil
-            return
-        }
-
-        if let currentBaseline = finalizationInitialPendingChunks {
-            finalizationInitialPendingChunks = max(currentBaseline, pendingChunks)
-        } else {
-            finalizationInitialPendingChunks = pendingChunks
-        }
+        finalizationInitialPendingChunks = ViewHelpers.refreshFinalizationProgressBaseline(
+            isRecording: transcriber.isRecording,
+            pendingChunks: pendingChunks,
+            currentBaseline: finalizationInitialPendingChunks
+        )
     }
 
     private var finalizationProgress: Double? {
@@ -923,10 +913,7 @@ struct ContentView: View {
     }
 
     private var canToggleRecording: Bool {
-        if transcriber.isRecording || transcriber.pendingChunkCount > 0 {
-            return true
-        }
-        return microphoneAuthorized
+        ViewHelpers.canToggleRecording(isRecording: transcriber.isRecording, pendingChunkCount: transcriber.pendingChunkCount, microphoneAuthorized: microphoneAuthorized)
     }
 
     private func startStopButtonHelpText() -> String {
@@ -1101,7 +1088,7 @@ struct ContentView: View {
     }
 
     private var isInsertTargetLocked: Bool {
-        hasTranscriptionText && canInsertNow && canInsertDirectly && hasResolvableInsertTarget
+        ViewHelpers.isInsertTargetLocked(hasTranscriptionText: hasTranscriptionText, canInsertNow: canInsertNow, canInsertDirectly: canInsertDirectly, hasResolvableInsertTarget: hasResolvableInsertTarget)
     }
 
     private var shouldSuggestRetarget: Bool {
@@ -1126,7 +1113,7 @@ struct ContentView: View {
     }
 
     private var shouldShowUseCurrentAppQuickAction: Bool {
-        shouldSuggestRetarget || isInsertTargetStale
+        ViewHelpers.shouldShowUseCurrentAppQuickAction(shouldSuggestRetarget: shouldSuggestRetarget, isInsertTargetStale: isInsertTargetStale)
     }
 
     private var shouldAutoRefreshInsertTargetBeforePrimaryInsert: Bool {
@@ -1149,30 +1136,23 @@ struct ContentView: View {
     }
 
     private var activeInsertTargetStaleAfterSeconds: TimeInterval {
-        insertTargetUsesFallback ? fallbackInsertTargetStaleAfterSeconds : insertTargetStaleAfterSeconds
+        ViewHelpers.activeInsertTargetStaleAfterSeconds(
+            usesFallback: insertTargetUsesFallback,
+            normalTimeout: insertTargetStaleAfterSeconds,
+            fallbackTimeout: fallbackInsertTargetStaleAfterSeconds
+        )
     }
 
     private var isInsertTargetStale: Bool {
-        guard let capturedAt = insertTargetCapturedAt else {
-            return false
-        }
-
-        return uiNow.timeIntervalSince(capturedAt) >= activeInsertTargetStaleAfterSeconds
+        ViewHelpers.isInsertTargetStale(capturedAt: insertTargetCapturedAt, now: uiNow, staleAfterSeconds: activeInsertTargetStaleAfterSeconds)
     }
 
     private func currentExternalFrontBundleIdentifier() -> String? {
-        let candidate = transcriber.frontmostBundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !candidate.isEmpty else { return nil }
-        guard candidate.caseInsensitiveCompare(Bundle.main.bundleIdentifier ?? "") != .orderedSame else { return nil }
-        return candidate
+        ViewHelpers.currentExternalFrontBundleIdentifier(transcriber.frontmostBundleIdentifier, ownBundleIdentifier: Bundle.main.bundleIdentifier)
     }
 
     private func currentExternalFrontAppName() -> String? {
-        let candidate = transcriber.frontmostAppName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !candidate.isEmpty else { return nil }
-        guard candidate.caseInsensitiveCompare("Unknown App") != .orderedSame else { return nil }
-        guard candidate.caseInsensitiveCompare("OpenWhisper") != .orderedSame else { return nil }
-        return candidate
+        ViewHelpers.currentExternalFrontAppName(transcriber.frontmostAppName)
     }
 
     private func abbreviatedAppName(_ name: String, maxCharacters: Int = 18) -> String {
