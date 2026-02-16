@@ -888,4 +888,192 @@ enum ViewHelpers {
         guard let startedAt else { return 0 }
         return max(0, now.timeIntervalSince(startedAt))
     }
+
+    // MARK: - SettingsView extracted logic
+
+    /// Tip text for the current hotkey mode.
+    static func hotkeyModeTipText(mode: HotkeyMode, usesEscapeTrigger: Bool) -> String {
+        switch mode {
+        case .toggle:
+            if usesEscapeTrigger {
+                return "Tip: toggle mode starts recording on the first press and stops on the next press. Escape quick-cancel is unavailable while Escape is the trigger key."
+            }
+            return "Tip: toggle mode starts recording on the first press and stops on the next press. Press Esc while recording to discard."
+        case .hold:
+            if usesEscapeTrigger {
+                return "Tip: hold-to-talk records while the combo is pressed and stops on release. Escape quick-cancel is unavailable while Escape is the trigger key."
+            }
+            return "Tip: hold-to-talk records while the combo is pressed and stops on release. Press Esc while recording to discard."
+        }
+    }
+
+    /// Title for the hotkey capture button.
+    static func hotkeyCaptureButtonTitle(isCapturing: Bool, secondsRemaining: Int) -> String {
+        guard isCapturing else { return "Record shortcut" }
+        return "Listening… \(secondsRemaining)s"
+    }
+
+    /// Instruction text during hotkey capture.
+    static func hotkeyCaptureInstruction(inputMonitoringAuthorized: Bool, secondsRemaining: Int) -> String {
+        if inputMonitoringAuthorized {
+            return "Listening for the next key press (works even if another app is focused). Hold modifiers and press your trigger key once. Press Esc to cancel. (\(secondsRemaining)s left)"
+        }
+        return "Listening for the next key press in OpenWhisper only. Input Monitoring is missing, so shortcut capture from other apps is unavailable until permission is granted. Press Esc to cancel. (\(secondsRemaining)s left)"
+    }
+
+    /// Capture progress as 0…1.
+    static func hotkeyCaptureProgress(secondsRemaining: Int, totalSeconds: Int) -> Double {
+        guard totalSeconds > 0 else { return 0 }
+        return min(max(Double(secondsRemaining) / Double(totalSeconds), 0), 1)
+    }
+
+    /// Validation message for the hotkey draft, nil when valid.
+    static func hotkeyDraftValidationMessage(draft: String, isSupportedKey: Bool) -> String? {
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "Enter one trigger key like space, f6, or /."
+        }
+        if !isSupportedKey {
+            if looksLikeModifierComboInput(trimmed),
+               parseHotkeyDraft(trimmed)?.requiredModifiers == nil {
+                return "Trigger key expects one key (like space or f6), not modifiers only."
+            }
+            return "Unsupported key. Use a single character, named key, arrow, or F1-F24."
+        }
+        return nil
+    }
+
+    /// Whether the hotkey draft has unapplied changes relative to the current config.
+    static func hasHotkeyDraftChangesToApply(draft: String, currentKey: String, currentModifiers: Set<ParsedModifier>) -> Bool {
+        guard let parsed = parseHotkeyDraft(draft) else { return false }
+        let sanitizedKey = sanitizeKeyValue(parsed.key)
+        let keyChanged = sanitizedKey != sanitizeKeyValue(currentKey)
+        let modifiersChanged: Bool
+        if let modifiers = parsed.requiredModifiers {
+            modifiersChanged = modifiers != currentModifiers
+        } else {
+            modifiersChanged = false
+        }
+        return keyChanged || modifiersChanged
+    }
+
+    /// Preview string for the canonical hotkey draft (e.g. "⌘+⇧+Space").
+    static func canonicalHotkeyDraftPreview(draft: String, currentModifiers: Set<ParsedModifier>) -> String? {
+        guard let parsed = parseHotkeyDraft(draft) else { return nil }
+        let sanitized = sanitizeKeyValue(parsed.key)
+        guard HotkeyDisplay.isSupportedKey(sanitized) else { return nil }
+        let previewModifiers = parsed.requiredModifiers ?? currentModifiers
+        var parts: [String] = []
+        if previewModifiers.contains(.command) { parts.append("⌘") }
+        if previewModifiers.contains(.shift) { parts.append("⇧") }
+        if previewModifiers.contains(.option) { parts.append("⌥") }
+        if previewModifiers.contains(.control) { parts.append("⌃") }
+        if previewModifiers.contains(.capsLock) { parts.append("⇪") }
+        parts.append(HotkeyDisplay.displayKey(sanitized))
+        return parts.joined(separator: "+")
+    }
+
+    /// Summary of modifier overrides from the draft vs current config, nil if no difference.
+    static func hotkeyDraftModifierOverrideSummary(draft: String, currentModifiers: Set<ParsedModifier>) -> String? {
+        guard let parsed = parseHotkeyDraft(draft),
+              let modifiers = parsed.requiredModifiers,
+              modifiers != currentModifiers else { return nil }
+        let ordered: [(ParsedModifier, String)] = [
+            (.command, "⌘ Command"), (.shift, "⇧ Shift"), (.option, "⌥ Option"),
+            (.control, "⌃ Control"), (.capsLock, "⇪ Caps Lock")
+        ]
+        let active = ordered.filter { modifiers.contains($0.0) }.map(\.1)
+        return active.isEmpty ? "none" : active.joined(separator: " + ")
+    }
+
+    /// Notice about fn/globe non-configurable modifiers, nil if not applicable.
+    static func hotkeyDraftNonConfigurableModifierNotice(draft: String) -> String? {
+        guard let parsed = parseHotkeyDraft(draft),
+              parsed.containsNonConfigurableModifiers else { return nil }
+        return "Fn/Globe modifiers aren't configurable yet. We'll apply the trigger key and keep your existing required modifiers."
+    }
+
+    /// Summary of missing hotkey permissions.
+    static func hotkeyMissingPermissionSummary(accessibilityAuthorized: Bool, inputMonitoringAuthorized: Bool) -> String? {
+        var missing: [String] = []
+        if !accessibilityAuthorized { missing.append("Accessibility") }
+        if !inputMonitoringAuthorized { missing.append("Input Monitoring") }
+        guard !missing.isEmpty else { return nil }
+        return missing.joined(separator: " + ")
+    }
+
+    // MARK: - ContentView extracted logic
+
+    /// Title for the insert/copy button.
+    static func insertButtonTitle(
+        canInsertDirectly: Bool,
+        insertTargetAppName: String?,
+        insertTargetUsesFallback: Bool,
+        shouldSuggestRetarget: Bool,
+        isInsertTargetStale: Bool,
+        liveFrontAppName: String?
+    ) -> String {
+        if canInsertDirectly {
+            guard let target = insertTargetAppName, !target.isEmpty else {
+                if let liveFront = liveFrontAppName, !liveFront.isEmpty {
+                    return "Insert → \(abbreviatedAppName(liveFront))"
+                }
+                return "Copy → Clipboard"
+            }
+            let targetLabel = insertTargetUsesFallback
+                ? "\(abbreviatedAppName(target)) (recent)"
+                : abbreviatedAppName(target)
+            if shouldSuggestRetarget || isInsertTargetStale {
+                return "Insert → \(targetLabel) ⚠︎"
+            }
+            return "Insert → \(targetLabel)"
+        }
+        return "Copy → Clipboard"
+    }
+
+    /// Help text for the insert/copy button.
+    static func insertButtonHelpText(
+        insertActionDisabledReason: String?,
+        canInsertDirectly: Bool,
+        shouldCopyBecauseTargetUnknown: Bool,
+        shouldSuggestRetarget: Bool,
+        isInsertTargetStale: Bool,
+        insertTargetAppName: String?,
+        insertTargetUsesFallback: Bool,
+        currentFrontAppName: String?
+    ) -> String {
+        if let reason = insertActionDisabledReason {
+            return "\(reason) before inserting"
+        }
+        guard canInsertDirectly else {
+            if let target = insertTargetAppName, !target.isEmpty {
+                return "Accessibility permission is missing, so this will copy text for \(target)"
+            }
+            return "Accessibility permission is missing, so this will copy transcription to clipboard"
+        }
+        if shouldCopyBecauseTargetUnknown {
+            return "No destination app is currently available, so this will copy transcription to clipboard"
+        }
+        if shouldSuggestRetarget,
+           let currentFront = currentFrontAppName,
+           let frozenTarget = insertTargetAppName,
+           !frozenTarget.isEmpty {
+            return "Current front app is \(currentFront), but Insert is still targeting \(frozenTarget). Use Retarget + Insert if you switched apps after transcription finished."
+        }
+        if isInsertTargetStale,
+           let frozenTarget = insertTargetAppName,
+           !frozenTarget.isEmpty {
+            return "Insert target \(frozenTarget) was captured a while ago. Retarget before inserting if you changed context."
+        }
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            if let liveFront = currentFrontAppName, !liveFront.isEmpty {
+                return "Insert into \(liveFront)"
+            }
+            return "Insert into the last active app"
+        }
+        if insertTargetUsesFallback {
+            return "Insert into \(target) captured from recent app context"
+        }
+        return "Insert into \(target)"
+    }
 }
