@@ -1076,4 +1076,158 @@ enum ViewHelpers {
         }
         return "Insert into \(target)"
     }
+
+    // MARK: - Retarget button
+
+    static func retargetButtonTitle(
+        insertTargetAppName: String?,
+        insertTargetUsesFallback: Bool
+    ) -> String {
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Retarget"
+        }
+        if insertTargetUsesFallback {
+            return "Retarget → \(abbreviatedAppName(target)) (recent)"
+        }
+        return "Retarget → \(abbreviatedAppName(target))"
+    }
+
+    static func retargetButtonHelpText(
+        isRecording: Bool,
+        pendingChunkCount: Int
+    ) -> String {
+        if isRecording {
+            return "Finish recording before retargeting insertion"
+        }
+        if pendingChunkCount > 0 {
+            return "Wait for finalization before retargeting insertion"
+        }
+        return "Refresh insertion target from your current front app"
+    }
+
+    // MARK: - Use Current App button
+
+    static func useCurrentAppButtonTitle(
+        canInsertDirectly: Bool,
+        currentFrontAppName: String?
+    ) -> String {
+        if canInsertDirectly {
+            if let currentFront = currentFrontAppName, !currentFront.isEmpty {
+                return "Use Current → \(abbreviatedAppName(currentFront))"
+            }
+            return "Use Current App"
+        }
+        return "Use Current + Copy"
+    }
+
+    static func useCurrentAppButtonHelpText(
+        insertActionDisabledReason: String?,
+        canInsertDirectly: Bool
+    ) -> String {
+        if let reason = insertActionDisabledReason {
+            return "\(reason) before using current app"
+        }
+        if canInsertDirectly {
+            return "Retarget to the current front app and insert immediately"
+        }
+        return "Retarget to the current front app and copy to clipboard"
+    }
+
+    // MARK: - Retarget + Insert button
+
+    static func retargetAndInsertButtonTitle(
+        canInsertDirectly: Bool,
+        currentFrontAppName: String?
+    ) -> String {
+        if canInsertDirectly {
+            if let currentFront = currentFrontAppName, !currentFront.isEmpty {
+                return "Retarget + Insert → \(abbreviatedAppName(currentFront))"
+            }
+            return "Retarget + Insert → Current App"
+        }
+        return "Retarget + Copy → Clipboard"
+    }
+
+    static func retargetAndInsertHelpText(
+        insertActionDisabledReason: String?,
+        canInsertDirectly: Bool
+    ) -> String {
+        if let reason = insertActionDisabledReason {
+            return "\(reason) before retargeting and inserting"
+        }
+        guard canInsertDirectly else {
+            return "Refresh target app, then copy transcription to clipboard"
+        }
+        return "Refresh target app from the current front app, then insert"
+    }
+
+    // MARK: - Focus Target button
+
+    static func focusTargetButtonTitle(
+        insertTargetAppName: String?
+    ) -> String {
+        guard let target = insertTargetAppName, !target.isEmpty else {
+            return "Focus Target"
+        }
+        return "Focus → \(abbreviatedAppName(target))"
+    }
+
+    static func focusTargetButtonHelpText(
+        isRecording: Bool,
+        pendingChunkCount: Int,
+        insertTargetAppName: String?
+    ) -> String {
+        if isRecording || pendingChunkCount > 0 {
+            return "Wait for recording/finalization to finish before focusing the target app"
+        }
+        if let target = insertTargetAppName, !target.isEmpty {
+            return "Bring \(target) to the front before inserting"
+        }
+        return "No insertion target yet. Switch to your destination app, then click Retarget."
+    }
+
+    // MARK: - Focus + Insert button
+
+    static func focusAndInsertButtonTitle(
+        canInsertDirectly: Bool,
+        insertTargetAppName: String?
+    ) -> String {
+        if canInsertDirectly {
+            if let target = insertTargetAppName, !target.isEmpty {
+                return "Focus + Insert → \(abbreviatedAppName(target))"
+            }
+            return "Focus + Insert"
+        }
+        return "Focus + Copy"
+    }
+
+    static func focusAndInsertButtonHelpText(
+        insertActionDisabledReason: String?,
+        hasResolvableInsertTarget: Bool,
+        canInsertDirectly: Bool
+    ) -> String {
+        if let reason = insertActionDisabledReason {
+            return "\(reason) before focusing and inserting"
+        }
+        guard hasResolvableInsertTarget else {
+            return "No insertion target yet. Switch to your destination app, then click Retarget."
+        }
+        if canInsertDirectly {
+            return "Focus the saved insert target and insert immediately"
+        }
+        return "Focus the saved insert target and copy to clipboard"
+    }
+
+    // MARK: - Computed property helpers
+
+    static func canRetargetInsertTarget(isRecording: Bool, pendingChunkCount: Int) -> Bool {
+        !isRecording && pendingChunkCount == 0
+    }
+
+    static func hasResolvableInsertTarget(insertTargetAppName: String?) -> Bool {
+        guard let target = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
+        }
+        return !target.isEmpty
+    }
 }
