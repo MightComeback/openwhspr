@@ -820,4 +820,72 @@ enum ViewHelpers {
         let chars = trimmed.count
         return "\(words)w · \(chars)c"
     }
+
+    /// Compute live words-per-minute from transcription text and recording duration.
+    /// Returns nil when duration is under 5 seconds or text has no words.
+    static func liveWordsPerMinute(transcription: String, durationSeconds: TimeInterval) -> Int? {
+        guard durationSeconds >= 5 else { return nil }
+        let words = transcription
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .count
+        guard words > 0 else { return nil }
+        let perMinute = Double(words) * 60 / durationSeconds
+        return max(1, Int(perMinute.rounded()))
+    }
+
+    /// Whether the insert action should fall back to clipboard copy because
+    /// no target app is identifiable.
+    static func shouldCopyBecauseTargetUnknown(
+        canInsertDirectly: Bool,
+        hasResolvableInsertTarget: Bool,
+        hasExternalFrontApp: Bool
+    ) -> Bool {
+        guard canInsertDirectly else { return false }
+        if hasResolvableInsertTarget { return false }
+        return !hasExternalFrontApp
+    }
+
+    /// Whether to suggest the user retarget the insert destination.
+    static func shouldSuggestRetarget(
+        isInsertTargetLocked: Bool,
+        insertTargetAppName: String?,
+        insertTargetBundleIdentifier: String?,
+        currentFrontBundleIdentifier: String?,
+        currentFrontAppName: String?,
+        isInsertTargetStale: Bool
+    ) -> Bool {
+        guard isInsertTargetLocked else { return false }
+        guard let target = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !target.isEmpty else { return false }
+
+        if let targetBundle = insertTargetBundleIdentifier,
+           let frontBundle = currentFrontBundleIdentifier {
+            return targetBundle.caseInsensitiveCompare(frontBundle) != .orderedSame
+        }
+
+        if let front = currentFrontAppName {
+            return target.caseInsensitiveCompare(front) != .orderedSame
+        }
+
+        return isInsertTargetStale
+    }
+
+    /// Whether to auto-refresh the insert target before primary insert action.
+    static func shouldAutoRefreshInsertTargetBeforePrimaryInsert(
+        canInsertDirectly: Bool,
+        canRetargetInsertTarget: Bool,
+        shouldSuggestRetarget: Bool,
+        isInsertTargetStale: Bool
+    ) -> Bool {
+        guard canInsertDirectly else { return false }
+        guard canRetargetInsertTarget else { return false }
+        guard !shouldSuggestRetarget else { return false }
+        return isInsertTargetStale
+    }
+
+    /// Compute recording duration from an optional start date and current time.
+    static func recordingDuration(startedAt: Date?, now: Date) -> TimeInterval {
+        guard let startedAt else { return 0 }
+        return max(0, now.timeIntervalSince(startedAt))
+    }
 }
