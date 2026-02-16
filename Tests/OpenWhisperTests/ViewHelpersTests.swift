@@ -1182,4 +1182,271 @@ struct ViewHelpersTests {
         let result = ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: false, inputMonitoringAuthorized: false)
         #expect(result == "Accessibility + Input Monitoring")
     }
+
+    // MARK: - liveWordsPerMinute
+
+    @Test("liveWPM: returns nil when duration < 5s")
+    func liveWPMShortDuration() {
+        #expect(ViewHelpers.liveWordsPerMinute(transcription: "hello world", durationSeconds: 4.9) == nil)
+    }
+
+    @Test("liveWPM: returns nil for empty transcription")
+    func liveWPMEmpty() {
+        #expect(ViewHelpers.liveWordsPerMinute(transcription: "", durationSeconds: 60) == nil)
+    }
+
+    @Test("liveWPM: returns nil for whitespace-only transcription")
+    func liveWPMWhitespace() {
+        #expect(ViewHelpers.liveWordsPerMinute(transcription: "   ", durationSeconds: 60) == nil)
+    }
+
+    @Test("liveWPM: calculates correctly for 60 words in 60 seconds")
+    func liveWPM60Words() {
+        let words = (1...60).map { "word\($0)" }.joined(separator: " ")
+        let result = ViewHelpers.liveWordsPerMinute(transcription: words, durationSeconds: 60)
+        #expect(result == 60)
+    }
+
+    @Test("liveWPM: minimum is 1")
+    func liveWPMMinimum() {
+        let result = ViewHelpers.liveWordsPerMinute(transcription: "hello", durationSeconds: 3600)
+        #expect(result == 1)
+    }
+
+    @Test("liveWPM: works at exactly 5 seconds")
+    func liveWPMAtBoundary() {
+        let result = ViewHelpers.liveWordsPerMinute(transcription: "one two three", durationSeconds: 5)
+        #expect(result != nil)
+        #expect(result! > 0)
+    }
+
+    // MARK: - recordingDuration
+
+    @Test("recordingDuration: nil startedAt returns 0")
+    func recordingDurationNil() {
+        #expect(ViewHelpers.recordingDuration(startedAt: nil, now: Date()) == 0)
+    }
+
+    @Test("recordingDuration: positive interval")
+    func recordingDurationPositive() {
+        let start = Date(timeIntervalSinceReferenceDate: 100)
+        let now = Date(timeIntervalSinceReferenceDate: 110)
+        #expect(ViewHelpers.recordingDuration(startedAt: start, now: now) == 10)
+    }
+
+    @Test("recordingDuration: future startedAt clamps to 0")
+    func recordingDurationFutureStart() {
+        let start = Date(timeIntervalSinceReferenceDate: 200)
+        let now = Date(timeIntervalSinceReferenceDate: 100)
+        #expect(ViewHelpers.recordingDuration(startedAt: start, now: now) == 0)
+    }
+
+    // MARK: - shouldCopyBecauseTargetUnknown
+
+    @Test("shouldCopy: false when cannot insert directly")
+    func shouldCopyNoInsert() {
+        #expect(ViewHelpers.shouldCopyBecauseTargetUnknown(canInsertDirectly: false, hasResolvableInsertTarget: false, hasExternalFrontApp: false) == false)
+    }
+
+    @Test("shouldCopy: false when has resolvable target")
+    func shouldCopyHasTarget() {
+        #expect(ViewHelpers.shouldCopyBecauseTargetUnknown(canInsertDirectly: true, hasResolvableInsertTarget: true, hasExternalFrontApp: false) == false)
+    }
+
+    @Test("shouldCopy: false when has external front app")
+    func shouldCopyHasFrontApp() {
+        #expect(ViewHelpers.shouldCopyBecauseTargetUnknown(canInsertDirectly: true, hasResolvableInsertTarget: false, hasExternalFrontApp: true) == false)
+    }
+
+    @Test("shouldCopy: true when can insert, no target, no front app")
+    func shouldCopyTrue() {
+        #expect(ViewHelpers.shouldCopyBecauseTargetUnknown(canInsertDirectly: true, hasResolvableInsertTarget: false, hasExternalFrontApp: false) == true)
+    }
+
+    // MARK: - shouldSuggestRetarget
+
+    @Test("shouldSuggestRetarget: false when not locked")
+    func suggestRetargetNotLocked() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: false, insertTargetAppName: "Safari", insertTargetBundleIdentifier: "com.apple.Safari", currentFrontBundleIdentifier: "com.apple.Notes", currentFrontAppName: "Notes", isInsertTargetStale: false) == false)
+    }
+
+    @Test("shouldSuggestRetarget: false when target name empty")
+    func suggestRetargetEmptyName() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "", insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: nil, isInsertTargetStale: false) == false)
+    }
+
+    @Test("shouldSuggestRetarget: false when target name nil")
+    func suggestRetargetNilName() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: nil, insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: nil, isInsertTargetStale: false) == false)
+    }
+
+    @Test("shouldSuggestRetarget: true when bundles differ")
+    func suggestRetargetDifferentBundles() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "Safari", insertTargetBundleIdentifier: "com.apple.Safari", currentFrontBundleIdentifier: "com.apple.Notes", currentFrontAppName: "Notes", isInsertTargetStale: false) == true)
+    }
+
+    @Test("shouldSuggestRetarget: false when same bundle")
+    func suggestRetargetSameBundle() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "Safari", insertTargetBundleIdentifier: "com.apple.Safari", currentFrontBundleIdentifier: "com.apple.Safari", currentFrontAppName: "Safari", isInsertTargetStale: false) == false)
+    }
+
+    @Test("shouldSuggestRetarget: falls back to app name comparison")
+    func suggestRetargetNameFallback() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "Safari", insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: "Notes", isInsertTargetStale: false) == true)
+    }
+
+    @Test("shouldSuggestRetarget: same name case-insensitive")
+    func suggestRetargetSameNameCaseInsensitive() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "safari", insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: "Safari", isInsertTargetStale: false) == false)
+    }
+
+    @Test("shouldSuggestRetarget: falls back to stale when no front app")
+    func suggestRetargetStaleFallback() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "Safari", insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: nil, isInsertTargetStale: true) == true)
+    }
+
+    @Test("shouldSuggestRetarget: not stale, no front app → false")
+    func suggestRetargetNotStaleNoFront() {
+        #expect(ViewHelpers.shouldSuggestRetarget(isInsertTargetLocked: true, insertTargetAppName: "Safari", insertTargetBundleIdentifier: nil, currentFrontBundleIdentifier: nil, currentFrontAppName: nil, isInsertTargetStale: false) == false)
+    }
+
+    // MARK: - shouldAutoRefreshInsertTargetBeforePrimaryInsert
+
+    @Test("autoRefresh: false when cannot insert directly")
+    func autoRefreshNoInsert() {
+        #expect(ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(canInsertDirectly: false, canRetargetInsertTarget: true, shouldSuggestRetarget: false, isInsertTargetStale: true) == false)
+    }
+
+    @Test("autoRefresh: false when cannot retarget")
+    func autoRefreshNoRetarget() {
+        #expect(ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(canInsertDirectly: true, canRetargetInsertTarget: false, shouldSuggestRetarget: false, isInsertTargetStale: true) == false)
+    }
+
+    @Test("autoRefresh: false when suggest retarget is true")
+    func autoRefreshSuggestRetarget() {
+        #expect(ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(canInsertDirectly: true, canRetargetInsertTarget: true, shouldSuggestRetarget: true, isInsertTargetStale: true) == false)
+    }
+
+    @Test("autoRefresh: true when stale and all conditions met")
+    func autoRefreshStale() {
+        #expect(ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(canInsertDirectly: true, canRetargetInsertTarget: true, shouldSuggestRetarget: false, isInsertTargetStale: true) == true)
+    }
+
+    @Test("autoRefresh: false when not stale")
+    func autoRefreshNotStale() {
+        #expect(ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(canInsertDirectly: true, canRetargetInsertTarget: true, shouldSuggestRetarget: false, isInsertTargetStale: false) == false)
+    }
+
+    // MARK: - insertButtonTitle
+
+    @Test("insertButtonTitle: copy when cannot insert directly")
+    func insertTitleCopy() {
+        #expect(ViewHelpers.insertButtonTitle(canInsertDirectly: false, insertTargetAppName: "Safari", insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: nil) == "Copy → Clipboard")
+    }
+
+    @Test("insertButtonTitle: insert with target name")
+    func insertTitleWithTarget() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: "Safari", insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: nil)
+        #expect(result == "Insert → Safari")
+    }
+
+    @Test("insertButtonTitle: fallback target shows (recent)")
+    func insertTitleFallback() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: "Safari", insertTargetUsesFallback: true, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: nil)
+        #expect(result == "Insert → Safari (recent)")
+    }
+
+    @Test("insertButtonTitle: suggest retarget shows warning")
+    func insertTitleRetargetWarning() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: "Safari", insertTargetUsesFallback: false, shouldSuggestRetarget: true, isInsertTargetStale: false, liveFrontAppName: nil)
+        #expect(result.contains("⚠︎"))
+    }
+
+    @Test("insertButtonTitle: stale shows warning")
+    func insertTitleStaleWarning() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: "Safari", insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: true, liveFrontAppName: nil)
+        #expect(result.contains("⚠︎"))
+    }
+
+    @Test("insertButtonTitle: no target uses live front app")
+    func insertTitleLiveFront() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: nil, insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: "Notes")
+        #expect(result == "Insert → Notes")
+    }
+
+    @Test("insertButtonTitle: no target no live front copies")
+    func insertTitleNoTargetNoFront() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: nil, insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: nil)
+        #expect(result == "Copy → Clipboard")
+    }
+
+    @Test("insertButtonTitle: empty target name uses live front")
+    func insertTitleEmptyTarget() {
+        let result = ViewHelpers.insertButtonTitle(canInsertDirectly: true, insertTargetAppName: "", insertTargetUsesFallback: false, shouldSuggestRetarget: false, isInsertTargetStale: false, liveFrontAppName: "Notes")
+        #expect(result == "Insert → Notes")
+    }
+
+    // MARK: - insertButtonHelpText
+
+    @Test("insertHelpText: shows disabled reason")
+    func insertHelpDisabledReason() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: "Record something", canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result == "Record something before inserting")
+    }
+
+    @Test("insertHelpText: no accessibility with target")
+    func insertHelpNoAccessibilityWithTarget() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: false, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: "Safari", insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result.contains("Accessibility permission is missing"))
+        #expect(result.contains("Safari"))
+    }
+
+    @Test("insertHelpText: no accessibility no target")
+    func insertHelpNoAccessibilityNoTarget() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: false, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result.contains("clipboard"))
+    }
+
+    @Test("insertHelpText: copy because target unknown")
+    func insertHelpCopyUnknown() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: true, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result.contains("No destination app"))
+    }
+
+    @Test("insertHelpText: suggest retarget with both app names")
+    func insertHelpSuggestRetarget() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: true, isInsertTargetStale: false, insertTargetAppName: "Safari", insertTargetUsesFallback: false, currentFrontAppName: "Notes")
+        #expect(result.contains("Notes"))
+        #expect(result.contains("Safari"))
+    }
+
+    @Test("insertHelpText: stale target")
+    func insertHelpStale() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: true, insertTargetAppName: "Safari", insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result.contains("captured a while ago"))
+    }
+
+    @Test("insertHelpText: fallback target")
+    func insertHelpFallback() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: "Safari", insertTargetUsesFallback: true, currentFrontAppName: nil)
+        #expect(result.contains("recent app context"))
+    }
+
+    @Test("insertHelpText: normal insert with target")
+    func insertHelpNormal() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: "Safari", insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result == "Insert into Safari")
+    }
+
+    @Test("insertHelpText: no target uses live front")
+    func insertHelpLiveFront() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: "Notes")
+        #expect(result == "Insert into Notes")
+    }
+
+    @Test("insertHelpText: no target no front app")
+    func insertHelpNoFront() {
+        let result = ViewHelpers.insertButtonHelpText(insertActionDisabledReason: nil, canInsertDirectly: true, shouldCopyBecauseTargetUnknown: false, shouldSuggestRetarget: false, isInsertTargetStale: false, insertTargetAppName: nil, insertTargetUsesFallback: false, currentFrontAppName: nil)
+        #expect(result == "Insert into the last active app")
+    }
 }
