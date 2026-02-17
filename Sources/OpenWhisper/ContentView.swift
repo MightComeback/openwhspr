@@ -854,21 +854,7 @@ struct ContentView: View {
     }
 
     private var liveWordsPerMinute: Int? {
-        let duration = recordingDuration()
-        guard duration >= 5 else {
-            return nil
-        }
-
-        let words = transcriber.transcription
-            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-            .count
-
-        guard words > 0 else {
-            return nil
-        }
-
-        let perMinute = Double(words) * 60 / duration
-        return max(1, Int(perMinute.rounded()))
+        ViewHelpers.liveWordsPerMinute(transcription: transcriber.transcription, durationSeconds: recordingDuration())
     }
 
     private func refreshFinalizationProgressBaseline(pendingChunks: Int) {
@@ -938,22 +924,15 @@ struct ContentView: View {
     }
 
     private var shouldCopyBecauseTargetUnknown: Bool {
-        guard canInsertDirectly else {
-            return false
-        }
-
-        if hasResolvableInsertTarget {
-            return false
-        }
-
-        return currentExternalFrontAppName() == nil
+        ViewHelpers.shouldCopyBecauseTargetUnknown(
+            canInsertDirectly: canInsertDirectly,
+            hasResolvableInsertTarget: hasResolvableInsertTarget,
+            hasExternalFrontApp: currentExternalFrontAppName() != nil
+        )
     }
 
     private var transcriptionStats: String {
-        let text = transcriber.transcription.trimmingCharacters(in: .whitespacesAndNewlines)
-        let words = text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).count
-        let chars = text.count
-        return "\(words)w · \(chars)c"
+        ViewHelpers.transcriptionStats(transcriber.transcription)
     }
 
     private var hasTranscriptionText: Bool {
@@ -974,69 +953,27 @@ struct ContentView: View {
     }
 
     private func insertButtonTitle() -> String {
-        if canInsertDirectly {
-            guard let target = insertTargetAppName, !target.isEmpty else {
-                if let liveFrontApp = currentExternalFrontAppName(), !liveFrontApp.isEmpty {
-                    return "Insert → \(abbreviatedAppName(liveFrontApp))"
-                }
-                return "Copy → Clipboard"
-            }
-
-            let targetLabel = insertTargetUsesFallback
-                ? "\(abbreviatedAppName(target)) (recent)"
-                : abbreviatedAppName(target)
-
-            if shouldSuggestRetarget || isInsertTargetStale {
-                return "Insert → \(targetLabel) ⚠︎"
-            }
-
-            return "Insert → \(targetLabel)"
-        }
-
-        return "Copy → Clipboard"
+        ViewHelpers.insertButtonTitle(
+            canInsertDirectly: canInsertDirectly,
+            insertTargetAppName: insertTargetAppName,
+            insertTargetUsesFallback: insertTargetUsesFallback,
+            shouldSuggestRetarget: shouldSuggestRetarget,
+            isInsertTargetStale: isInsertTargetStale,
+            liveFrontAppName: currentExternalFrontAppName()
+        )
     }
 
     private func insertButtonHelpText() -> String {
-        if let insertActionDisabledReason {
-            return "\(insertActionDisabledReason) before inserting"
-        }
-
-        guard canInsertDirectly else {
-            if let target = insertTargetAppName, !target.isEmpty {
-                return "Accessibility permission is missing, so this will copy text for \(target)"
-            }
-            return "Accessibility permission is missing, so this will copy transcription to clipboard"
-        }
-
-        if shouldCopyBecauseTargetUnknown {
-            return "No destination app is currently available, so this will copy transcription to clipboard"
-        }
-
-        if shouldSuggestRetarget,
-           let currentFrontAppName = currentExternalFrontAppName(),
-           let frozenTarget = insertTargetAppName,
-           !frozenTarget.isEmpty {
-            return "Current front app is \(currentFrontAppName), but Insert is still targeting \(frozenTarget). Use Retarget + Insert if you switched apps after transcription finished."
-        }
-
-        if isInsertTargetStale,
-           let frozenTarget = insertTargetAppName,
-           !frozenTarget.isEmpty {
-            return "Insert target \(frozenTarget) was captured a while ago. Retarget before inserting if you changed context."
-        }
-
-        guard let target = insertTargetAppName, !target.isEmpty else {
-            if let liveFrontApp = currentExternalFrontAppName(), !liveFrontApp.isEmpty {
-                return "Insert into \(liveFrontApp)"
-            }
-            return "Insert into the last active app"
-        }
-
-        if insertTargetUsesFallback {
-            return "Insert into \(target) captured from recent app context"
-        }
-
-        return "Insert into \(target)"
+        ViewHelpers.insertButtonHelpText(
+            insertActionDisabledReason: insertActionDisabledReason,
+            canInsertDirectly: canInsertDirectly,
+            shouldCopyBecauseTargetUnknown: shouldCopyBecauseTargetUnknown,
+            shouldSuggestRetarget: shouldSuggestRetarget,
+            isInsertTargetStale: isInsertTargetStale,
+            insertTargetAppName: insertTargetAppName,
+            insertTargetUsesFallback: insertTargetUsesFallback,
+            currentFrontAppName: currentExternalFrontAppName()
+        )
     }
 
     private func retargetButtonTitle() -> String {
@@ -1092,24 +1029,14 @@ struct ContentView: View {
     }
 
     private var shouldSuggestRetarget: Bool {
-        guard isInsertTargetLocked else {
-            return false
-        }
-
-        guard let target = insertTargetAppName?.trimmingCharacters(in: .whitespacesAndNewlines), !target.isEmpty else {
-            return false
-        }
-
-        if let targetBundle = insertTargetBundleIdentifier,
-           let frontBundle = currentExternalFrontBundleIdentifier() {
-            return targetBundle.caseInsensitiveCompare(frontBundle) != .orderedSame
-        }
-
-        if let front = currentExternalFrontAppName() {
-            return target.caseInsensitiveCompare(front) != .orderedSame
-        }
-
-        return isInsertTargetStale
+        ViewHelpers.shouldSuggestRetarget(
+            isInsertTargetLocked: isInsertTargetLocked,
+            insertTargetAppName: insertTargetAppName,
+            insertTargetBundleIdentifier: insertTargetBundleIdentifier,
+            currentFrontBundleIdentifier: currentExternalFrontBundleIdentifier(),
+            currentFrontAppName: currentExternalFrontAppName(),
+            isInsertTargetStale: isInsertTargetStale
+        )
     }
 
     private var shouldShowUseCurrentAppQuickAction: Bool {
@@ -1117,22 +1044,12 @@ struct ContentView: View {
     }
 
     private var shouldAutoRefreshInsertTargetBeforePrimaryInsert: Bool {
-        guard canInsertDirectly else {
-            return false
-        }
-
-        guard canRetargetInsertTarget else {
-            return false
-        }
-
-        // If we already know the user switched apps, keep the target locked and
-        // force an explicit retarget choice. Auto-refresh only the stale-but-
-        // likely-same-app path to improve reliability without surprising jumps.
-        guard !shouldSuggestRetarget else {
-            return false
-        }
-
-        return isInsertTargetStale
+        ViewHelpers.shouldAutoRefreshInsertTargetBeforePrimaryInsert(
+            canInsertDirectly: canInsertDirectly,
+            canRetargetInsertTarget: canRetargetInsertTarget,
+            shouldSuggestRetarget: shouldSuggestRetarget,
+            isInsertTargetStale: isInsertTargetStale
+        )
     }
 
     private var activeInsertTargetStaleAfterSeconds: TimeInterval {
