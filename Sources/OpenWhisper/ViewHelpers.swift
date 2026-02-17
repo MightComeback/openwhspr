@@ -1307,4 +1307,110 @@ enum ViewHelpers {
         return !target.isEmpty
     }
 
+    // MARK: - Common hotkey key sections (static data)
+
+    /// The categorized list of supported hotkey key names shown in the settings picker.
+    static var commonHotkeyKeySections: [(title: String, keys: [String])] {
+        [
+            (
+                title: "Basic",
+                keys: ["space", "tab", "return", "escape", "delete", "forwarddelete", "insert", "fn", "globe"]
+            ),
+            (
+                title: "Navigation",
+                keys: ["left", "right", "up", "down", "home", "end", "pageup", "pagedown"]
+            ),
+            (
+                title: "Function",
+                keys: ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"]
+            ),
+            (
+                title: "Punctuation",
+                keys: ["minus", "equals", "openbracket", "closebracket", "semicolon", "apostrophe", "comma", "period", "slash", "backslash", "backtick", "section"]
+            ),
+            (
+                title: "Keypad",
+                keys: ["keypad0", "keypad1", "keypad2", "keypad3", "keypad4", "keypad5", "keypad6", "keypad7", "keypad8", "keypad9", "keypaddecimal", "keypadcomma", "keypadclear", "keypadplus", "keypadminus", "keypadmultiply", "keypaddivide", "keypadenter", "keypadequals"]
+            )
+        ]
+    }
+
+    // MARK: - Insertion probe helpers
+
+    /// Maximum characters for the insertion probe sample text.
+    static let insertionProbeMaxCharacters = 200
+
+    /// Whether the trimmed sample text exceeds the max character limit.
+    static func insertionProbeSampleTextWillTruncate(_ trimmedText: String) -> Bool {
+        trimmedText.count > insertionProbeMaxCharacters
+    }
+
+    /// Enforce the character limit on insertion probe sample text, returning the limited version.
+    static func enforceInsertionProbeSampleTextLimit(_ text: String) -> String {
+        String(text.prefix(insertionProbeMaxCharacters))
+    }
+
+    /// The effective sample text for an insertion probe run (trimmed + limited).
+    static func insertionProbeSampleTextForRun(_ rawText: String) -> String {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(trimmed.prefix(insertionProbeMaxCharacters))
+    }
+
+    /// Whether there is any non-empty sample text for the insertion probe.
+    static func hasInsertionProbeSampleText(_ rawText: String) -> Bool {
+        !insertionProbeSampleTextForRun(rawText).isEmpty
+    }
+
+    // MARK: - Hotkey draft edits detection
+
+    /// Whether the hotkey draft field has any unsaved edits compared to the current key + modifiers.
+    static func hasHotkeyDraftEdits(draft: String, currentKey: String, currentModifiers: Set<ParsedModifier>) -> Bool {
+        let sanitizedDraft = sanitizeKeyValue(draft)
+        if sanitizedDraft != sanitizeKeyValue(currentKey) {
+            return true
+        }
+
+        guard let parsed = parseHotkeyDraft(draft),
+              let modifiers = parsed.requiredModifiers else {
+            return false
+        }
+
+        return modifiers != currentModifiers
+    }
+
+    // MARK: - Effective hotkey risk context
+
+    /// Resolve the effective key + modifiers for risk warnings, considering the draft field.
+    static func effectiveHotkeyRiskContext(
+        draft: String,
+        currentKey: String,
+        currentModifiers: Set<ParsedModifier>
+    ) -> (requiredModifiers: Set<ParsedModifier>, key: String) {
+        if let parsed = parseHotkeyDraft(draft) {
+            let parsedKey = sanitizeKeyValue(parsed.key)
+            if HotkeyDisplay.isSupportedKey(parsedKey) {
+                let modifiers = parsed.requiredModifiers ?? currentModifiers
+                return (modifiers, parsedKey)
+            }
+        }
+        return (currentModifiers, sanitizeKeyValue(currentKey))
+    }
+
+    // MARK: - Insertion probe status
+
+    /// Map the insertion probe success state to a semantic status category.
+    enum InsertionProbeStatus {
+        case success
+        case failure
+        case unknown
+    }
+
+    static func insertionProbeStatus(succeeded: Bool?) -> InsertionProbeStatus {
+        switch succeeded {
+        case true: return .success
+        case false: return .failure
+        case nil: return .unknown
+        }
+    }
+
 }
