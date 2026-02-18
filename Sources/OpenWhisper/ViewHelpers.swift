@@ -1413,4 +1413,98 @@ enum ViewHelpers {
         }
     }
 
+    // MARK: - Hotkey key-code helpers (extracted for testability)
+
+    /// Known key-code → key-name mapping used during hotkey capture.
+    /// Returns `nil` for pure modifier keys (command, shift, etc.).
+    static func hotkeyKeyNameForKeyCode(_ keyCode: Int) -> String? {
+        switch keyCode {
+        // Pure modifier keys – no key name
+        case 0x37, 0x38, 0x3C, 0x3A, 0x3D, 0x3B, 0x3E, 0x39: // Cmd, Shift, RShift, Option, ROption, Control, RControl, CapsLock
+            return nil
+        case 0x3F: return "fn"       // Function key
+        case 0x31: return "space"
+        case 0x30: return "tab"
+        case 0x24: return "return"
+        case 0x35: return "escape"
+        case 0x33: return "delete"
+        case 0x75: return "forwarddelete"
+        case 0x72: return "insert"   // Help key
+        case 0x7B: return "left"
+        case 0x7C: return "right"
+        case 0x7E: return "up"
+        case 0x7D: return "down"
+        case 0x73: return "home"
+        case 0x77: return "end"
+        case 0x74: return "pageup"
+        case 0x79: return "pagedown"
+        // F-keys
+        case 0x7A: return "f1"
+        case 0x78: return "f2"
+        case 0x63: return "f3"
+        case 0x76: return "f4"
+        case 0x60: return "f5"
+        case 0x61: return "f6"
+        case 0x62: return "f7"
+        case 0x64: return "f8"
+        case 0x65: return "f9"
+        case 0x6D: return "f10"
+        case 0x67: return "f11"
+        case 0x6F: return "f12"
+        case 0x69: return "f13"
+        case 0x6B: return "f14"
+        case 0x71: return "f15"
+        case 0x6A: return "f16"
+        case 0x40: return "f17"
+        case 0x4F: return "f18"
+        case 0x50: return "f19"
+        case 0x5A: return "f20"
+        default: return nil // caller should fall back to characters
+        }
+    }
+
+    /// Whether a key code represents a modifier-only key (no printable character).
+    static func isModifierOnlyKeyCode(_ keyCode: Int) -> Bool {
+        switch keyCode {
+        case 0x37, 0x36,  // Command, Right Command
+             0x38, 0x3C,  // Shift, Right Shift
+             0x3A, 0x3D,  // Option, Right Option
+             0x3B, 0x3E,  // Control, Right Control
+             0x39,        // CapsLock
+             0x3F:        // Function
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Build a hotkey summary string from modifier flags and key name.
+    static func hotkeySummaryFromModifiers(
+        command: Bool, shift: Bool, option: Bool, control: Bool, capsLock: Bool,
+        key: String
+    ) -> String {
+        var parts: [String] = []
+        if command { parts.append("⌘") }
+        if shift { parts.append("⇧") }
+        if option { parts.append("⌥") }
+        if control { parts.append("⌃") }
+        if capsLock { parts.append("⇪") }
+        parts.append(HotkeyDisplay.displayKey(key))
+        return parts.joined(separator: "+")
+    }
+
+    /// Whether a capture-activation event should be ignored (debounce within threshold).
+    static func shouldIgnoreCaptureActivation(
+        elapsedSinceCaptureStart: TimeInterval,
+        debounceThreshold: TimeInterval = 0.35,
+        keyName: String?,
+        hasCommandModifier: Bool,
+        hasShiftModifier: Bool,
+        hasExtraModifiers: Bool
+    ) -> Bool {
+        guard elapsedSinceCaptureStart <= debounceThreshold else { return false }
+        guard keyName == "k" else { return false }
+        return hasCommandModifier && hasShiftModifier && !hasExtraModifiers
+    }
+
 }
