@@ -893,9 +893,7 @@ struct ContentView: View {
     }
 
     private var activeLanguageLabel: String {
-        let code = transcriber.activeLanguageCode
-        let language = WhisperLanguage(rawValue: code) ?? .auto
-        return language.displayName
+        ViewHelpers.activeLanguageLabel(for: transcriber.activeLanguageCode)
     }
 
     private var canToggleRecording: Bool {

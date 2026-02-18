@@ -4,9 +4,16 @@
 // Pure utility functions extracted from ContentView / SettingsView for testability.
 
 import Foundation
+import SwiftWhisper
 
 /// Pure helper functions used by views, extracted for testability.
 enum ViewHelpers {
+
+    /// Human-readable language label for the given Whisper language code.
+    static func activeLanguageLabel(for code: String) -> String {
+        let language = WhisperLanguage(rawValue: code) ?? .auto
+        return language.displayName
+    }
 
     // MARK: - Duration formatting
 
