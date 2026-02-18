@@ -1110,44 +1110,19 @@ struct SettingsView: View {
     }
 
     private var hotkeyModeTipText: String {
-        let usesEscapeTrigger = effectiveHotkeyRiskContext.key == "escape"
-
-        switch currentHotkeyMode {
-        case .toggle:
-            if usesEscapeTrigger {
-                return "Tip: toggle mode starts recording on the first press and stops on the next press. Escape quick-cancel is unavailable while Escape is the trigger key."
-            }
-            return "Tip: toggle mode starts recording on the first press and stops on the next press. Press Esc while recording to discard."
-        case .hold:
-            if usesEscapeTrigger {
-                return "Tip: hold-to-talk records while the combo is pressed and stops on release. Escape quick-cancel is unavailable while Escape is the trigger key."
-            }
-            return "Tip: hold-to-talk records while the combo is pressed and stops on release. Press Esc while recording to discard."
-        }
+        ViewHelpers.hotkeyModeTipText(mode: currentHotkeyMode, usesEscapeTrigger: effectiveHotkeyRiskContext.key == "escape")
     }
 
     private var hotkeyCaptureButtonTitle: String {
-        guard isCapturingHotkey else {
-            return "Record shortcut"
-        }
-
-        return "Listening… \(hotkeyCaptureSecondsRemaining)s"
+        ViewHelpers.hotkeyCaptureButtonTitle(isCapturing: isCapturingHotkey, secondsRemaining: hotkeyCaptureSecondsRemaining)
     }
 
     private var hotkeyCaptureInstruction: String {
-        if inputMonitoringAuthorized {
-            return "Listening for the next key press (works even if another app is focused). Hold modifiers and press your trigger key once. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)"
-        }
-
-        return "Listening for the next key press in OpenWhisper only. Input Monitoring is missing, so shortcut capture from other apps is unavailable until permission is granted. Press Esc to cancel. (\(hotkeyCaptureSecondsRemaining)s left)"
+        ViewHelpers.hotkeyCaptureInstruction(inputMonitoringAuthorized: inputMonitoringAuthorized, secondsRemaining: hotkeyCaptureSecondsRemaining)
     }
 
     private var hotkeyCaptureProgress: Double {
-        guard hotkeyCaptureTimeoutSeconds > 0 else {
-            return 0
-        }
-
-        return min(max(Double(hotkeyCaptureSecondsRemaining) / Double(hotkeyCaptureTimeoutSeconds), 0), 1)
+        ViewHelpers.hotkeyCaptureProgress(secondsRemaining: hotkeyCaptureSecondsRemaining, totalSeconds: hotkeyCaptureTimeoutSeconds)
     }
 
     private var isHotkeyKeyDraftSupported: Bool {
@@ -1299,21 +1274,11 @@ struct SettingsView: View {
     }
 
     private var showsAutoPastePermissionWarning: Bool {
-        autoPaste && !accessibilityAuthorized
+        ViewHelpers.showsAutoPastePermissionWarning(autoPaste: autoPaste, accessibilityAuthorized: accessibilityAuthorized)
     }
 
     private var hotkeyMissingPermissionSummary: String? {
-        var missing: [String] = []
-        if !accessibilityAuthorized {
-            missing.append("Accessibility")
-        }
-        if !inputMonitoringAuthorized {
-            missing.append("Input Monitoring")
-        }
-        guard !missing.isEmpty else {
-            return nil
-        }
-        return missing.joined(separator: " + ")
+        ViewHelpers.hotkeyMissingPermissionSummary(accessibilityAuthorized: accessibilityAuthorized, inputMonitoringAuthorized: inputMonitoringAuthorized)
     }
 
     private var canCaptureFrontmostProfile: Bool {
@@ -1404,23 +1369,12 @@ struct SettingsView: View {
     }
 
     private var runInsertionTestButtonTitle: String {
-        if transcriber.isRunningInsertionProbe {
-            return "Running insertion test…"
-        }
-
-        if canRunInsertionTest {
-            return "Run insertion test"
-        }
-
-        if let targetName = insertionTestAutoCaptureTargetName, !targetName.isEmpty {
-            return "Run insertion test (capture \(targetName))"
-        }
-
-        if canCaptureAndRunInsertionTest {
-            return "Run insertion test (auto-capture)"
-        }
-
-        return "Run insertion test"
+        ViewHelpers.runInsertionTestButtonTitle(
+            isRunningProbe: transcriber.isRunningInsertionProbe,
+            canRunTest: canRunInsertionTest,
+            autoCaptureTargetName: insertionTestAutoCaptureTargetName,
+            canCaptureAndRun: canCaptureAndRunInsertionTest
+        )
     }
 
     private var showsInsertionTestAutoCaptureHint: Bool {
@@ -1428,20 +1382,11 @@ struct SettingsView: View {
     }
 
     private var canFocusInsertionTarget: Bool {
-        guard !transcriber.isRecording else {
-            return false
-        }
-        guard !isTranscriptionFinalizingForInsertion else {
-            return false
-        }
-        return insertionTestTargetDisplay != nil
+        ViewHelpers.canFocusInsertionTarget(isRecording: transcriber.isRecording, isFinalizingTranscription: isTranscriptionFinalizingForInsertion, hasInsertionTarget: insertionTestTargetDisplay != nil)
     }
 
     private var canClearInsertionTarget: Bool {
-        guard !transcriber.isRunningInsertionProbe else {
-            return false
-        }
-        return insertionTestTargetDisplay != nil
+        ViewHelpers.canClearInsertionTarget(isRunningProbe: transcriber.isRunningInsertionProbe, hasInsertionTarget: insertionTestTargetDisplay != nil)
     }
 
     private func runInsertionTestFromTextFieldSubmission() {

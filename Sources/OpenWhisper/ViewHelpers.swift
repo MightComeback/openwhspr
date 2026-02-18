@@ -1493,6 +1493,42 @@ enum ViewHelpers {
         return parts.joined(separator: "+")
     }
 
+    // MARK: - Settings UI helpers
+
+    /// Whether the auto-paste permission warning should show.
+    static func showsAutoPastePermissionWarning(autoPaste: Bool, accessibilityAuthorized: Bool) -> Bool {
+        autoPaste && !accessibilityAuthorized
+    }
+
+    /// Title for the insertion test button.
+    static func runInsertionTestButtonTitle(
+        isRunningProbe: Bool,
+        canRunTest: Bool,
+        autoCaptureTargetName: String?,
+        canCaptureAndRun: Bool
+    ) -> String {
+        if isRunningProbe { return "Running insertion test…" }
+        if canRunTest { return "Run insertion test" }
+        if let name = autoCaptureTargetName, !name.isEmpty {
+            return "Run insertion test (capture \(name))"
+        }
+        if canCaptureAndRun { return "Run insertion test (auto-capture)" }
+        return "Run insertion test"
+    }
+
+    /// Whether the focus-insertion-target button should be enabled.
+    static func canFocusInsertionTarget(isRecording: Bool, isFinalizingTranscription: Bool, hasInsertionTarget: Bool) -> Bool {
+        guard !isRecording else { return false }
+        guard !isFinalizingTranscription else { return false }
+        return hasInsertionTarget
+    }
+
+    /// Whether the clear-insertion-target button should be enabled.
+    static func canClearInsertionTarget(isRunningProbe: Bool, hasInsertionTarget: Bool) -> Bool {
+        guard !isRunningProbe else { return false }
+        return hasInsertionTarget
+    }
+
     /// Whether a capture-activation event should be ignored (debounce within threshold).
     static func shouldIgnoreCaptureActivation(
         elapsedSinceCaptureStart: TimeInterval,
