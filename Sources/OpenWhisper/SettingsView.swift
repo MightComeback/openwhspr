@@ -1802,95 +1802,11 @@ struct SettingsView: View {
     }
 
     private func isModifierOnlyHotkeyEvent(_ event: NSEvent) -> Bool {
-        switch Int(event.keyCode) {
-        case kVK_Command, kVK_RightCommand,
-             kVK_Shift, kVK_RightShift,
-             kVK_Option, kVK_RightOption,
-             kVK_Control, kVK_RightControl,
-             kVK_CapsLock,
-             kVK_Function:
-            return true
-        default:
-            return false
-        }
+        ViewHelpers.isModifierOnlyKeyCode(Int(event.keyCode))
     }
 
     private func hotkeyKeyName(from event: NSEvent) -> String? {
-        switch Int(event.keyCode) {
-        case kVK_Command, kVK_Shift, kVK_RightShift, kVK_Option, kVK_RightOption, kVK_Control, kVK_RightControl, kVK_CapsLock:
-            return nil
-        case kVK_Function:
-            return "fn"
-        case kVK_Space: return "space"
-        case kVK_Tab: return "tab"
-        case kVK_Return: return "return"
-        case kVK_Escape: return "escape"
-        case kVK_Delete: return "delete"
-        case kVK_ForwardDelete: return "forwarddelete"
-        case kVK_Help: return "insert"
-        case kVK_LeftArrow: return "left"
-        case kVK_RightArrow: return "right"
-        case kVK_UpArrow: return "up"
-        case kVK_DownArrow: return "down"
-        case kVK_Home: return "home"
-        case kVK_End: return "end"
-        case kVK_PageUp: return "pageup"
-        case kVK_PageDown: return "pagedown"
-        case kVK_F1: return "f1"
-        case kVK_F2: return "f2"
-        case kVK_F3: return "f3"
-        case kVK_F4: return "f4"
-        case kVK_F5: return "f5"
-        case kVK_F6: return "f6"
-        case kVK_F7: return "f7"
-        case kVK_F8: return "f8"
-        case kVK_F9: return "f9"
-        case kVK_F10: return "f10"
-        case kVK_F11: return "f11"
-        case kVK_F12: return "f12"
-        case kVK_F13: return "f13"
-        case kVK_F14: return "f14"
-        case kVK_F15: return "f15"
-        case kVK_F16: return "f16"
-        case kVK_F17: return "f17"
-        case kVK_F18: return "f18"
-        case kVK_F19: return "f19"
-        case kVK_F20: return "f20"
-        case 0x6E: return "f21"
-        case 0x6F: return "f22"
-        case 0x70: return "f23"
-        case 0x71: return "f24"
-        case kVK_ANSI_Keypad0: return "keypad0"
-        case kVK_ANSI_Keypad1: return "keypad1"
-        case kVK_ANSI_Keypad2: return "keypad2"
-        case kVK_ANSI_Keypad3: return "keypad3"
-        case kVK_ANSI_Keypad4: return "keypad4"
-        case kVK_ANSI_Keypad5: return "keypad5"
-        case kVK_ANSI_Keypad6: return "keypad6"
-        case kVK_ANSI_Keypad7: return "keypad7"
-        case kVK_ANSI_Keypad8: return "keypad8"
-        case kVK_ANSI_Keypad9: return "keypad9"
-        case kVK_ANSI_KeypadDecimal: return "keypaddecimal"
-        case kVK_JIS_KeypadComma: return "keypadcomma"
-        case kVK_ANSI_KeypadMultiply: return "keypadmultiply"
-        case kVK_ANSI_KeypadPlus: return "keypadplus"
-        case kVK_ANSI_KeypadClear: return "keypadclear"
-        case kVK_ANSI_KeypadDivide: return "keypaddivide"
-        case kVK_ANSI_KeypadEnter: return "keypadenter"
-        case kVK_ANSI_KeypadMinus: return "keypadminus"
-        case kVK_ANSI_KeypadEquals: return "keypadequals"
-        default:
-            guard let characters = event.charactersIgnoringModifiers?.lowercased(),
-                  let scalar = characters.unicodeScalars.first else {
-                return nil
-            }
-
-            if scalar.properties.isWhitespace {
-                return "space"
-            }
-
-            return HotkeyDisplay.canonicalKey(String(scalar))
-        }
+        ViewHelpers.hotkeyKeyNameFromKeyCode(Int(event.keyCode), characters: event.charactersIgnoringModifiers)
     }
 
     private var normalizedHotkeyDraftForApply: String? {
@@ -2239,10 +2155,7 @@ struct SettingsView: View {
     }
 
     private func formatBytes(_ bytes: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useMB, .useKB]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
+        ViewHelpers.formatBytes(bytes)
     }
 
     private func sizeOfModel(path: String) -> Int64 {

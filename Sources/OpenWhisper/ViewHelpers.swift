@@ -1550,4 +1550,77 @@ enum ViewHelpers {
         return hasCommandModifier && hasShiftModifier && !hasExtraModifiers
     }
 
+    /// Maps a virtual key code (and optional characters string) to a canonical hotkey name.
+    /// Returns `nil` for modifier-only key codes (command, shift, option, control, caps lock).
+    static func hotkeyKeyNameFromKeyCode(_ keyCode: Int, characters: String? = nil) -> String? {
+        switch keyCode {
+        case 0x37, 0x38, 0x3C, 0x3A, 0x3D, 0x3B, 0x3E, 0x39:
+            return nil
+        case 0x3F: return "fn"
+        case 0x31: return "space"
+        case 0x30: return "tab"
+        case 0x24: return "return"
+        case 0x35: return "escape"
+        case 0x33: return "delete"
+        case 0x75: return "forwarddelete"
+        case 0x72: return "insert"
+        case 0x7B: return "left"
+        case 0x7C: return "right"
+        case 0x7E: return "up"
+        case 0x7D: return "down"
+        case 0x73: return "home"
+        case 0x77: return "end"
+        case 0x74: return "pageup"
+        case 0x79: return "pagedown"
+        case 0x7A: return "f1"
+        case 0x78: return "f2"
+        case 0x63: return "f3"
+        case 0x76: return "f4"
+        case 0x60: return "f5"
+        case 0x61: return "f6"
+        case 0x62: return "f7"
+        case 0x64: return "f8"
+        case 0x65: return "f9"
+        case 0x6D: return "f10"
+        case 0x67: return "f11"
+        case 0x6F: return "f12"
+        case 0x69: return "f13"
+        case 0x6B: return "f14"
+        case 0x71: return "f15"
+        case 0x6A: return "f16"
+        case 0x40: return "f17"
+        case 0x4F: return "f18"
+        case 0x50: return "f19"
+        case 0x5A: return "f20"
+        case 0x52: return "keypad0"
+        case 0x53: return "keypad1"
+        case 0x54: return "keypad2"
+        case 0x55: return "keypad3"
+        case 0x56: return "keypad4"
+        case 0x57: return "keypad5"
+        case 0x58: return "keypad6"
+        case 0x59: return "keypad7"
+        case 0x5B: return "keypad8"
+        case 0x5C: return "keypad9"
+        case 0x41: return "keypaddecimal"
+        case 0x5F: return "keypadcomma"
+        case 0x43: return "keypadmultiply"
+        case 0x45: return "keypadplus"
+        case 0x47: return "keypadclear"
+        case 0x4B: return "keypaddivide"
+        case 0x4C: return "keypadenter"
+        case 0x4E: return "keypadminus"
+        case 0x51: return "keypadequals"
+        default:
+            guard let chars = characters?.lowercased(),
+                  let scalar = chars.unicodeScalars.first else {
+                return nil
+            }
+            if scalar.properties.isWhitespace {
+                return "space"
+            }
+            return HotkeyDisplay.canonicalKey(String(scalar))
+        }
+    }
+
 }
