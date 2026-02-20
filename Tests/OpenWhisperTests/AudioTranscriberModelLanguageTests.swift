@@ -6,7 +6,7 @@ import Foundation
 /// NOTE: Avoid calling setModelSource / setCustomModelPath / clearCustomModelPath
 /// with multiple model reloads in a single suite — Whisper init blocks the main
 /// thread and can deadlock when run concurrently or serialized.
-@Suite("AudioTranscriber Model & Language")
+@Suite("AudioTranscriber Model & Language", .serialized)
 struct AudioTranscriberModelLanguageTests {
 
     // MARK: - setTranscriptionLanguage
