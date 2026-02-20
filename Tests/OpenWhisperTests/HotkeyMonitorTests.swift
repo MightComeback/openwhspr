@@ -1708,7 +1708,12 @@ final class HotkeyMonitorTests: XCTestCase {
     }
 
     func testMissingSinglePermissionMessageIncludesSettingsPath() {
-        let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
 
         XCTAssertEqual(
             monitor.missingPermissionStatusMessage(["Accessibility"]),
@@ -1717,7 +1722,12 @@ final class HotkeyMonitorTests: XCTestCase {
     }
 
     func testMissingMultiplePermissionsMessageIncludesBothSectionsGuidance() {
-        let monitor = HotkeyMonitor(defaults: makeDefaults(), startListening: false, observeDefaults: false)
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredCommand)
+        defaults.set(true, forKey: AppDefaults.Keys.hotkeyRequiredShift)
+        defaults.set("space", forKey: AppDefaults.Keys.hotkeyKey)
+        defaults.set(HotkeyMode.toggle.rawValue, forKey: AppDefaults.Keys.hotkeyMode)
+        let monitor = HotkeyMonitor(defaults: defaults, startListening: false, observeDefaults: false)
 
         XCTAssertEqual(
             monitor.missingPermissionStatusMessage(["Accessibility", "Input Monitoring"]),
