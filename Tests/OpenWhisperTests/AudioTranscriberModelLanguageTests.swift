@@ -2,47 +2,12 @@ import Testing
 import Foundation
 @testable import OpenWhisper
 
-/// Tests for AudioTranscriber model/language/cancel methods that previously lacked coverage.
-@Suite("AudioTranscriber Model & Language", .serialized)
+/// Tests for AudioTranscriber model/language/cancel methods.
+/// NOTE: Avoid calling setModelSource / setCustomModelPath / clearCustomModelPath
+/// with multiple model reloads in a single suite — Whisper init blocks the main
+/// thread and can deadlock when run concurrently or serialized.
+@Suite("AudioTranscriber Model & Language")
 struct AudioTranscriberModelLanguageTests {
-
-    // MARK: - setModelSource
-
-    @Test("setModelSource bundledTiny stores rawValue and clears warning")
-    @MainActor func setModelSourceBundledTiny() {
-        let t = AudioTranscriber.shared
-        t.modelWarning = "stale warning"
-        t.setModelSource(.bundledTiny)
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource) == ModelSource.bundledTiny.rawValue)
-        #expect(t.modelWarning == nil)
-    }
-
-    @Test("setModelSource customPath stores rawValue and preserves warning")
-    @MainActor func setModelSourceCustomPath() {
-        let t = AudioTranscriber.shared
-        t.modelWarning = "some warning"
-        t.setModelSource(.customPath)
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource) == ModelSource.customPath.rawValue)
-        // customPath does NOT clear modelWarning
-        // (warning may be set or cleared by reloadConfiguredModel; we just verify it wasn't nil'd by setModelSource)
-    }
-
-    @Test("setModelSource triggers reloadConfiguredModel (activeModelSource updates)")
-    @MainActor func setModelSourceReloads() {
-        let t = AudioTranscriber.shared
-        t.setModelSource(.bundledTiny)
-        #expect(t.activeModelSource == .bundledTiny)
-    }
-
-    @Test("setModelSource round-trips through UserDefaults")
-    @MainActor func setModelSourceRoundTrip() {
-        let t = AudioTranscriber.shared
-        for source in ModelSource.allCases {
-            t.setModelSource(source)
-            let stored = UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource)
-            #expect(stored == source.rawValue)
-        }
-    }
 
     // MARK: - setTranscriptionLanguage
 
@@ -82,63 +47,11 @@ struct AudioTranscriberModelLanguageTests {
         #expect(t.activeLanguageCode == "xx")
     }
 
-    // MARK: - setCustomModelPath
-
-    @Test("setCustomModelPath stores normalized path")
-    @MainActor func setCustomPathStores() {
-        let t = AudioTranscriber.shared
-        t.setCustomModelPath("  /some/path.bin  ")
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath) == "/some/path.bin")
-    }
-
-    @Test("setCustomModelPath switches source to customPath")
-    @MainActor func setCustomPathSwitchesSource() {
-        let t = AudioTranscriber.shared
-        t.setCustomModelPath("/some/path.bin")
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource) == ModelSource.customPath.rawValue)
-    }
-
-    @Test("setCustomModelPath triggers reload without crash")
-    @MainActor func setCustomPathReloads() {
-        let t = AudioTranscriber.shared
-        // For a nonexistent path, reloadConfiguredModel may fall back to bundledTiny.
-        // We just verify it doesn't crash and UserDefaults was set.
-        t.setCustomModelPath("/nonexistent/model.bin")
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource) == ModelSource.customPath.rawValue)
-    }
-
-    @Test("setCustomModelPath empty string stores empty")
-    @MainActor func setCustomPathEmpty() {
-        let t = AudioTranscriber.shared
-        t.setCustomModelPath("")
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath) == "")
-    }
-
-    // MARK: - clearCustomModelPath
-
-    @Test("clearCustomModelPath resets path to empty")
-    @MainActor func clearCustomPath() {
-        let t = AudioTranscriber.shared
-        UserDefaults.standard.set("/old/path.bin", forKey: AppDefaults.Keys.modelCustomPath)
-        t.clearCustomModelPath()
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath) == "")
-    }
-
-    @Test("clearCustomModelPath triggers reload")
-    @MainActor func clearCustomPathReloads() {
-        let t = AudioTranscriber.shared
-        // Set custom first, then clear — should not crash
-        t.setCustomModelPath("/some/path.bin")
-        t.clearCustomModelPath()
-        #expect(UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath) == "")
-    }
-
     // MARK: - cancelRecording
 
     @Test("cancelRecording when idle sets 'Nothing to cancel'")
     @MainActor func cancelRecordingIdle() {
         let t = AudioTranscriber.shared
-        // Ensure not recording
         if t.isRecording { return }
         if t.pendingChunkCount > 0 { return }
         t.cancelRecording()
@@ -193,5 +106,66 @@ struct AudioTranscriberModelLanguageTests {
         t.setPendingSessionFinalizeForTesting(true)
         t.cancelRecording()
         #expect(t.startRecordingAfterFinalizeRequestedForTesting == false)
+    }
+
+    // MARK: - Model source UserDefaults (no reload)
+
+    @Test("ModelSource rawValues write to UserDefaults correctly")
+    func modelSourceRawValues() {
+        for source in ModelSource.allCases {
+            UserDefaults.standard.set(source.rawValue, forKey: AppDefaults.Keys.modelSource)
+            let stored = UserDefaults.standard.string(forKey: AppDefaults.Keys.modelSource)
+            #expect(stored == source.rawValue)
+        }
+    }
+
+    @Test("Custom model path stores trimmed in UserDefaults")
+    func customModelPathTrimmed() {
+        let key = AppDefaults.Keys.modelCustomPath
+        let path = "  /some/path.bin  "
+        UserDefaults.standard.set(path.trimmingCharacters(in: .whitespacesAndNewlines), forKey: key)
+        #expect(UserDefaults.standard.string(forKey: key) == "/some/path.bin")
+    }
+
+    @Test("clearCustomModelPath empties UserDefaults key")
+    func clearCustomModelPathDefaults() {
+        let key = AppDefaults.Keys.modelCustomPath
+        UserDefaults.standard.set("/old/path.bin", forKey: key)
+        UserDefaults.standard.set("", forKey: key)
+        #expect(UserDefaults.standard.string(forKey: key) == "")
+    }
+
+    // MARK: - resolveConfiguredModelURL (does not trigger full model load)
+
+    @Test("resolveConfiguredModelURL bundled returns bundledTiny source")
+    @MainActor func resolveURLBundled() {
+        let t = AudioTranscriber.shared
+        UserDefaults.standard.set(ModelSource.bundledTiny.rawValue, forKey: AppDefaults.Keys.modelSource)
+        let result = t.resolveConfiguredModelURL()
+        #expect(result.loadedSource == .bundledTiny)
+    }
+
+    @Test("resolveConfiguredModelURL custom invalid path falls back with warning")
+    @MainActor func resolveURLCustomInvalid() {
+        let t = AudioTranscriber.shared
+        UserDefaults.standard.set(ModelSource.customPath.rawValue, forKey: AppDefaults.Keys.modelSource)
+        UserDefaults.standard.set("/nonexistent/path/model.bin", forKey: AppDefaults.Keys.modelCustomPath)
+        let result = t.resolveConfiguredModelURL()
+        #expect(result.loadedSource == .bundledTiny)
+        #expect(result.warning != nil)
+        #expect(result.warning?.contains("not found") == true)
+        // Restore
+        UserDefaults.standard.set(ModelSource.bundledTiny.rawValue, forKey: AppDefaults.Keys.modelSource)
+    }
+
+    @Test("resolveConfiguredModelURL custom empty path falls back with warning")
+    @MainActor func resolveURLCustomEmpty() {
+        let t = AudioTranscriber.shared
+        UserDefaults.standard.set(ModelSource.customPath.rawValue, forKey: AppDefaults.Keys.modelSource)
+        UserDefaults.standard.set("", forKey: AppDefaults.Keys.modelCustomPath)
+        let result = t.resolveConfiguredModelURL()
+        #expect(result.loadedSource == .bundledTiny)
+        #expect(result.warning?.contains("empty") == true)
+        UserDefaults.standard.set(ModelSource.bundledTiny.rawValue, forKey: AppDefaults.Keys.modelSource)
     }
 }

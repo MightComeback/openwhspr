@@ -1,8 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import OpenWhisper
 
-final class AudioTranscriberTests: XCTestCase {
-    private func withStandardDefaults(_ values: [String: Any], _ body: () async throws -> Void) async rethrows {
+@Suite("AudioTranscriber")
+struct AudioTranscriberSwiftTests {
+    @MainActor
+    private func withStandardDefaults(_ values: [String: Any], _ body: @MainActor () async throws -> Void) async rethrows {
         let defaults = UserDefaults.standard
         var previous: [String: Any?] = [:]
         for (key, value) in values {
@@ -21,20 +24,22 @@ final class AudioTranscriberTests: XCTestCase {
         try await body()
     }
 
-    func testResolveConfiguredModelURLUsesBundledWhenCustomMissing() async throws {
+    @Test
+    func resolveConfiguredModelURLUsesBundledWhenCustomMissing() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.modelSource: ModelSource.customPath.rawValue,
             AppDefaults.Keys.modelCustomPath: ""
         ]) {
             let transcriber = AudioTranscriber.shared
             let resolved = transcriber.resolveConfiguredModelURL()
-            XCTAssertEqual(resolved.loadedSource, .bundledTiny)
-            XCTAssertNotNil(resolved.url)
-            XCTAssertNotNil(resolved.warning)
+            #expect(resolved.loadedSource == .bundledTiny)
+            #expect(resolved.url != nil)
+            #expect(resolved.warning != nil)
         }
     }
 
-    func testResolveConfiguredModelURLUsesCustomWhenValid() async throws {
+    @Test
+    func resolveConfiguredModelURLUsesCustomWhenValid() async throws {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try "model".data(using: .utf8)!.write(to: tempURL)
 
@@ -44,13 +49,14 @@ final class AudioTranscriberTests: XCTestCase {
         ]) {
             let transcriber = AudioTranscriber.shared
             let resolved = transcriber.resolveConfiguredModelURL()
-            XCTAssertEqual(resolved.loadedSource, .customPath)
-            XCTAssertEqual(resolved.url?.path, tempURL.path)
-            XCTAssertNil(resolved.warning)
+            #expect(resolved.loadedSource == .customPath)
+            #expect(resolved.url?.path == tempURL.path)
+            #expect(resolved.warning == nil)
         }
     }
 
-    func testResolveConfiguredModelURLWarnsOnInvalidPath() async throws {
+    @Test
+    func resolveConfiguredModelURLWarnsOnInvalidPath() async throws {
         let invalidPath = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try await withStandardDefaults([
             AppDefaults.Keys.modelSource: ModelSource.customPath.rawValue,
@@ -58,19 +64,21 @@ final class AudioTranscriberTests: XCTestCase {
         ]) {
             let transcriber = AudioTranscriber.shared
             let resolved = transcriber.resolveConfiguredModelURL()
-            XCTAssertEqual(resolved.loadedSource, .bundledTiny)
-            XCTAssertNotNil(resolved.warning)
+            #expect(resolved.loadedSource == .bundledTiny)
+            #expect(resolved.warning != nil)
         }
     }
 
-    func testIsReadableModelFileRejectsEmptyFile() throws {
+    @Test
+    func isReadableModelFileRejectsEmptyFile() throws {
         let transcriber = AudioTranscriber.shared
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         FileManager.default.createFile(atPath: tempURL.path, contents: Data(), attributes: nil)
-        XCTAssertFalse(transcriber.isReadableModelFile(at: tempURL))
+        #expect(!transcriber.isReadableModelFile(at: tempURL))
     }
 
-    func testNormalizeOutputTextAppliesCommandReplacement() async throws {
+    @Test @MainActor
+    func normalizeOutputTextAppliesCommandReplacement() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: "",
             AppDefaults.Keys.outputCommandReplacements: true
@@ -85,14 +93,13 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: false,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("new line", settings: settings)
-            }
-            XCTAssertEqual(output, "\n")
+            let output = transcriber.normalizeOutputText("new line", settings: settings)
+            #expect(output == "\n")
         }
     }
 
-    func testNormalizeOutputTextAppliesSmartCapitalization() async throws {
+    @Test @MainActor
+    func normalizeOutputTextAppliesSmartCapitalization() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: ""
         ]) {
@@ -106,14 +113,13 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: false,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("hello. world", settings: settings)
-            }
-            XCTAssertEqual(output, "Hello. World")
+            let output = transcriber.normalizeOutputText("hello. world", settings: settings)
+            #expect(output == "Hello. World")
         }
     }
 
-    func testNormalizeOutputTextAppliesTerminalPunctuation() async throws {
+    @Test @MainActor
+    func normalizeOutputTextAppliesTerminalPunctuation() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: ""
         ]) {
@@ -127,14 +133,13 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: true,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("hello", settings: settings)
-            }
-            XCTAssertEqual(output, "hello.")
+            let output = transcriber.normalizeOutputText("hello", settings: settings)
+            #expect(output == "hello.")
         }
     }
 
-    func testNormalizeOutputTextDoesNotDuplicateTerminalPunctuation() async throws {
+    @Test @MainActor
+    func normalizeOutputTextDoesNotDuplicateTerminalPunctuation() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: ""
         ]) {
@@ -148,14 +153,13 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: true,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("hello!", settings: settings)
-            }
-            XCTAssertEqual(output, "hello!")
+            let output = transcriber.normalizeOutputText("hello!", settings: settings)
+            #expect(output == "hello!")
         }
     }
 
-    func testNormalizeOutputTextTreatsEllipsisAsTerminalPunctuation() async throws {
+    @Test @MainActor
+    func normalizeOutputTextTreatsEllipsisAsTerminalPunctuation() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: ""
         ]) {
@@ -169,14 +173,13 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: true,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("hello…", settings: settings)
-            }
-            XCTAssertEqual(output, "hello…")
+            let output = transcriber.normalizeOutputText("hello…", settings: settings)
+            #expect(output == "hello…")
         }
     }
 
-    func testNormalizeOutputTextAppliesTextReplacements() async throws {
+    @Test @MainActor
+    func normalizeOutputTextAppliesTextReplacements() async throws {
         try await withStandardDefaults([
             AppDefaults.Keys.transcriptionReplacements: "foo=bar"
         ]) {
@@ -190,753 +193,752 @@ final class AudioTranscriberTests: XCTestCase {
                 terminalPunctuation: false,
                 customCommandsRaw: ""
             )
-            let output = await MainActor.run {
-                transcriber.normalizeOutputText("foo test", settings: settings)
-            }
-            XCTAssertEqual(output, "bar test")
+            let output = transcriber.normalizeOutputText("foo test", settings: settings)
+            #expect(output == "bar test")
         }
     }
 
-    func testMergeChunkPrefersPunctuatedVariantInsteadOfAppendingDotToken() {
+    @Test
+    func mergeChunkPrefersPunctuatedVariantInsteadOfAppendingDotToken() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world.", into: "hello world")
-        XCTAssertEqual(merged, "hello world.")
+        #expect(merged == "hello world.")
     }
 
-    func testMergeChunkTreatsWhitespaceOnlyDifferencesAsDuplicate() {
+    @Test
+    func mergeChunkTreatsWhitespaceOnlyDifferencesAsDuplicate() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello   world", into: "hello world")
-        XCTAssertEqual(merged, "hello world")
+        #expect(merged == "hello world")
     }
 
-    func testMergeChunkStillAppendsNewContentWithOverlap() {
+    @Test
+    func mergeChunkStillAppendsNewContentWithOverlap() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("world from swift", into: "hello world")
-        XCTAssertEqual(merged, "hello world from swift")
+        #expect(merged == "hello world from swift")
     }
 
-    func testMergeChunkSkipsDuplicateFragmentFoundInsideTranscript() {
+    @Test
+    func mergeChunkSkipsDuplicateFragmentFoundInsideTranscript() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("world from", into: "hello world from swift")
-        XCTAssertEqual(merged, "hello world from swift")
+        #expect(merged == "hello world from swift")
     }
 
-    func testMergeChunkStillAppendsShortNonDuplicateChunks() {
+    @Test
+    func mergeChunkStillAppendsShortNonDuplicateChunks() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("new", into: "hello world")
-        XCTAssertEqual(merged, "hello world new")
+        #expect(merged == "hello world new")
     }
 
-    func testMergeChunkIgnoresTinyOverlapThatWouldCorruptWords() {
+    @Test
+    func mergeChunkIgnoresTinyOverlapThatWouldCorruptWords() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("atlas", into: "cat")
-        XCTAssertEqual(merged, "cat atlas")
+        #expect(merged == "cat atlas")
     }
 
-    func testMergeChunkUsesThreeCharacterOverlapWhenLegitimate() {
+    @Test
+    func mergeChunkUsesThreeCharacterOverlapWhenLegitimate() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("def ghi", into: "abc def")
-        XCTAssertEqual(merged, "abc def ghi")
+        #expect(merged == "abc def ghi")
     }
 
-    func testMergeChunkPrefersExpandedChunkWhenItExtendsPartialTail() {
+    @Test
+    func mergeChunkPrefersExpandedChunkWhenItExtendsPartialTail() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world", into: "hello wor")
-        XCTAssertEqual(merged, "hello world")
+        #expect(merged == "hello world")
     }
 
-    func testMergeChunkCollapsesSpacedPunctuationWhenChunkRestatesFullSentence() {
+    @Test
+    func mergeChunkCollapsesSpacedPunctuationWhenChunkRestatesFullSentence() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world .", into: "hello world")
-        XCTAssertEqual(merged, "hello world.")
+        #expect(merged == "hello world.")
     }
 
-    func testMergeChunkPreservesExistingCapitalizationWhenAddingTrailingPunctuation() {
+    @Test
+    func mergeChunkPreservesExistingCapitalizationWhenAddingTrailingPunctuation() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world.", into: "Hello world")
-        XCTAssertEqual(merged, "Hello world.")
+        #expect(merged == "Hello world.")
     }
 
-    func testMergeChunkPreservesExistingCapitalizationForMultiCharacterTrailingPunctuation() {
+    @Test
+    func mergeChunkPreservesExistingCapitalizationForMultiCharacterTrailingPunctuation() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world?!", into: "Hello world")
-        XCTAssertEqual(merged, "Hello world?!")
+        #expect(merged == "Hello world?!")
     }
 
-    func testMergeChunkAttachesStandalonePunctuationWithoutExtraSpace() {
+    @Test
+    func mergeChunkAttachesStandalonePunctuationWithoutExtraSpace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(".", into: "hello world")
-        XCTAssertEqual(merged, "hello world.")
+        #expect(merged == "hello world.")
     }
 
-    func testMergeChunkAttachesStandalonePunctuationAfterTrailingWhitespace() {
+    @Test
+    func mergeChunkAttachesStandalonePunctuationAfterTrailingWhitespace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(".", into: "hello world ")
-        XCTAssertEqual(merged, "hello world.")
+        #expect(merged == "hello world.")
     }
 
-    func testMergeChunkSkipsStandalonePunctuationWhenTranscriptAlreadyEndsWithPunctuation() {
+    @Test
+    func mergeChunkSkipsStandalonePunctuationWhenTranscriptAlreadyEndsWithPunctuation() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("!", into: "hello world!")
-        XCTAssertEqual(merged, "hello world!")
+        #expect(merged == "hello world!")
     }
 
-    func testMergeChunkAppendsNovelPunctuationSuffixWhenTranscriptAlreadyHasPunctuation() {
+    @Test
+    func mergeChunkAppendsNovelPunctuationSuffixWhenTranscriptAlreadyHasPunctuation() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("!?", into: "hello world!")
-        XCTAssertEqual(merged, "hello world!?")
+        #expect(merged == "hello world!?")
     }
 
-    func testMergeChunkSkipsPunctuationFragmentThatIsPrefixOfExistingTail() {
+    @Test
+    func mergeChunkSkipsPunctuationFragmentThatIsPrefixOfExistingTail() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("!", into: "hello world!?")
-        XCTAssertEqual(merged, "hello world!?")
+        #expect(merged == "hello world!?")
     }
 
-    func testMergeChunkAttachesLeadingCommaWithoutExtraSpace() {
+    @Test
+    func mergeChunkAttachesLeadingCommaWithoutExtraSpace() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting(", and then continue", into: "hello world")
-        XCTAssertEqual(merged, "hello world, and then continue")
+        #expect(merged == "hello world, and then continue")
     }
 
-    func testMergeChunkSkipsDuplicateEllipsisPunctuationFragment() {
+    @Test
+    func mergeChunkSkipsDuplicateEllipsisPunctuationFragment() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("…", into: "hello world…")
-        XCTAssertEqual(merged, "hello world…")
+        #expect(merged == "hello world…")
     }
 
-    func testMergeChunkTreatsEllipsisVariantAsDuplicate() {
+    @Test
+    func mergeChunkTreatsEllipsisVariantAsDuplicate() {
         let transcriber = AudioTranscriber.shared
         let merged = transcriber.mergeChunkForTesting("hello world…", into: "hello world")
-        XCTAssertEqual(merged, "hello world…")
+        #expect(merged == "hello world…")
     }
 
-    func testSetAccessibilityPermissionCheckerForTestingOverridesChecker() async {
+    @Test @MainActor
+    func setAccessibilityPermissionCheckerForTestingOverridesChecker() {
         let transcriber = AudioTranscriber.shared
         transcriber.setAccessibilityPermissionCheckerForTesting { false }
         defer {
             transcriber.setAccessibilityPermissionCheckerForTesting { true }
         }
 
-        let canPaste = await MainActor.run {
-            transcriber.canAutoPasteIntoTargetAppForTesting()
-        }
-
-        XCTAssertFalse(canPaste)
+        let canPaste = transcriber.canAutoPasteIntoTargetAppForTesting()
+        #expect(!canPaste)
     }
 
-    func testCopyTranscriptionToClipboardShowsStatusWhenTextIsEmpty() async {
+    @Test @MainActor
+    func copyTranscriptionToClipboardShowsStatusWhenTextIsEmpty() {
         let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            transcriber.transcription = "   "
-            let copied = transcriber.copyTranscriptionToClipboard()
-            XCTAssertFalse(copied)
-            XCTAssertEqual(transcriber.statusMessage, "Nothing to copy")
-        }
+        transcriber.transcription = "   "
+        let copied = transcriber.copyTranscriptionToClipboard()
+        #expect(!copied)
+        #expect(transcriber.statusMessage == "Nothing to copy")
     }
 
-    func testCopyTranscriptionToClipboardClearsPreviousErrorOnSuccess() async {
+    @Test @MainActor
+    func copyTranscriptionToClipboardClearsPreviousErrorOnSuccess() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalTranscription = transcriber.transcription
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
+        let originalTranscription = transcriber.transcription
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
 
-            defer {
-                transcriber.transcription = originalTranscription
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.transcription = "hello world"
-            transcriber.lastError = "old insertion error"
-
-            let copied = transcriber.copyTranscriptionToClipboard()
-            XCTAssertTrue(copied)
-            XCTAssertEqual(transcriber.statusMessage, "Copied to clipboard")
-            XCTAssertNil(transcriber.lastError)
+        defer {
+            transcriber.transcription = originalTranscription
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
         }
+
+        transcriber.transcription = "hello world"
+        transcriber.lastError = "old insertion error"
+
+        let copied = transcriber.copyTranscriptionToClipboard()
+        #expect(copied)
+        #expect(transcriber.statusMessage == "Copied to clipboard")
+        #expect(transcriber.lastError == nil)
     }
 
-    func testInsertTranscriptionShowsStatusWhenTextIsEmpty() async {
+    @Test @MainActor
+    func insertTranscriptionShowsStatusWhenTextIsEmpty() {
         let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            transcriber.transcription = "\n\n"
-            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
-            XCTAssertFalse(inserted)
-            XCTAssertEqual(transcriber.statusMessage, "Nothing to insert")
-        }
+        transcriber.transcription = "\n\n"
+        let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+        #expect(!inserted)
+        #expect(transcriber.statusMessage == "Nothing to insert")
     }
 
-    func testInsertTranscriptionBlockedWhileFinalizingPendingChunks() async {
+    @Test @MainActor
+    func insertTranscriptionBlockedWhileFinalizingPendingChunks() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
-            let originalTranscription = transcriber.transcription
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+        let originalTranscription = transcriber.transcription
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
 
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
-                transcriber.transcription = originalTranscription
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 1
-            transcriber.recordingStartedAt = Date()
-            transcriber.setPendingSessionFinalizeForTesting(false)
-            transcriber.transcription = "hello world"
-
-            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
-            XCTAssertFalse(inserted)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.)")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.)")
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+            transcriber.transcription = originalTranscription
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
         }
+
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 1
+        transcriber.recordingStartedAt = Date()
+        transcriber.setPendingSessionFinalizeForTesting(false)
+        transcriber.transcription = "hello world"
+
+        let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+        #expect(!inserted)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.)")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.)")
     }
 
-    func testInsertTranscriptionBlockedWhileFinalizingWithoutQueuedChunks() async {
+    @Test @MainActor
+    func insertTranscriptionBlockedWhileFinalizingWithoutQueuedChunks() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
-            let originalTranscription = transcriber.transcription
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+        let originalTranscription = transcriber.transcription
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
 
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
-                transcriber.transcription = originalTranscription
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 0
-            transcriber.setPendingSessionFinalizeForTesting(true)
-            transcriber.transcription = "hello world"
-
-            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
-            XCTAssertFalse(inserted)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+            transcriber.transcription = originalTranscription
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
         }
+
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 0
+        transcriber.setPendingSessionFinalizeForTesting(true)
+        transcriber.transcription = "hello world"
+
+        let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+        #expect(!inserted)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before inserting text. (Preparing final chunk.)")
     }
 
-    func testInsertTranscriptionBlockedWhileFinalizingShowsQueuedStartHint() async {
+    @Test @MainActor
+    func insertTranscriptionBlockedWhileFinalizingShowsQueuedStartHint() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
-            let originalTranscription = transcriber.transcription
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+        let originalTranscription = transcriber.transcription
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
 
-            defer {
-                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                    transcriber.toggleRecording()
-                }
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
-                transcriber.transcription = originalTranscription
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 1
-            transcriber.recordingStartedAt = Date()
-            transcriber.setPendingSessionFinalizeForTesting(false)
-            transcriber.transcription = "hello world"
-
+        defer {
             if transcriber.startRecordingAfterFinalizeRequestedForTesting {
                 transcriber.toggleRecording()
             }
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+            transcriber.transcription = originalTranscription
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 1
+        transcriber.recordingStartedAt = Date()
+        transcriber.setPendingSessionFinalizeForTesting(false)
+        transcriber.transcription = "hello world"
+
+        if transcriber.startRecordingAfterFinalizeRequestedForTesting {
             transcriber.toggleRecording()
-
-            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
-            XCTAssertFalse(inserted)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
         }
+        transcriber.toggleRecording()
+
+        let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+        #expect(!inserted)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before inserting text. (1 chunk pending.) Next recording is already queued.")
     }
 
-    func testInsertTranscriptionReturnsSuccessWhenAccessibilityFallbackCopiesText() async {
+    @Test @MainActor
+    func insertTranscriptionReturnsSuccessWhenAccessibilityFallbackCopiesText() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
-            let originalTranscription = transcriber.transcription
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-            let originalHistory = transcriber.recentEntries
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+        let originalTranscription = transcriber.transcription
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+        let originalHistory = transcriber.recentEntries
 
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
-                transcriber.transcription = originalTranscription
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-                transcriber.recentEntries = originalHistory
-                transcriber.setAccessibilityPermissionCheckerForTesting { true }
-            }
-
-            transcriber.setAccessibilityPermissionCheckerForTesting { false }
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 0
-            transcriber.setPendingSessionFinalizeForTesting(false)
-
-            let insertedText = "accessibility fallback \(UUID().uuidString)"
-            transcriber.transcription = insertedText
-
-            let previousHistoryCount = transcriber.recentEntries.count
-            let inserted = transcriber.insertTranscriptionIntoFocusedApp()
-
-            XCTAssertTrue(inserted)
-            XCTAssertGreaterThanOrEqual(transcriber.recentEntries.count, previousHistoryCount)
-            XCTAssertEqual(transcriber.recentEntries.first?.text, transcriber.transcription)
-            XCTAssertTrue(transcriber.statusMessage.hasPrefix("Copied to clipboard"))
-            XCTAssertNil(transcriber.lastError)
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+            transcriber.transcription = originalTranscription
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+            transcriber.recentEntries = originalHistory
+            transcriber.setAccessibilityPermissionCheckerForTesting { true }
         }
+
+        transcriber.setAccessibilityPermissionCheckerForTesting { false }
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 0
+        transcriber.setPendingSessionFinalizeForTesting(false)
+
+        let insertedText = "accessibility fallback \(UUID().uuidString)"
+        transcriber.transcription = insertedText
+
+        let previousHistoryCount = transcriber.recentEntries.count
+        let inserted = transcriber.insertTranscriptionIntoFocusedApp()
+
+        #expect(inserted)
+        #expect(transcriber.recentEntries.count >= previousHistoryCount)
+        #expect(transcriber.recentEntries.first?.text == transcriber.transcription)
+        #expect(transcriber.statusMessage.hasPrefix("Copied to clipboard"))
+        #expect(transcriber.lastError == nil)
     }
 
-    func testToggleRecordingDefersNewSessionWhileFinalizing() async {
+    @Test @MainActor
+    func toggleRecordingDefersNewSessionWhileFinalizing() {
         let transcriber = AudioTranscriber.shared
 
-        await MainActor.run {
-            let originalStartedAt = transcriber.recordingStartedAt
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalStatusMessage = transcriber.statusMessage
-            let originalIsRecording = transcriber.isRecording
+        let originalStartedAt = transcriber.recordingStartedAt
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalStatusMessage = transcriber.statusMessage
+        let originalIsRecording = transcriber.isRecording
 
-            defer {
-                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                    transcriber.isRecording = false
-                    transcriber.recordingStartedAt = Date()
-                    transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
-                    transcriber.toggleRecording()
-                }
-                transcriber.recordingStartedAt = originalStartedAt
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.isRecording = originalIsRecording
+        defer {
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.isRecording = false
+                transcriber.recordingStartedAt = Date()
+                transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
+                transcriber.toggleRecording()
             }
+            transcriber.recordingStartedAt = originalStartedAt
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.isRecording = originalIsRecording
+        }
 
-            transcriber.isRecording = false
-            transcriber.recordingStartedAt = Date()
-            transcriber.pendingChunkCount = 1
+        transcriber.isRecording = false
+        transcriber.recordingStartedAt = Date()
+        transcriber.pendingChunkCount = 1
 
+        if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+            transcriber.toggleRecording()
+        }
+
+        transcriber.toggleRecording()
+
+        #expect(!transcriber.isRecording)
+        #expect(transcriber.statusMessage == "Finalizing previous recording… next recording queued")
+        #expect(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+
+        transcriber.toggleRecording()
+
+        #expect(transcriber.statusMessage == "Finalizing previous recording… queued start canceled")
+        #expect(!transcriber.startRecordingAfterFinalizeRequestedForTesting)
+    }
+
+    @Test @MainActor
+    func refreshStreamingStatusKeepsQueuedStartHintWhileFinalizing() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalStartedAt = transcriber.recordingStartedAt
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalStatusMessage = transcriber.statusMessage
+        let originalIsRecording = transcriber.isRecording
+
+        defer {
+            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+                transcriber.isRecording = false
+                transcriber.recordingStartedAt = Date()
+                transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
+                transcriber.toggleRecording()
+            }
+            transcriber.recordingStartedAt = originalStartedAt
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.isRecording = originalIsRecording
+        }
+
+        transcriber.isRecording = false
+        transcriber.recordingStartedAt = Date()
+        transcriber.pendingChunkCount = 2
+
+        if transcriber.startRecordingAfterFinalizeRequestedForTesting {
+            transcriber.toggleRecording()
+        }
+
+        transcriber.toggleRecording()
+        transcriber.refreshStreamingStatusForTesting()
+
+        #expect(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+        #expect(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
+        #expect(transcriber.statusMessage.contains("next recording queued"))
+    }
+
+    @Test @MainActor
+    func cancelQueuedStartAfterFinalizeFromHotkeyClearsQueuedStart() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalStartedAt = transcriber.recordingStartedAt
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalStatusMessage = transcriber.statusMessage
+        let originalIsRecording = transcriber.isRecording
+
+        defer {
+            transcriber.recordingStartedAt = originalStartedAt
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.isRecording = originalIsRecording
+        }
+
+        transcriber.isRecording = false
+        transcriber.recordingStartedAt = Date()
+        transcriber.pendingChunkCount = 1
+        transcriber.toggleRecording()
+
+        #expect(transcriber.startRecordingAfterFinalizeRequestedForTesting)
+
+        let canceled = transcriber.cancelQueuedStartAfterFinalizeFromHotkey()
+
+        #expect(canceled)
+        #expect(!transcriber.startRecordingAfterFinalizeRequestedForTesting)
+        #expect(transcriber.statusMessage == "Finalizing previous recording… queued start canceled")
+    }
+
+    @Test @MainActor
+    func refreshStreamingStatusShowsHourAwareElapsedTime() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalStatusMessage = transcriber.statusMessage
+        let originalIsRecording = transcriber.isRecording
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalProcessedChunkCount = transcriber.processedChunkCount
+        let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
+        let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
+
+        defer {
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.isRecording = originalIsRecording
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.processedChunkCount = originalProcessedChunkCount
+            transcriber.lastChunkLatencySeconds = originalLastChunkLatency
+            transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
+        }
+
+        transcriber.isRecording = true
+        transcriber.recordingStartedAt = Date().addingTimeInterval(-3661)
+        transcriber.pendingChunkCount = 0
+        transcriber.processedChunkCount = 0
+        transcriber.lastChunkLatencySeconds = 0
+        transcriber.averageChunkLatencySeconds = 0
+
+        transcriber.refreshStreamingStatusForTesting()
+
+        #expect(transcriber.statusMessage.contains("1:01:01"))
+    }
+
+    @Test @MainActor
+    func refreshStreamingStatusShowsFinalizingEstimateFromLatency() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalStatusMessage = transcriber.statusMessage
+        let originalIsRecording = transcriber.isRecording
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalProcessedChunkCount = transcriber.processedChunkCount
+        let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
+        let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
+
+        defer {
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.isRecording = originalIsRecording
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.processedChunkCount = originalProcessedChunkCount
+            transcriber.lastChunkLatencySeconds = originalLastChunkLatency
+            transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
+        }
+
+        transcriber.isRecording = false
+        transcriber.recordingStartedAt = Date()
+        transcriber.pendingChunkCount = 2
+        transcriber.processedChunkCount = 3
+        transcriber.lastChunkLatencySeconds = 0.8
+        transcriber.averageChunkLatencySeconds = 1.2
+
+        transcriber.refreshStreamingStatusForTesting()
+
+        #expect(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
+        #expect(transcriber.statusMessage.contains("~3s remaining"))
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhenSampleTextIsEmpty() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        let success = transcriber.runInsertionProbe(sampleText: "   ")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Insertion test text is empty. Enter sample text and try again.")
+        #expect(transcriber.lastError == "Insertion test text is empty. Enter sample text and try again.")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhenAnotherProbeIsRunning() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRunningInsertionProbe = transcriber.isRunningInsertionProbe
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.isRunningInsertionProbe = originalIsRunningInsertionProbe
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRunningInsertionProbe = true
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Insertion test already running.")
+        #expect(transcriber.lastError == "Insertion test already running.")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhileRecording() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRecording = transcriber.isRecording
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRecording = true
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Stop recording before running an insertion test.")
+        #expect(transcriber.lastError == "Stop recording before running an insertion test.")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhileFinalizingPendingChunks() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRecording = false
+        transcriber.recordingStartedAt = Date()
+        transcriber.pendingChunkCount = 2
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.)")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.)")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhileFinalizingWithoutQueuedChunks() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 0
+        transcriber.recordingStartedAt = Date()
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before running an insertion test.")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before running an insertion test.")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhilePendingFinalizeFlagSet() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
+
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 0
+        transcriber.recordingStartedAt = nil
+        transcriber.setPendingSessionFinalizeForTesting(true)
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
+
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
+    }
+
+    @Test @MainActor
+    func runInsertionProbeBlockedWhileFinalizingShowsQueuedStartHint() {
+        let transcriber = AudioTranscriber.shared
+
+        let originalIsRecording = transcriber.isRecording
+        let originalPendingChunkCount = transcriber.pendingChunkCount
+        let originalRecordingStartedAt = transcriber.recordingStartedAt
+        let originalStatusMessage = transcriber.statusMessage
+        let originalLastError = transcriber.lastError
+
+        defer {
             if transcriber.startRecordingAfterFinalizeRequestedForTesting {
                 transcriber.toggleRecording()
             }
+            transcriber.isRecording = originalIsRecording
+            transcriber.pendingChunkCount = originalPendingChunkCount
+            transcriber.recordingStartedAt = originalRecordingStartedAt
+            transcriber.statusMessage = originalStatusMessage
+            transcriber.lastError = originalLastError
+        }
 
+        transcriber.isRecording = false
+        transcriber.pendingChunkCount = 2
+        transcriber.recordingStartedAt = Date()
+
+        if transcriber.startRecordingAfterFinalizeRequestedForTesting {
             transcriber.toggleRecording()
-
-            XCTAssertFalse(transcriber.isRecording)
-            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… next recording queued")
-            XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
-
-            transcriber.toggleRecording()
-
-            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… queued start canceled")
-            XCTAssertFalse(transcriber.startRecordingAfterFinalizeRequestedForTesting)
         }
-    }
+        transcriber.toggleRecording()
 
-    func testRefreshStreamingStatusKeepsQueuedStartHintWhileFinalizing() async {
-        let transcriber = AudioTranscriber.shared
+        let success = transcriber.runInsertionProbe(sampleText: "probe")
 
-        await MainActor.run {
-            let originalStartedAt = transcriber.recordingStartedAt
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalStatusMessage = transcriber.statusMessage
-            let originalIsRecording = transcriber.isRecording
-
-            defer {
-                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                    transcriber.isRecording = false
-                    transcriber.recordingStartedAt = Date()
-                    transcriber.pendingChunkCount = max(1, transcriber.pendingChunkCount)
-                    transcriber.toggleRecording()
-                }
-                transcriber.recordingStartedAt = originalStartedAt
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.isRecording = originalIsRecording
-            }
-
-            transcriber.isRecording = false
-            transcriber.recordingStartedAt = Date()
-            transcriber.pendingChunkCount = 2
-
-            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                transcriber.toggleRecording()
-            }
-
-            transcriber.toggleRecording()
-            transcriber.refreshStreamingStatusForTesting()
-
-            XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
-            XCTAssertTrue(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
-            XCTAssertTrue(transcriber.statusMessage.contains("next recording queued"))
-        }
-    }
-
-    func testCancelQueuedStartAfterFinalizeFromHotkeyClearsQueuedStart() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalStartedAt = transcriber.recordingStartedAt
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalStatusMessage = transcriber.statusMessage
-            let originalIsRecording = transcriber.isRecording
-
-            defer {
-                transcriber.recordingStartedAt = originalStartedAt
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.isRecording = originalIsRecording
-            }
-
-            transcriber.isRecording = false
-            transcriber.recordingStartedAt = Date()
-            transcriber.pendingChunkCount = 1
-            transcriber.toggleRecording()
-
-            XCTAssertTrue(transcriber.startRecordingAfterFinalizeRequestedForTesting)
-
-            let canceled = transcriber.cancelQueuedStartAfterFinalizeFromHotkey()
-
-            XCTAssertTrue(canceled)
-            XCTAssertFalse(transcriber.startRecordingAfterFinalizeRequestedForTesting)
-            XCTAssertEqual(transcriber.statusMessage, "Finalizing previous recording… queued start canceled")
-        }
-    }
-
-    func testRefreshStreamingStatusShowsHourAwareElapsedTime() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalStatusMessage = transcriber.statusMessage
-            let originalIsRecording = transcriber.isRecording
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalProcessedChunkCount = transcriber.processedChunkCount
-            let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
-            let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
-
-            defer {
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.isRecording = originalIsRecording
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.processedChunkCount = originalProcessedChunkCount
-                transcriber.lastChunkLatencySeconds = originalLastChunkLatency
-                transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
-            }
-
-            transcriber.isRecording = true
-            transcriber.recordingStartedAt = Date().addingTimeInterval(-3661)
-            transcriber.pendingChunkCount = 0
-            transcriber.processedChunkCount = 0
-            transcriber.lastChunkLatencySeconds = 0
-            transcriber.averageChunkLatencySeconds = 0
-
-            transcriber.refreshStreamingStatusForTesting()
-
-            XCTAssertTrue(transcriber.statusMessage.contains("1:01:01"))
-        }
-    }
-
-    func testRefreshStreamingStatusShowsFinalizingEstimateFromLatency() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalStatusMessage = transcriber.statusMessage
-            let originalIsRecording = transcriber.isRecording
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalProcessedChunkCount = transcriber.processedChunkCount
-            let originalLastChunkLatency = transcriber.lastChunkLatencySeconds
-            let originalAverageChunkLatency = transcriber.averageChunkLatencySeconds
-
-            defer {
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.isRecording = originalIsRecording
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.processedChunkCount = originalProcessedChunkCount
-                transcriber.lastChunkLatencySeconds = originalLastChunkLatency
-                transcriber.averageChunkLatencySeconds = originalAverageChunkLatency
-            }
-
-            transcriber.isRecording = false
-            transcriber.recordingStartedAt = Date()
-            transcriber.pendingChunkCount = 2
-            transcriber.processedChunkCount = 3
-            transcriber.lastChunkLatencySeconds = 0.8
-            transcriber.averageChunkLatencySeconds = 1.2
-
-            transcriber.refreshStreamingStatusForTesting()
-
-            XCTAssertTrue(transcriber.statusMessage.contains("Finalizing… 2 chunks left"))
-            XCTAssertTrue(transcriber.statusMessage.contains("~3s remaining"))
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhenSampleTextIsEmpty() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            let success = transcriber.runInsertionProbe(sampleText: "   ")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Insertion test text is empty. Enter sample text and try again.")
-            XCTAssertEqual(transcriber.lastError, "Insertion test text is empty. Enter sample text and try again.")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhenAnotherProbeIsRunning() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRunningInsertionProbe = transcriber.isRunningInsertionProbe
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.isRunningInsertionProbe = originalIsRunningInsertionProbe
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRunningInsertionProbe = true
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Insertion test already running.")
-            XCTAssertEqual(transcriber.lastError, "Insertion test already running.")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhileRecording() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = true
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Stop recording before running an insertion test.")
-            XCTAssertEqual(transcriber.lastError, "Stop recording before running an insertion test.")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhileFinalizingPendingChunks() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.recordingStartedAt = Date()
-            transcriber.pendingChunkCount = 2
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.)")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.)")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhileFinalizingWithoutQueuedChunks() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 0
-            transcriber.recordingStartedAt = Date()
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test.")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test.")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhilePendingFinalizeFlagSet() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalPendingSessionFinalize = transcriber.pendingSessionFinalizeForTesting
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.setPendingSessionFinalizeForTesting(originalPendingSessionFinalize)
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 0
-            transcriber.recordingStartedAt = nil
-            transcriber.setPendingSessionFinalizeForTesting(true)
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test. (Preparing final chunk.)")
-        }
-    }
-
-    func testRunInsertionProbeBlockedWhileFinalizingShowsQueuedStartHint() async {
-        let transcriber = AudioTranscriber.shared
-
-        await MainActor.run {
-            let originalIsRecording = transcriber.isRecording
-            let originalPendingChunkCount = transcriber.pendingChunkCount
-            let originalRecordingStartedAt = transcriber.recordingStartedAt
-            let originalStatusMessage = transcriber.statusMessage
-            let originalLastError = transcriber.lastError
-
-            defer {
-                if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                    transcriber.toggleRecording()
-                }
-                transcriber.isRecording = originalIsRecording
-                transcriber.pendingChunkCount = originalPendingChunkCount
-                transcriber.recordingStartedAt = originalRecordingStartedAt
-                transcriber.statusMessage = originalStatusMessage
-                transcriber.lastError = originalLastError
-            }
-
-            transcriber.isRecording = false
-            transcriber.pendingChunkCount = 2
-            transcriber.recordingStartedAt = Date()
-
-            if transcriber.startRecordingAfterFinalizeRequestedForTesting {
-                transcriber.toggleRecording()
-            }
-            transcriber.toggleRecording()
-
-            let success = transcriber.runInsertionProbe(sampleText: "probe")
-
-            XCTAssertFalse(success)
-            XCTAssertEqual(transcriber.statusMessage, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
-            XCTAssertEqual(transcriber.lastError, "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
-        }
+        #expect(!success)
+        #expect(transcriber.statusMessage == "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
+        #expect(transcriber.lastError == "Wait for live transcription to finish finalizing before running an insertion test. (2 chunks pending.) Next recording is already queued.")
     }
 
     // MARK: - Whitespace normalization
 
-    func testNormalizeWhitespaceCollapsesSpaceBeforePunctuation() async throws {
+    @Test
+    func normalizeWhitespaceCollapsesSpaceBeforePunctuation() {
         let transcriber = AudioTranscriber.shared
         let result = transcriber.normalizeWhitespace(in: "hello , world .")
-        XCTAssertEqual(result, "hello, world.")
+        #expect(result == "hello, world.")
     }
 
-    func testNormalizeWhitespacePreservesPunctuationCharacter() async throws {
+    @Test
+    func normalizeWhitespacePreservesPunctuationCharacter() {
         let transcriber = AudioTranscriber.shared
-        // Verify that the $1 backreference works — punctuation is kept, not replaced with literal "$1".
         let result = transcriber.normalizeWhitespace(in: "wait ! really ?")
-        XCTAssertEqual(result, "wait! really?")
+        #expect(result == "wait! really?")
     }
 
-    func testNormalizeWhitespaceCollapsesMultipleSpaces() async throws {
+    @Test
+    func normalizeWhitespaceCollapsesMultipleSpaces() {
         let transcriber = AudioTranscriber.shared
         let result = transcriber.normalizeWhitespace(in: "hello    world")
-        XCTAssertEqual(result, "hello world")
+        #expect(result == "hello world")
     }
 
-    func testNormalizeWhitespaceCollapsesExcessiveNewlines() async throws {
+    @Test
+    func normalizeWhitespaceCollapsesExcessiveNewlines() {
         let transcriber = AudioTranscriber.shared
         let result = transcriber.normalizeWhitespace(in: "hello\n\n\n\nworld")
-        XCTAssertEqual(result, "hello\n\nworld")
+        #expect(result == "hello\n\nworld")
     }
 
-    func testNormalizeWhitespaceCollapsesSpacedAsciiApostrophesInContractions() async throws {
+    @Test
+    func normalizeWhitespaceCollapsesSpacedAsciiApostrophesInContractions() {
         let transcriber = AudioTranscriber.shared
         let result = transcriber.normalizeWhitespace(in: "don ' t stop")
-        XCTAssertEqual(result, "don't stop")
+        #expect(result == "don't stop")
     }
 
-    func testNormalizeWhitespaceCollapsesSpacedCurlyApostrophesInContractions() async throws {
+    @Test
+    func normalizeWhitespaceCollapsesSpacedCurlyApostrophesInContractions() {
         let transcriber = AudioTranscriber.shared
-        let result = transcriber.normalizeWhitespace(in: "we ’ re live")
-        XCTAssertEqual(result, "we're live")
+        let result = transcriber.normalizeWhitespace(in: "we \u{2019} re live")
+        #expect(result == "we're live")
     }
 }

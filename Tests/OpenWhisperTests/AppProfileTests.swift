@@ -1,8 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import OpenWhisper
 
-final class AppProfileTests: XCTestCase {
-    func testCodableRoundTrip() throws {
+@Suite("AppProfile")
+struct AppProfileTests {
+    @Test
+    func codableRoundTrip() throws {
         let profile = AppProfile(
             bundleIdentifier: "com.example.app",
             appName: "Example",
@@ -16,10 +19,11 @@ final class AppProfileTests: XCTestCase {
         )
         let data = try JSONEncoder().encode(profile)
         let decoded = try JSONDecoder().decode(AppProfile.self, from: data)
-        XCTAssertEqual(decoded, profile)
+        #expect(decoded == profile)
     }
 
-    func testCodableDefaultsMissingCustomCommands() throws {
+    @Test
+    func codableDefaultsMissingCustomCommands() throws {
         let json = """
         {
           "bundleIdentifier": "com.example.app",
@@ -34,10 +38,11 @@ final class AppProfileTests: XCTestCase {
         """
         let data = json.data(using: .utf8)!
         let decoded = try JSONDecoder().decode(AppProfile.self, from: data)
-        XCTAssertEqual(decoded.customCommands, "")
+        #expect(decoded.customCommands == "")
     }
 
-    func testProfileResolutionMergesCustomCommands() {
+    @Test
+    func profileResolutionMergesCustomCommands() {
         let transcriber = AudioTranscriber.shared
         let defaults = AudioTranscriber.EffectiveOutputSettings(
             autoCopy: true,
@@ -61,8 +66,8 @@ final class AppProfileTests: XCTestCase {
         )
 
         let resolved = transcriber.resolveOutputSettings(defaults: defaults, profile: profile)
-        XCTAssertEqual(resolved.customCommandsRaw, "default\nprofile")
-        XCTAssertTrue(resolved.autoPaste)
-        XCTAssertFalse(resolved.commandReplacements)
+        #expect(resolved.customCommandsRaw == "default\nprofile")
+        #expect(resolved.autoPaste)
+        #expect(!resolved.commandReplacements)
     }
 }

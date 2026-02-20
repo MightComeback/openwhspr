@@ -1,14 +1,17 @@
-import XCTest
+import Testing
 @testable import OpenWhisper
 
-final class OnboardingViewTests: XCTestCase {
-    func testPermissionsGrantedWhenAllTrue() {
-        XCTAssertTrue(OnboardingView.permissionsGranted(microphone: true, accessibility: true, inputMonitoring: true))
+@Suite("OnboardingView")
+struct OnboardingViewTests {
+    @Test
+    func permissionsGrantedWhenAllTrue() {
+        #expect(OnboardingView.permissionsGranted(microphone: true, accessibility: true, inputMonitoring: true))
     }
 
-    func testPermissionsGrantedWhenAnyMissing() {
-        XCTAssertFalse(OnboardingView.permissionsGranted(microphone: false, accessibility: true, inputMonitoring: true))
-        XCTAssertFalse(OnboardingView.permissionsGranted(microphone: true, accessibility: false, inputMonitoring: true))
-        XCTAssertFalse(OnboardingView.permissionsGranted(microphone: true, accessibility: true, inputMonitoring: false))
+    @Test
+    func permissionsGrantedWhenAnyMissing() {
+        #expect(!OnboardingView.permissionsGranted(microphone: false, accessibility: true, inputMonitoring: true))
+        #expect(!OnboardingView.permissionsGranted(microphone: true, accessibility: false, inputMonitoring: true))
+        #expect(!OnboardingView.permissionsGranted(microphone: true, accessibility: true, inputMonitoring: false))
     }
 }

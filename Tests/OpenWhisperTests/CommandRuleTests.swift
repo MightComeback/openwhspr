@@ -1,36 +1,42 @@
-import XCTest
+import Testing
 @testable import OpenWhisper
 
-final class CommandRuleTests: XCTestCase {
-    func testBuiltInCommandRulesContainNewLine() {
+@Suite("CommandRule")
+struct CommandRuleTests {
+    @Test
+    func builtInCommandRulesContainNewLine() {
         let hasNewLine = BuiltInCommandRules.all.contains { rule in
             rule.phrase == "new line" && rule.replacement == "\n"
         }
-        XCTAssertTrue(hasNewLine)
+        #expect(hasNewLine)
     }
 
-    func testCommandRuleParserParsesArrow() {
+    @Test
+    func commandRuleParserParsesArrow() {
         let rules = CommandRuleParser.parse(raw: "Hello => world")
-        XCTAssertEqual(rules.count, 1)
-        XCTAssertEqual(rules.first?.phrase, "hello")
-        XCTAssertEqual(rules.first?.replacement, "world")
+        #expect(rules.count == 1)
+        #expect(rules.first?.phrase == "hello")
+        #expect(rules.first?.replacement == "world")
     }
 
-    func testCommandRuleParserParsesEquals() {
+    @Test
+    func commandRuleParserParsesEquals() {
         let rules = CommandRuleParser.parse(raw: "Foo=bar")
-        XCTAssertEqual(rules.count, 1)
-        XCTAssertEqual(rules.first?.phrase, "foo")
-        XCTAssertEqual(rules.first?.replacement, "bar")
+        #expect(rules.count == 1)
+        #expect(rules.first?.phrase == "foo")
+        #expect(rules.first?.replacement == "bar")
     }
 
-    func testCommandRuleParserIgnoresCommentsAndEmptyLines() {
+    @Test
+    func commandRuleParserIgnoresCommentsAndEmptyLines() {
         let rules = CommandRuleParser.parse(raw: "# comment\n\n  \n")
-        XCTAssertTrue(rules.isEmpty)
+        #expect(rules.isEmpty)
     }
 
-    func testCommandRuleParserDecodesEscapes() {
+    @Test
+    func commandRuleParserDecodesEscapes() {
         let rules = CommandRuleParser.parse(raw: "line => first\\nsecond")
-        XCTAssertEqual(rules.count, 1)
-        XCTAssertEqual(rules.first?.replacement, "first\nsecond")
+        #expect(rules.count == 1)
+        #expect(rules.first?.replacement == "first\nsecond")
     }
 }

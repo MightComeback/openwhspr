@@ -1,38 +1,40 @@
-import XCTest
+import Testing
+import Foundation
 @testable import OpenWhisper
 
-final class AppDefaultsTests: XCTestCase {
+@Suite("AppDefaults")
+struct AppDefaultsTests {
     private func makeDefaults() -> UserDefaults {
         let suiteName = "AppDefaultsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        addTeardownBlock {
-            UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
-        }
         return defaults
     }
 
-    func testRegisterSetsHotkeyDefaults() {
+    @Test
+    func registerSetsHotkeyDefaults() {
         let defaults = makeDefaults()
         AppDefaults.register(into: defaults)
-        XCTAssertEqual(defaults.string(forKey: AppDefaults.Keys.hotkeyKey), "space")
-        XCTAssertEqual(defaults.string(forKey: AppDefaults.Keys.hotkeyMode), HotkeyMode.toggle.rawValue)
-        XCTAssertTrue(defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCommand))
-        XCTAssertTrue(defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredShift))
+        #expect(defaults.string(forKey: AppDefaults.Keys.hotkeyKey) == "space")
+        #expect(defaults.string(forKey: AppDefaults.Keys.hotkeyMode) == HotkeyMode.toggle.rawValue)
+        #expect(defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredCommand))
+        #expect(defaults.bool(forKey: AppDefaults.Keys.hotkeyRequiredShift))
     }
 
-    func testRegisterSetsOutputDefaults() {
+    @Test
+    func registerSetsOutputDefaults() {
         let defaults = makeDefaults()
         AppDefaults.register(into: defaults)
-        XCTAssertTrue(defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy))
-        XCTAssertFalse(defaults.bool(forKey: AppDefaults.Keys.outputAutoPaste))
-        XCTAssertTrue(defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization))
+        #expect(defaults.bool(forKey: AppDefaults.Keys.outputAutoCopy))
+        #expect(!defaults.bool(forKey: AppDefaults.Keys.outputAutoPaste))
+        #expect(defaults.bool(forKey: AppDefaults.Keys.outputSmartCapitalization))
     }
 
-    func testRegisterSetsModelDefaults() {
+    @Test
+    func registerSetsModelDefaults() {
         let defaults = makeDefaults()
         AppDefaults.register(into: defaults)
-        XCTAssertEqual(defaults.string(forKey: AppDefaults.Keys.modelSource), ModelSource.bundledTiny.rawValue)
-        XCTAssertEqual(defaults.string(forKey: AppDefaults.Keys.modelCustomPath), "")
+        #expect(defaults.string(forKey: AppDefaults.Keys.modelSource) == ModelSource.bundledTiny.rawValue)
+        #expect(defaults.string(forKey: AppDefaults.Keys.modelCustomPath) == "")
     }
 }
