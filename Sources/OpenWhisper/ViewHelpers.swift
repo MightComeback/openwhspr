@@ -1680,6 +1680,32 @@ enum ViewHelpers {
         return (currentModifiers, sanitizeKeyValue(currentKey))
     }
 
+    /// Whether an insertion test can run, either standalone or with auto-capture.
+    static func canRunInsertionTestWithAutoCapture(
+        canRunTest: Bool,
+        canCaptureAndRun: Bool
+    ) -> Bool {
+        canRunTest || canCaptureAndRun
+    }
+
+    /// Whether the user can focus the insertion target and then run a test.
+    static func canFocusAndRunInsertionTest(
+        canFocusTarget: Bool,
+        canRunTest: Bool
+    ) -> Bool {
+        canFocusTarget && canRunTest
+    }
+
+    /// Resolves the insertion test auto-capture hint visibility.
+    /// Shows when not running a probe, can't run standalone, but can auto-capture.
+    static func showsInsertionTestAutoCaptureHintResolved(
+        isRunningProbe: Bool,
+        canRunTest: Bool,
+        canCaptureAndRun: Bool
+    ) -> Bool {
+        !isRunningProbe && !canRunTest && canCaptureAndRun
+    }
+
     /// Maps insertion probe succeeded state to a status string for display.
     static func insertionProbeStatusLabel(succeeded: Bool?) -> String {
         switch succeeded {
