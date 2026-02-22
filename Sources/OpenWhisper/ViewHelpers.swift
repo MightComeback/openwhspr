@@ -1715,4 +1715,58 @@ enum ViewHelpers {
         }
     }
 
+    // MARK: - Sentence punctuation helpers
+
+    /// Whether a character is sentence-ending punctuation.
+    static func isSentencePunctuation(_ character: Character) -> Bool {
+        ".,!?;:…".contains(character)
+    }
+
+    /// Extracts trailing sentence punctuation from text, if any.
+    static func trailingSentencePunctuation(in text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        var punctuation: [Character] = []
+        for character in trimmed.reversed() {
+            if isSentencePunctuation(character) {
+                punctuation.append(character)
+                continue
+            }
+            break
+        }
+
+        guard !punctuation.isEmpty else { return nil }
+        return String(punctuation.reversed())
+    }
+
+    // MARK: - Streaming elapsed time
+
+    /// Format elapsed seconds as "H:MM:SS" or "M:SS" for streaming status.
+    static func streamingElapsedStatusSegment(elapsedSeconds: Int) -> String? {
+        guard elapsedSeconds >= 0 else { return nil }
+
+        let hours = elapsedSeconds / 3600
+        let minutes = (elapsedSeconds % 3600) / 60
+        let seconds = elapsedSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        }
+
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    // MARK: - Model file size
+
+    /// Returns the file size at the given path, or 0 if unavailable.
+    static func sizeOfModelFile(atPath path: String) -> Int64 {
+        guard !path.isEmpty,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+              let size = attrs[.size] as? Int64 else {
+            return 0
+        }
+        return size
+    }
+
 }

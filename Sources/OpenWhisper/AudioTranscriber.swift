@@ -1141,15 +1141,7 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard let startedAt = recordingStartedAt else { return nil }
 
         let elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt).rounded(.down)))
-        let hours = elapsedSeconds / 3600
-        let minutes = (elapsedSeconds % 3600) / 60
-        let seconds = elapsedSeconds % 60
-
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-
-        return String(format: "%d:%02d", minutes, seconds)
+        return ViewHelpers.streamingElapsedStatusSegment(elapsedSeconds: elapsedSeconds)
     }
 
     @MainActor
@@ -1360,24 +1352,11 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
     }
 
     private func trailingSentencePunctuation(in text: String) -> String? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        var punctuation: [Character] = []
-        for character in trimmed.reversed() {
-            if Self.isSentencePunctuation(character) {
-                punctuation.append(character)
-                continue
-            }
-            break
-        }
-
-        guard !punctuation.isEmpty else { return nil }
-        return String(punctuation.reversed())
+        ViewHelpers.trailingSentencePunctuation(in: text)
     }
 
     private static func isSentencePunctuation(_ character: Character) -> Bool {
-        ".,!?;:…".contains(character)
+        ViewHelpers.isSentencePunctuation(character)
     }
 
     func mergeChunkForTesting(_ chunk: String, into existing: String) -> String {
