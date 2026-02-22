@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import OpenWhisper
 
-@Suite("AudioTranscriber – model source / custom path configuration")
+@Suite("AudioTranscriber – model source / custom path configuration", .serialized)
 struct AudioTranscriberModelConfigTests {
 
     private let defaults = UserDefaults.standard
