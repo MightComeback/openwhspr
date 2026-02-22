@@ -1431,6 +1431,26 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         canAutoPasteIntoTargetApp()
     }
 
+    // MARK: - Additional testing hooks
+
+    static func isSentencePunctuationForTesting(_ character: Character) -> Bool {
+        isSentencePunctuation(character)
+    }
+
+    func clipboardFallbackStatusMessageForTesting(targetName: String?) -> String {
+        clipboardFallbackStatusMessage(targetName: targetName)
+    }
+
+    @MainActor
+    func finalizingWaitMessageForTesting(for action: String) -> String {
+        finalizingWaitMessage(for: action)
+    }
+
+    @MainActor
+    func finalizingRemainingEstimateSuffixForTesting(for inFlightChunks: Int) -> String {
+        finalizingRemainingEstimateSuffix(for: inFlightChunks)
+    }
+
     private func compactAudioBufferIfNeeded() {
         guard audioBufferHead > 0 else { return }
 
