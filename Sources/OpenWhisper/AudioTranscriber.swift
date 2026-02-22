@@ -1847,7 +1847,22 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
         guard !text.isEmpty else { return .pasteKeystrokeFailed }
 
         let pasteboard = NSPasteboard.general
-        let originalItems = pasteboard.pasteboardItems
+
+        // Snapshot pasteboard data before clearing. NSPasteboardItem objects
+        // cannot be written back after their owning pasteboard is cleared, so
+        // we copy the raw type→data pairs instead.
+        var savedItemData: [[(NSPasteboard.PasteboardType, Data)]] = []
+        if let items = pasteboard.pasteboardItems {
+            for item in items {
+                var pairs: [(NSPasteboard.PasteboardType, Data)] = []
+                for type in item.types {
+                    if let data = item.data(forType: type) {
+                        pairs.append((type, data))
+                    }
+                }
+                if !pairs.isEmpty { savedItemData.append(pairs) }
+            }
+        }
 
         pasteboard.clearContents()
         guard pasteboard.setString(text, forType: .string) else { return .pasteKeystrokeFailed }
@@ -1871,8 +1886,14 @@ final class AudioTranscriber: @unchecked Sendable, ObservableObject {
             guard currentString == text else { return }
 
             pb.clearContents()
-            if let originalItems {
-                _ = pb.writeObjects(originalItems)
+            if !savedItemData.isEmpty {
+                for itemPairs in savedItemData {
+                    let newItem = NSPasteboardItem()
+                    for (type, data) in itemPairs {
+                        newItem.setData(data, forType: type)
+                    }
+                    pb.writeObjects([newItem])
+                }
             }
         }
 
