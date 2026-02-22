@@ -1623,4 +1623,70 @@ enum ViewHelpers {
         }
     }
 
+    // MARK: - Settings insertion test composite helpers
+
+    /// Whether the auto-capture hint should display in Settings.
+    static func showsInsertionTestAutoCaptureHint(
+        isRunningProbe: Bool,
+        canRunTest: Bool,
+        canCaptureAndRun: Bool
+    ) -> Bool {
+        !isRunningProbe && !canRunTest && canCaptureAndRun
+    }
+
+    /// Whether a combined capture-and-run insertion test action is available.
+    static func canCaptureAndRunInsertionTest(
+        canCaptureFrontmostProfile: Bool,
+        isRecording: Bool,
+        isFinalizingTranscription: Bool,
+        isRunningInsertionProbe: Bool,
+        hasInsertionProbeSampleText: Bool
+    ) -> Bool {
+        canCaptureFrontmostProfile
+            && !isRecording
+            && !isFinalizingTranscription
+            && !isRunningInsertionProbe
+            && hasInsertionProbeSampleText
+    }
+
+    /// Whether a standalone (no auto-capture) insertion test can run.
+    static func canRunInsertionTest(
+        isRecording: Bool,
+        isFinalizingTranscription: Bool,
+        isRunningInsertionProbe: Bool,
+        hasInsertionTarget: Bool,
+        hasInsertionProbeSampleText: Bool
+    ) -> Bool {
+        !isRecording
+            && !isFinalizingTranscription
+            && !isRunningInsertionProbe
+            && hasInsertionTarget
+            && hasInsertionProbeSampleText
+    }
+
+    /// Resolves the effective hotkey risk context from draft text or current config.
+    static func effectiveHotkeyRiskKey(
+        draftKey: String,
+        currentKey: String,
+        currentModifiers: Set<ParsedModifier>
+    ) -> (requiredModifiers: Set<ParsedModifier>, key: String) {
+        if let parsed = parseHotkeyDraft(draftKey) {
+            let parsedKey = sanitizeKeyValue(parsed.key)
+            if HotkeyDisplay.isSupportedKey(parsedKey) {
+                let modifiers = parsed.requiredModifiers ?? currentModifiers
+                return (modifiers, parsedKey)
+            }
+        }
+        return (currentModifiers, sanitizeKeyValue(currentKey))
+    }
+
+    /// Maps insertion probe succeeded state to a status string for display.
+    static func insertionProbeStatusLabel(succeeded: Bool?) -> String {
+        switch succeeded {
+        case true: return "Passed"
+        case false: return "Failed"
+        case nil: return "Not tested"
+        }
+    }
+
 }
