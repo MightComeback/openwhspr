@@ -470,7 +470,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func currentComboSummary() -> String {
+    package func currentComboSummary() -> String {
         HotkeyDisplay.summaryIncludingMode(defaults: defaults)
     }
 
@@ -587,7 +587,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         temporaryStatusResetDelayNanoseconds(for: message)
     }
 
-    private func modifierGlyphSummary(from flags: CGEventFlags) -> String {
+    package func modifierGlyphSummary(from flags: CGEventFlags) -> String {
         var glyphs: [String] = []
         if flags.contains(.maskCommand) { glyphs.append("⌘") }
         if flags.contains(.maskShift) { glyphs.append("⇧") }
@@ -675,7 +675,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return "Hotkey disabled: trigger key \(triggerKeyLabel) without required modifiers is too easy to trigger while typing. Add at least one required modifier. Configured hotkey: \(combo)."
     }
 
-    private func configuredComboSummary() -> String {
+    package func configuredComboSummary() -> String {
         var parts: [String] = []
         if requiredModifiers.contains(.maskCommand) { parts.append("⌘") }
         if requiredModifiers.contains(.maskShift) { parts.append("⇧") }
@@ -686,7 +686,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return "\(mode.title) • \(parts.joined(separator: "+"))"
     }
 
-    private func allowsNoModifierTrigger(_ key: String) -> Bool {
+    package func allowsNoModifierTrigger(_ key: String) -> Bool {
         let normalized = key.lowercased()
 
         if normalized.hasPrefix("f"), let functionIndex = Int(normalized.dropFirst()) {
@@ -701,7 +701,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func looksLikeShortcutCombo(_ raw: String) -> Bool {
+    package func looksLikeShortcutCombo(_ raw: String) -> Bool {
         let normalized = raw.lowercased()
         if normalized.contains("+") {
             return true
@@ -713,7 +713,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return modifierCount >= 1 && tokens.count >= 2
     }
 
-    private func normalizedOutOfRangeFunctionKeyInput(_ raw: String) -> String? {
+    package func normalizedOutOfRangeFunctionKeyInput(_ raw: String) -> String? {
         let normalized = HotkeyDisplay.canonicalKey(raw)
 
         if let functionNumber = parseFunctionKeyNumber(normalized), !(1...24).contains(functionNumber) {
@@ -723,7 +723,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return nil
     }
 
-    private func parseFunctionKeyNumber(_ token: String) -> Int? {
+    package func parseFunctionKeyNumber(_ token: String) -> Int? {
         let prefixes = ["functionkey", "fnkey", "fkey", "fn", "function", "f"]
 
         for prefix in prefixes {
@@ -742,14 +742,14 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return nil
     }
 
-    private func looksLikeModifierOnlyInput(_ raw: String) -> Bool {
+    package func looksLikeModifierOnlyInput(_ raw: String) -> Bool {
         let tokens = expandedShortcutTokens(from: raw.lowercased())
         guard !tokens.isEmpty else { return false }
         let modifierWords = shortcutModifierWords()
         return tokens.allSatisfy { modifierWords.contains($0) }
     }
 
-    private func expandedShortcutTokens(from raw: String) -> [String] {
+    package func expandedShortcutTokens(from raw: String) -> [String] {
         let expanded = raw
             .replacingOccurrences(of: "⌘", with: " command ")
             .replacingOccurrences(of: "⇧", with: " shift ")
@@ -763,7 +763,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
             .map(String.init)
     }
 
-    private func shortcutModifierWords() -> Set<String> {
+    package func shortcutModifierWords() -> Set<String> {
         [
             "cmd", "command", "meta", "super", "win", "windows",
             "shift",
@@ -812,7 +812,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return missing
     }
 
-    private static func humanList(_ items: [String]) -> String {
+    package static func humanList(_ items: [String]) -> String {
         switch items.count {
         case 0:
             return ""
@@ -859,7 +859,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         HotkeyDisplay.canonicalKey(raw)
     }
 
-    private func keyCodeMatchesConfiguredTrigger(eventKeyCode: CGKeyCode, configuredKeyCode: CGKeyCode) -> Bool {
+    package func keyCodeMatchesConfiguredTrigger(eventKeyCode: CGKeyCode, configuredKeyCode: CGKeyCode) -> Bool {
         if eventKeyCode == configuredKeyCode {
             return true
         }
@@ -891,7 +891,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return false
     }
 
-    private func keyCodeForKeyString(_ key: String) -> CGKeyCode? {
+    package func keyCodeForKeyString(_ key: String) -> CGKeyCode? {
         switch key {
         case "space", "spacebar": return CGKeyCode(kVK_Space)
         case "return", "enter": return CGKeyCode(kVK_Return)
@@ -987,7 +987,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         return nil
     }
 
-    private func letterKeyCode(for char: Character) -> CGKeyCode? {
+    package func letterKeyCode(for char: Character) -> CGKeyCode? {
         switch char {
         case "a": return CGKeyCode(kVK_ANSI_A)
         case "b": return CGKeyCode(kVK_ANSI_B)
@@ -1019,7 +1019,7 @@ final class HotkeyMonitor: @unchecked Sendable, ObservableObject {
         }
     }
 
-    private func digitKeyCode(for char: Character) -> CGKeyCode? {
+    package func digitKeyCode(for char: Character) -> CGKeyCode? {
         switch char {
         case "0": return CGKeyCode(kVK_ANSI_0)
         case "1": return CGKeyCode(kVK_ANSI_1)
