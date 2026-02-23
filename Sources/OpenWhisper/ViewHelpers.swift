@@ -1769,4 +1769,44 @@ enum ViewHelpers {
         return size
     }
 
+    // MARK: - Insertion probe status
+
+    /// Maps the optional insertion probe success flag to a semantic color name.
+    /// Returns "green" for success, "orange" for failure, "secondary" for unknown.
+    static func insertionProbeStatusColorName(succeeded: Bool?) -> String {
+        switch succeeded {
+        case true:
+            return "green"
+        case false:
+            return "orange"
+        case nil:
+            return "secondary"
+        }
+    }
+
+    // MARK: - Capture profile helpers
+
+    /// The fixed string shown when no target app can be found for profile capture.
+    static let captureProfileDisabledReasonText =
+        "Couldn't find a target app yet. Switch to the app where insertion should happen, then click Refresh frontmost app."
+
+    /// Whether a profile capture candidate is a recent-app fallback.
+    static func captureProfileUsesRecentAppFallback(isFallback: Bool?) -> Bool {
+        isFallback == true
+    }
+
+    /// Extracts the fallback app name from a profile capture candidate, or nil.
+    static func captureProfileFallbackAppName(isFallback: Bool?, appName: String?) -> String? {
+        guard isFallback == true else { return nil }
+        return appName
+    }
+
+    // MARK: - Modifier bridge
+
+    /// Bridge local ParsedModifier set to ViewHelpers.ParsedModifier set.
+    /// Both enums have the same cases; this just crosses the type boundary.
+    static func bridgeModifiers(_ modifiers: Set<ParsedModifier>) -> Set<ParsedModifier> {
+        modifiers
+    }
+
 }
