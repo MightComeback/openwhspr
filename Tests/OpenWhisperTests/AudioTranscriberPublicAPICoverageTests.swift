@@ -47,9 +47,9 @@ struct AudioTranscriberPublicAPICoverageTests {
     @Test("updateProfile updates existing profile by bundleIdentifier")
     @MainActor func updateProfileUpdatesExisting() {
         let t = AudioTranscriber.shared
-        let original = t.appProfiles
+        let bid = "com.test.update-profile-\(UUID().uuidString)"
         let profile = AppProfile(
-            bundleIdentifier: "com.test.update-profile-test",
+            bundleIdentifier: bid,
             appName: "TestApp",
             autoCopy: false,
             autoPaste: false,
@@ -66,11 +66,11 @@ struct AudioTranscriberPublicAPICoverageTests {
         updated.autoCopy = true
         t.updateProfile(updated)
 
-        let found = t.appProfiles.first(where: { $0.bundleIdentifier == "com.test.update-profile-test" })
+        let found = t.appProfiles.first(where: { $0.bundleIdentifier == bid })
         #expect(found?.appName == "UpdatedTestApp")
         #expect(found?.autoCopy == true)
 
-        t.appProfiles = original
+        t.removeProfile(bundleIdentifier: bid)
     }
 
     @Test("updateProfile is no-op for unknown bundleIdentifier")
