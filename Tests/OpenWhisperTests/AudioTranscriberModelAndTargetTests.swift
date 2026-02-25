@@ -10,8 +10,10 @@ struct AudioTranscriberModelAndTargetTests {
     @Test("setCustomModelPath trims whitespace and stores normalized path")
     @MainActor func setCustomModelPathTrimsWhitespace() {
         let t = AudioTranscriber.shared
+        // Reset before test
+        UserDefaults.standard.removeObject(forKey: AppDefaults.Keys.modelCustomPath)
         t.setCustomModelPath("  /tmp/model.bin  ")
-        let stored = UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath)
+        let stored = UserDefaults.standard.string(forKey: AppDefaults.Keys.modelCustomPath) ?? ""
         #expect(stored == "/tmp/model.bin")
     }
 
