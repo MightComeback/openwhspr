@@ -60,9 +60,14 @@ struct LaunchAtLoginTests {
         UserDefaults.standard.set(!actual, forKey: key)
 
         // Call setEnabled — on failure path it sets defaults to isEnabled
-        let _ = LaunchAtLogin.setEnabled(true)
+        let result = LaunchAtLogin.setEnabled(true)
         let stored = UserDefaults.standard.bool(forKey: key)
-        // stored should be either true (success) or actual (failure fallback)
-        #expect(stored == true || stored == LaunchAtLogin.isEnabled)
+        if result {
+            // Success: stored should reflect requested value
+            #expect(stored == true)
+        } else {
+            // Failure: stored should reflect actual system state
+            #expect(stored == LaunchAtLogin.isEnabled)
+        }
     }
 }
